@@ -1,0 +1,4 @@
+PySALWeb
+========
+
+PySAL web version
