@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>GeoDa.app</title>
+<style>
+canvas {
+    stroke: #000;
+}
+path {
+    fill: green;
+    stroke: #333;
+    //stroke-linejoin: round;
+}
+.map_div {
+    width: 800px;
+    height: 400px;
+    pointer-events: none;
+    fill: none;
+    stroke: #fff;
+    stroke-width: .5px;
+    stroke-linejoin: round;
+    //border: 1px solid #ccc;
+    border-radius: 5px;
+    margin: 0 auto;
+}
+.selected {
+    fill: yellow;
+}
+.unselected {
+    fill: green;
+}
+
+div {
+    display: block;
+}
+#header {
+  height: 80px;
+  margin-bottom: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+#header .container {
+  width: 90%;
+  height: 90px;
+  margin: 0 auto;
+  text-align: left;
+}
+#header .logo {
+  width: 480px;
+}
+body {
+  text-align: center;
+}
+#dragdrop_div {
+    width: 60%;
+    padding: 10px;
+}
+
+#drop_zone {
+    border: 2px dashed #bbb;
+    border-radius: 5px;
+    padding: 25px;
+    text-align: center;
+    font: 20pt bold 'Vollkorn';
+    color: #bbb;
+}
+
+#dropbox_div {
+    width: 250px; 
+    height: 80px;
+    margin-top: 10px;
+    padding-top: 30px;
+    vertical-align: middle;
+    border-right:2px solid #ccc;
+    float: left;
+}
+#progress_bar {
+    margin: 10px 0;
+    padding: 3px;
+    border: 1px solid #000;
+    font-size: 14px;
+    clear: both;
+    opacity: 0;
+    -moz-transition: opacity 1s linear;
+    -o-transition: opacity 1s linear;
+    -webkit-transition: opacity 1s linear;
+}
+#progress_bar.loading {
+    opacity: 1.0;
+}
+#progress_bar .percent {
+    background-color: #99ccff;
+    height: auto;
+    width: 0;
+}
+.check_file {
+  background-image: url("/media/img/checkmark.png");
+  background-repeat:no-repeat;
+  background-position:right; 
+}
+.uncheck_file {
+  color: red;
+  font-weight: bold;
+}
+#preview {
+    width: 90%;
+    height: 450px;
+    margin-top: 20px;
+    padding-top: 20px;
+    margin:0 auto;
+    //border: 1px solid red;
+    text-align: center;
+}
+#toolbar {
+    width: 90%;
+    height: 100px;
+    margin-top: 20px;
+    margin:0 auto;
+}
+.toolbar_tbl {
+    height: 80px;
+    border: none; 
+    overflow: hidden;
+}
+.block_button {
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    padding: 25px;
+    text-align: center;
+    font: 20pt bold 'Vollkorn';
+    color: #bbb;
+}
+.block_button {
+    opacity: 0.5;
+    background: #ccc;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+#btnOpenData{
+    background-image: url(/media/img/add-file.png);
+}
+#btnSave {
+    background-image: url(/media/img/ToolBar-save-project_disabled.png);
+}
+#btnShowTable {
+    background-image: url(/media/img/ToolBar-table.png);
+}
+#btnCreateWeights {
+    background-image: url(/media/img/ToolBar-new-weights.png);
+}
+#btnSpatialRegression {
+    background-image: url(/media/img/ToolBar-regression.png);
+}
+#btnAbout {
+    background-image: url(/media/img/about.png);
+}
+</style>
+
+<link rel="stylesheet" href="/media/css/csslider.css" />
+<script src="/media/js/jquery.min.js"></script>
+<script src="/media/js/d3.v3.min.js"></script>
+<script src="/media/js/inflate.js"></script>
+<script src="/media/js/zip/zip.js"></script>
+<script src="/media/stream.js"></script>
+<script src="/media/shapefile.js"></script>
+<script src="/media/dbf.js"></script>
+<script src="/media/js/indexeddb.js"></script>
+<script src="/media/js/utils.js"></script>
+<script src="/media/js/jsonmap.js"></script>
+<script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="50dk6qp6nc2fcxs"></script>
+
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.1.1/list.min.js"></script>
+<link rel="stylesheet" href="http://jqueryui.com/resources/demos/style.css">
+
+<script type="text/javascript">
+ 	
+///////////////////////////////////////////////////////////////
+// Show map function
+///////////////////////////////////////////////////////////////
+var data; // global for testing
+
+var mapCounter = 1;
+function CreateMapContainer(jsonFilePath) {
+  var containerID = 'map' + mapCounter;
+  $('#mapslider ul').append("<li><center>" + jsonFilePath + "<div id="+containerID+" class=map_div></div></center></li>"); 
+  $('#mapnav').append("<label for=slides_"+mapCounter+"></label>");
+  $('.arrows').append("<label for=slides_"+mapCounter+"></label>");
+  //$('#mapslider').removeClass('csslider').addClass('csslider');
+  //$('.navigation').removeClass('navigation').addClass('navigation');
+  localStorage[containerID] = jsonFilePath;
+  mapCounter++;
+  return containerID;
+}
+
+function SaveMapThumbnail(canvas) {
+  var layer_uuid = localStorage.getItem('current_layer');
+  if (  layer_uuid != undefined ) {
+    var dataURL = canvas.toDataURL();
+    $.ajax({
+      type: "POST",
+      url: "/myapp/upload_canvas/",
+      data: { 
+         imageData: dataURL,
+         layer_uuid: layer_uuid,
+         csrfmiddlewaretoken: '{{ csrf_token }}',
+      }
+    }).done(function(data) {
+      console.log('saved'); 
+      // If you want the file to be visible in the browser 
+      // - please modify the callback in javascript. All you
+      // need is to return the url to the file, you just saved 
+      // and than put the image in your browser.
+    });
+  }
+}
+
+var w = 600;
+var h = 400;
+function ShowJsonMap(jsonFilePath, content, onSuccess) {
+    //console.log(content);
+    var containerID = CreateMapContainer(jsonFilePath);
+
+    //Load in GeoJSON data
+    var createJsonMap = function(json) {
+        /*
+        if (localStorage.getItem(jsonFilePath) == null) {
+            localStorage.setItem(jsonFilePath, 1);
+            // store the content to indexedDB
+            var fileurl = jsonFilePath;
+            var filename = getFileName(fileurl);
+            var fileid = filename;
+            var filecontent = JSON.stringify(json);
+            addFile(fileid, filename, fileurl, filecontent);
+        }
+        */
+    /*} else {
+        console.log("load from cache:");
+        queryFile(jsonFilePath, function(e) {
+            if (e.target.result) {
+                console.log(e.target.result);
+                jsonContent = e.target.result.filecontent;
+                jsonContent = jQuery.parseJSON(jsonContent);
+                createJsonMap(jsonContent);
+            } else {
+                console.log("load from cache error.");
+            }
+        });
+    }*/
+        console.log("create", jsonFilePath);
+        //Create SVG element
+        var canvas = d3.select('#' + containerID)
+            .append("canvas")
+            .attr("width", w)
+            .attr("height", h);
+
+        var minX = Number.POSITIVE_INFINITY,
+            maxX = Number.NEGATIVE_INFINITY,
+            minY = Number.POSITIVE_INFINITY,
+            maxY = Number.NEGATIVE_INFINITY;
+        data = json;
+        json.features.forEach(function(feat,i) {
+            feat.geometry.coordinates.forEach(function(coords,j) {
+                coords.forEach(function(xy,k){
+                    x = xy[0], y = xy[1];
+                    if (x > maxX) {maxX = x;}
+                    if (x < minX) {minX = x;}
+                    if (y > maxY) {maxY = y;}
+                    if (y < minY) {minY = y;}
+                });
+            });
+        });
+
+        console.log(minX,maxX,minY,maxY);
+        var xyratio = (maxX-minX)/(maxY-minY);
+        var offsetW = 0.0;
+        var offsetH = 0.0;
+        if (w/h > xyratio) {
+            // canvas is too wide
+            offsetW = (w - h*xyratio)/2.0;
+        } else if (w/h < xyratio) {
+            // canvas is too tall
+            offsetH = (h - w/xyratio)/2.0;
+        }
+
+        var scaleX = d3.scale.linear()
+            .domain([minX,maxX])
+            .range([0, w-offsetW*2]);
+        scaleY = d3.scale.linear()
+            .domain([minY, maxY])
+            .range([h-offsetH*2,0]);
+
+        function matrix(a, b, c, d, tx, ty) {
+            return d3.geo.transform({
+                point: function(x, y) { 
+                    this.stream.point(scaleX(x)+offsetW, scaleY(y)+offsetH); 
+                }});
+        }
+
+        var context = canvas.node().getContext("2d");
+        var path = d3.geo.path().projection(matrix(-1, 0, 0, 1, 0, 0)).context(context);
+
+        context.strokeStyle = "#cccccc";
+        context.fillStyle = "#ffffff";
+
+        json.features.forEach(function(feat,i) {
+            feat.geometry.coordinates.forEach(function(coords,j) {
+                context.beginPath();
+                coords.forEach(function(xy,k){
+                    x = xy[0], y = xy[1];
+                    x = scaleX(x)+offsetW;
+                    y = scaleY(y)+offsetH;
+                    if (k === 0) {
+                        context.moveTo(x,y);
+                    } else {
+                        context.lineTo(x,y);
+                    }
+                });
+                context.closePath();
+                context.stroke();
+            });
+        });
+        //context.fill();
+        if (onSuccess!= undefined) {
+          //onSuccess(canvas[0][0]);
+        }
+        
+    };
+    if (content!=undefined) {
+        createJsonMap(content);
+    } else{
+    
+        console.log("load from raw data");
+        var suffix = getSuffix(jsonFilePath);
+        if (suffix === "json" || suffix === "geojson") {
+            d3.json(jsonFilePath, createJsonMap);
+        } else if (suffix === "zip") {
+            FetchZipResource(jsonFilePath, function(data){
+                jsonContent = JSON.parse(data);
+                createJsonMap(jsonContent);
+            });
+        }
+    }
+} // end function ShowJsonMap()
+
+
+var socket;
+var db;
+
+///////////////////////////////////////////////////////////////
+// Init document 
+///////////////////////////////////////////////////////////////
+$(document).ready(function() {
+
+  $('#btnOpenData').popupDiv('#divPop','Start by click this button to load your data.');
+  
+  function getCookie(name) {
+     var cookieValue = null;
+     if (document.cookie && document.cookie != '') {
+       var cookies = document.cookie.split(';');
+       for (var i = 0; i < cookies.length; i++) {
+         var cookie = jQuery.trim(cookies[i]);
+         // Does this cookie string begin with the name we want?
+         if (cookie.substring(0, name.length + 1) == (name + '=')) {
+             cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+             break;
+         }
+       }
+     }
+    return cookieValue;
+  }
+  //////////////////////////////////////////////////////////////
+  // WebSocket Server Communications
+  //////////////////////////////////////////////////////////////
+  // create websocket
+  if (! ("WebSocket" in window)) WebSocket = MozWebSocket; // firefox
+  socket = new WebSocket("ws://localhost:9000");
+
+  // open the socket
+  socket.onopen = function(event) {
+      socket.send('{connected:'+ pageid + '}');
+
+      // show server response
+      socket.onmessage = function(e) {
+          // handle different messages
+          try {
+              data = JSON.parse(e.data);
+              if ( 'SELECTED' in data ) {
+                  select_ids = data['SELECTED'];
+                  d3.selectAll("path")
+                      .attr("class", "unselected");
+                  d3.selectAll("path")
+                      .each(function(d,i){ 
+                      if (jQuery.inArray(d.properties.FIPS, select_ids) > -1) {
+                          //if (d.id in select_ids) {
+                          d3.select(this).attr("class", "selected");
+                      }
+                  });
+              }
+          } catch (err) {
+              console.error("Parsing error:", err);            
+          }
+      }
+  }
+
+  //////////////////////////////////////////////////////////////
+  // Dropbox Plugin
+  //////////////////////////////////////////////////////////////
+  var dropboxOptions = {
+      // Required. Called when a user selects an item in the Chooser.
+      success: function(files) {
+          //alert("Here's the file link: " + files[0].link)
+          var fileLink = files[0].link;
+          ShowJsonMap(fileLink, undefined, SaveMapThumbnail);
+      },
+      cancel: function() {
+          $('#progressCont').hide();
+      },
+      linkType: "direct", // or "preview"
+      // Optional. A value of false (default) limits selection to a single file, while
+      // true enables multiple file selection.
+      multiselect: false, // or true
+      extensions: ['.json', '.geojson', '.zip', '.shp','.shx','.dbf','.prj'],
+  };
+  var button = Dropbox.createChooseButton(dropboxOptions);
+  $("#dropbox_div").append(button);
+  $('#dropbox_div').click(function() {});
+
+
+  //////////////////////////////////////////////////////////////
+  // DragDrop Plugin
+  //////////////////////////////////////////////////////////////
+
+  var reader;
+  var progress = document.querySelector('.percent');
+
+  function updateProgress(evt) {
+    // evt is an ProgressEvent.
+    if (evt.lengthComputable) {
+      var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
+      // Increase the progress bar length.
+      if (percentLoaded < 100) {
+        progress.style.width = percentLoaded + '%';
+        progress.textContent = percentLoaded + '%';
+      }
+    }
+  }
+  function checkShpFileComplete(filename) {
+    var suffix = getSuffix(filename);
+    if (suffix === 'geojson' || suffix === 'json') {
+      localStorage['isFileComplete'] = true;  
+      return true;
+
+    } else if (suffix === 'shp' || suffix === 'dbf' || suffix === 'shx') {
+      shpfilename = getName(filename);
+      shp_exts = ['.shp','.dbf','.shx'];
+      lbl_ids = ['#lbl-drop-shp', '#lbl-drop-dbf', '#lbl-drop-shx'];
+      var flag = true;
+      for ( var i=0 ; i < shp_exts.length; i++) {
+        if (localStorage.getItem(shpfilename + shp_exts[i]) == undefined) {
+          $(lbl_ids[i]).addClass("uncheck_file");
+          flag = false;
+        } else {
+          $(lbl_ids[i]).removeClass("uncheck_file").addClass("check_file");
+        }
+      }
+      if (flag == true) {
+        localStorage['isFileComplete'] = true;
+        return true;
+      }
+    }
+    return false;
+  }
+  //****************************************************
+  // fill forms and controls after uploading data files
+  //****************************************************
+  function refillCombobox(kv) {
+  }
+  function sortKeys() {
+  }
+  function fillForms() {
+    var layer_uuid = localStorage.getItem('current_layer');
+    if (  layer_uuid != undefined ){
+      //-----------------------------------------------
+      // get fields information
+      //-----------------------------------------------
+      $.get("/myapp/get_fields/", {"layer_uuid": layer_uuid},function() {
+      }).done(function(fields) {
+        var field_names = [];
+        for ( var key in fields ){
+          field_names.push(key); 
+        }
+        field_names.sort();
+        // fill content for combobox: select ID for weights creation 
+        $('#sel-w-id').find('option').remove().end();
+        $.each(field_names, function(i, field_name) {
+          if ( fields[field_name] != "String" ) {
+            $('#sel-w-id').append($('<option>', {value: field_name}).text(field_name));
+          }
+        });
+        //InitAutocompCombobox('sel-w-id');
+        //$("#sel-w-id").combobox();
+        // fill content for <ul id="ul-x-variables"></ul> 
+        $('#ul-x-variables').find('li').remove().end();
+        $.each(field_names, function(i, field_name) {
+          if ( fields[field_name] != "String" ) {
+            var item = $('#ul-x-variables').append('<li><p class="name">'+field_name+'</p></li>');
+            console.log(item);
+          }
+        });
+        $( "#vars ul li" ).draggable({
+          helper: "clone"
+        });
+        new List('vars', {valueNames:['name']});
+      });
+      //-----------------------------------------------
+      // get weights name:uuid
+      //-----------------------------------------------
+      $.get("/myapp/get_weights_names/", {"layer_uuid": layer_uuid},function() {
+      }).done(function(data) {
+        var w_names = [];
+        for ( var key in data){
+          w_names.push(key); 
+        }
+        w_names.sort();
+        w_combobox= ['#sel-model-w-files', '#sel-kernel-w-files'];
+        $.each(w_combobox, function(i, w_cmb) {
+          $(w_cmb).find('option').remove().end();
+          $.each(w_names, function(j, w_name) {
+            wuuid = data[w_name];
+            $(w_cmb).append($('<option>', {value: wuuid}).text(w_name));
+          });
+        });
+      });
+    }
+  }
+  function handleFileSelect(evt) {
+    $("#"+evt.target.id).css("color", "#bbb");
+    evt.stopPropagation();
+    evt.preventDefault();
+
+    // Reset progress indicator on new file selection.
+    progress.style.width = '0%';
+    progress.textContent = '0%';
+
+    var formData = new FormData();
+    var files = evt.dataTransfer.files; // FileList object.
+    $.each(files, function(i, f) {
+      console.log(f, f.name, f.size)
+      formData.append('docfile', f, f.name);
+      var fileurl = "local://" + f.name + f.size;
+      var suffix = getSuffix(f.name);
+      // draw geometries directly
+      if ( suffix == 'shp' ) {
+        var opts = { shp: f};
+        new Shapefile(opts, function(content){
+          var json = content.geojson;
+          ShowJsonMap(fileurl, json, SaveMapThumbnail);
+        }); 
+      } else if ( suffix === 'json' || suffix === 'geojson' ) {
+        var reader = new FileReader();
+
+        //reader.onprogress = updateProgress;
+        reader.onabort = function(e) { console.log('File read cancelled');}; 
+        reader.onloadstart = function(e) {
+        };
+        reader.onloadend =  function(evt) {
+          if (evt.target.readyState == FileReader.DONE) {
+            var data = evt.target.result;
+            console.log("showjsonmap");
+            ShowJsonMap(fileurl, JSON.parse(data), SaveMapThumbnail);
+          }
+        };
+        reader.readAsText(f);
+      }
+      localStorage[f.name] = true;
+    });
+    checkShpFileComplete(files[0].name);
+    // upload files to server
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/myapp/upload/');
+    xhr.onload = function() {
+        try{
+          data = JSON.parse(this.responseText);
+          if ( data['layer_uuid'] != undefined) {
+            localStorage['current_layer']= data["layer_uuid"];
+            fillForms();
+            var containerID = 'map' + mapCounter;
+            SaveMapThumbnail($('#containerID canvas'));
+          }
+        } catch(e){console.log(e);}
+        console.log("upload return:",this.responseText);
+        // Ensure that the progress bar displays 100% at the end.
+        progress.style.width = '100%';
+        progress.textContent = '100%';
+        setTimeout("document.getElementById('progress_bar').className='';", 5000);
+    }; 
+    xhr.upload.onprogress = updateProgress;
+    //xhr.send(formData);
+    document.getElementById('progress_bar').className = 'loading';
+  }
+
+  function handleDragOver(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+    evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+    $("#"+evt.target.id).css("color", "black");
+  }
+
+  function handleDragOut(evt) {
+    $("#"+evt.target.id).css("color", "#bbb");
+  }
+
+  // Setup the dnd listeners.
+  var dropZone = document.getElementById('drop_zone');
+  dropZone.addEventListener('dragover', handleDragOver, false);
+  dropZone.addEventListener('dragleave', handleDragOut, false);
+  dropZone.addEventListener('drop', handleFileSelect, false);
+
+  //////////////////////////////////////////////////////////////
+  // Buttons 
+  //////////////////////////////////////////////////////////////
+  $('#btnOpenData').css("opacity",1);
+  $('#btnAbout').css("opacity",1);
+  $('.block_button').mouseenter(function(){
+    if ($(this).attr("id") == 'btnOpenData' || 
+        $(this).attr("id") == 'btnAbout' || 
+        localStorage.getItem('current_layer') != null) {
+      $(this).css("border","1px solid #333");
+    }
+  });
+  $('.block_button').mouseleave(function(){
+    if ($(this).attr("id") == 'btnOpenData' || 
+        $(this).attr("id") == 'btnAbout' || 
+        localStorage.getItem('current_layer') != null) {
+      $(this).css("border","0px solid #333");
+    }
+  });
+  $('#file_div').hide();
+  $('#btnOpenData').click(function(){
+    $('#file_div').slideToggle("slow");  
+  });
+  $('#btnShowMap').click(function(){
+      $('[name="slides"]').each(function(i, obj){
+          if ( obj.checked === true) {
+              var map_id = "map"+ obj.id.slice(-1);
+              var map_url = localStorage[map_id];
+              if (map_url) {
+                  console.log("popup");
+                  window.open("template_json_map.html?json="+map_url,"");
+              }
+              return;
+          }
+      });
+  });
+  $('#btnCreateWeights').click(function(){
+    // pop-up weights creation dialog
+    //localStorage.getItem('current_layer') != null) {
+    $('#dialog-weights').dialog('open');
+  });
+  $('#btnSpatialRegression').click(function(){
+    // pop-up weights creation dialog
+    //localStorage.getItem('current_layer') != null) {
+    $('#dialog-regression').dialog('open');
+
+  });
+  
+  //test 
+  fillForms();
+});
+</script>
+</head>
+
+<body>
+<style>
+.bubble {
+  z-index: 500;
+  position: absolute;
+  background-color: orange;
+  opacity: 0.8;
+  margin: 0;
+  padding:10px;
+  text-align:center;
+  width:180px;
+  -moz-border-radius:10px;
+  -webkit-border-radius:10px;
+  -webkit-box-shadow: 0px 0 3px rgba(0,0,0,0.25);
+  -moz-box-shadow: 0px 0 3px rgba(0,0,0,0.25);
+  box-shadow: 0px 0 3px rgba(0,0,0,0.25); 
+}
+</style>
+<div id="divPop" class="bubble">
+    Hello World! This is Popup Div.
+</div>
+<script>
+$('#divPop').hide();
+jQuery.fn.popupDiv = function (divToPop, text) {
+  var pos=$(this).offset();
+  var h=$(this).height();
+  var w=$(this).width();
+  if (w == 0) w = 40;
+  $(divToPop).html(text);
+  $(divToPop).css({ left: pos.left + w , top: pos.top - h });
+  $(divToPop).show(function() {
+    setTimeout(function(){
+      $(divToPop).fadeOut('slow');
+    }, 2000);
+  });
+};
+</script>
+
+<div id="header"> 
+    <div class="container">
+        <img src="/media/img/cloud.png"/>
+        <font style="color: #666;" size=16 face="Century Gothic">{</font>
+        <font style="color: #666; font-size: 30px">'Spatial Data Analysis':</font>
+        <font style="color: #666; font-size: 30px" face="Copperplate">WEB</font>
+        </font><font style="color: #666;" size=16 face="Century Gothic">}</font>
+    </div>
+</div>
+<div id="toolbar">
+    <div style="clear: left;"></div>
+    <table class="toolbar_tbl">
+        <tr>
+           <td><div class="block_button" id="btnOpenData"></div></td> 
+           <td><div class="block_button" id="btnSave"></div></td> 
+           <td><div class="block_button" id="btnShowTable"></div></td> 
+           <td><div class="block_button" id="btnCreateWeights"></div></td> 
+           <td><div class="block_button" id="btnHistogram"></div></td> 
+           <td><div class="block_button" id="btnScatterPlot"></div></td> 
+           <td><div class="block_button"></div></td> 
+           <td><div class="block_button"></div></td> 
+           <td><div class="block_button"></div></td> 
+           <td><div class="block_button"></div></td> 
+           <td><div class="block_button"></div></td> 
+           <td><div class="block_button"></div></td> 
+           <td><div class="block_button"></div></td> 
+           <td><div class="block_button"></div></td> 
+           <td><div class="block_button"></div></td> 
+           <td><div class="block_button"></div></td> 
+           <td><div class="block_button"  id="btnSpatialRegression"></div></td> 
+           <td><div class="block_button" id="btnAbout"></div></td> 
+        </tr>
+    </table>
+</div>
+<div id="file_div"> 
+  <div id="main_div" style="width: 80%;margin: 0 auto;">
+      <div id="file_choose_div" style="width: 100%; margin: 0 auto;">
+          <div id="dropbox_div"></div>
+          <div id="dragdrop_div" style="margin-left: 350px;">
+              <div id="drop_zone">Drop files here
+                <p style="font-size:12px;"><label>*.json</label>&nbsp;&nbsp;or &nbsp;&nbsp;
+                <label  id="lbl-drop-shp">*.shp</label>&nbsp;<label id="lbl-drop-dbf">*.dbf</label>
+                &nbsp;<label id="lbl-drop-shx">.shx</label>&nbsp;&nbsp;or &nbsp;&nbsp;
+                <label>*.zip</label></p>
+              </div>
+              <div id="progress_bar"><div class="percent">0%</div></div>
+          </div>
+      </div>
+  </div>
+</div>
+
+<div id="preview"> 
+<div id="mapslider" class="csslider">
+    <input type="radio" name="slides" id="slides_1" checked />
+    <input type="radio" name="slides" id="slides_2" />
+    <input type="radio" name="slides" id="slides_3" />
+    <input type="radio" name="slides" id="slides_4" />
+    <ul>
+    </ul>
+    <div class="arrows">
+    </div>
+    <div class="navigation">
+        <div id="mapnav">
+        </div>
+    </div>
+</div>
+</div>
+
+<style>
+  .ui-widget-overlay { background: #eee repeat-x; opacity: .8;}
+  table { border-spacing: 0;}
+  th { text-align: left; padding: 10px 0 10px 0; }
+  h1 { padding: .2em; margin: 0; font-size: 13px;}
+  ol li:hover {background-color: #eee;}
+  .list { margin:0; padding:0px 0 0; }
+  .list li {
+    display:block; background-color: #ddd; padding:1px; box-shadow: inset 0 1px 0 #fff;
+    height: 20px;  cursor: pointer; cursor: hand; vertical-align: bottom;
+  }
+  .list li p { margin: 0px; padding: 4px 0px 0px 10px; vertical-align: bottom; }
+  .list li:nth-child(odd) {background: #fff;}
+  .list li:hover { background-color: orange; }
+  
+  .dialogWithDropShadow{
+         -webkit-box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);  
+         -moz-box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5); 
+   }
+  #weights { width: 600px; height: 90px; margin-right: 2em; display:block;}
+  #weights select {width: 90%;}
+  #w_catalog_model {width: 48%; float: left;}
+  #w_catalog_kernel {width: 50%; float: right;}
+  #model_spec { width: 600px; margin-right: 2em; height:370px; display:block;}
+  #y_catalog {width: 48%; float: left;}
+  #x_catalog {width: 50%; float: right;}
+  #x_catalog.x_box {height: 200px;}
+  #var_list { width: 200px; }
+  /* style the list to maximize the droppable hitarea */
+  .drop_box ol { list-style-type: circle; height: 100px; margin: 0; padding: 1em 0 1em 2em; }
+  #x_box ol {height: 215px;}
+
+  #estimation { width: 600px; margin-right: 2em; height:170px; display:block;}
+  .est_tab { border: 1px #bbb solid; border-radius:5px; width: 32%; height: 120px; float: left; margin: 15px 1px 0 0; padding-left: 5px;}
+  .est_tab p { margin: -5px 0 5px 5px; background-color: white; width: 100px; text-align:center; font-weight: bold;}
+  .est_tab input { margin-bottom: 8px;}
+
+</style>
+<div id="dialog-regression" title="Spatial Regression Dialog"> 
+  <p style="text-align: left">
+  <button id="btn_create_w">Create Weights</button> 
+  <button id="first">Open Model</button>
+  <button id="save_btn">Save Model</button>
+  <button id="sec">Reset Model</button>
+  <button id="btn_preference">Preference</button>
+  <button id="btn_run">Run</button>
+  <button id="btn_result">Show Result</button>
+  </p>
+  <table>
+    <tr>
+      <td>
+      </td>
+    </tr>
+    <tr>
+      <td valign=top>
+        <div id="model_spec">
+          <h1 class="ui-widget-header">Model Specifications</h1>
+          <p>Drag and drop variables from the Variables Panel.<br>Double click variable to remove it.</p>
+          <div id="y_catalog">
+            <h2><a href="#">Y (Required) </a></h2>
+            <div class="drop_box" id="y_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">YE </a></h2>
+            <div class="drop_box" id="ye_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">Instruments</a></h2>
+            <div class="drop_box" id="inst_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">R</a></h2>
+            <div class="drop_box" id="r_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">T</a></h2>
+            <div class="drop_box" id="i_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+          </div>
+          <div id="x_catalog">
+            <h2><a href="#">X (Required) </a></h2>
+            <div class="drop_box" id="x_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        <div id="estimation">
+          <h1 class="ui-widget-header">Estimation</h1>
+          <div class="est_tab">
+            <p>Model Type</p>
+            <input type="radio" name="model_type" value="0" checked>Standard<br>
+            <input type="radio" name="model_type" value="1">Spatial Lag<br>
+            <input type="radio" name="model_type" value="2">Spatial Error<br>
+            <input type="radio" name="model_type" value="3">Spatial Lag+Error<br>
+          </div>
+          <div class="est_tab">
+            <p>Method</p>
+            <input type="radio" name="method" value=0 checked>OLS<br>
+            <input type="radio" name="method" value=1>GMM<br>
+            <input type="radio" name="method" value=2>ML<br>
+          </div>
+          <div class="est_tab">
+            <p>Standard Errors</p>
+            <input type="checkbox" name="stderror" value="white">White<br>
+            <input type="checkbox" name="stderror" value="hac">HAC<br>
+            <input type="checkbox" name="stderror" value="kphet">KP HET<br>
+          </div>
+        </div>
+        <div id="weights">
+          <h1 class="ui-widget-header">Weights</h1>
+          <div id="w_catalog_model">
+            <h2><a href="#">Model Weights (Optional) </a></h2>
+            <div id="w_model_box">
+              <select id="sel-model-w-files" multiple="multiple">
+                <option value="NAT.gal">NAT.gal</option>
+                <option value="NAT.knn4.gwt">NAT.knn4.gwt</option>
+              </select>
+            </div>
+          </div>
+          <div id="w_catalog_kernel">
+            <h2><a href="#">Kernel Weights (Optional) </a></h2>
+            <div id="w_kernel_box">
+              <select id="sel-kernel-w-files" multiple="multiple">
+                <option value="NAT.gal">NAT.gal</option>
+                <option value="NAT.knn4.gwt">NAT.knn4.gwt</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td valign=top>
+        <div id="var_list">
+          <h1 class="ui-widget-header">Variables</h1>
+          <div class="ui-widget-content" id="vars">
+            <input class="search" placeholder="Search" />
+            <button class="sort" data-sort="name">
+            Sort
+            </button>
+            <ul id="ul-x-variables" class="list">
+              <li><p class="name">x1</p></li>
+              <li><p class="name">x2</p></li>
+              <li><p class="name">x3</p></li>
+              <li><p class="name">x4</p></li>
+              <li><p class="name">x5</p></li>
+              <li><p class="name">x6</p></li>
+              <li><p class="name">x7</p></li>
+            </ul>
+          </div>
+        </div>
+
+      </td>
+    </tr>
+  </table> 
+</div>
+<div id="dialog-spreg-result" title="Spatial Regression Result">
+  <div id="spreg-result-tabs">
+    <ul>
+      <li><a href="#tabs-1">Report</a></li>
+      <li><a href="#tabs-2">Predicted Values and Residuals</a></li>
+    </ul>
+    <div id="tabs-1" style="height:320px">
+      <textarea id="txt-spreg-summary" style="resize: none; width: 100%; padding: 10px; border: none; height: 100%; margin: -10px; border: 1px solid #ccc;"> </textarea>
+    </div>
+    <div id="tabs-2" style="height:320px">
+      <textarea id="txt-spreg-predy" style="resize: none; width: 100%; padding: 10px; border: none; height: 100%; margin: -10px; border: 1px solid #ccc;"> </textarea>
+      <button id="btn-save-predy">Save values to datasource</button>
+    </div>
+  </div>
+</div>
+
+<div id="dialog-preference" title="Preference">
+  <div id="tabs">
+    <ul>
+      <li><a href="#tabs-1">Std Dev</a></li>
+      <li><a href="#tabs-2">GMM</a></li>
+      <li><a href="#tabs-3">ML</a></li>
+      <li><a href="#tabs-4">Instruments</a></li>
+      <li><a href="#tabs-5">Output</a></li>
+      <li><a href="#tabs-6">Regimes</a></li>
+      <li><a href="#tabs-7">Other</a></li>
+    </ul>
+    <div id="tabs-1">
+      <p><b>Compute Standard Deviation with N or N-K</b></p>
+      <table>
+        <tr><td></td><td width="40">N-K</td><td width="40">N</td></tr>
+        <tr><td>OLS</td><td><input type="radio" name="ols-n-k" checked></td><td><input type="radio" name="ols-n"></td></tr>
+        <tr><td>2SLS</td><td><input type="radio" name="2sls-n-k"></td><td><input type="radio" name="2sls-n" checked></td></tr>
+        <tr><td>GM-Lag</td><td><input type="radio" name="gm-lag-n-k"></td><td><input type="radio" name="gm-lg-n" checked></td></tr>
+        <tr><td>All Other Models</td><td></td><td><input type="radio" name="ols-n" checked></td></tr>
+      </table>
+    </div>
+    <div id="tabs-2">
+      <table>
+        <tr><th>Improved Efficiency</th></tr>
+        <tr>
+          <td>Maximum Iteration</td>
+          <td><input id="spinner" name="gmm-max-ite" value=1></td>
+        </tr>
+        <tr>
+          <td>Stopping Criterion<br>(change in Lambda)</td>
+          <td><input id="spinner" name="gmm-stop-cri" value="0.00001"></td>
+        </tr>
+        <tr><th><b>Spatial Error Model</b></th><th></th></tr>
+        <tr>
+          <td>Inference on Lambda</td>
+          <td><input type="checkbox" name="gmm-inf-lmd" checked></td>
+        </tr>
+        <tr><th><b>Heteroskedasticity</b></th><th></th></tr>
+        <tr>
+          <td>Computation of Inverse</td>
+          <td>
+            <select>
+              <option value="gmm-powerexpansion" selected>Power Expansion</option>
+              <option value="gmm-trueinverse">True Inverse</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Step 1c from Arraiz et al (2010)</td>
+          <td><input type="checkbox" name="gmm-step1c"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-3">
+      <table>
+        <tr><th>Diagnostics</th></tr>
+        <tr>
+          <td>ML Diagnostics</td>
+          <td><input type="checkbox" name="ckb-ml-diag"></td>
+        </tr>
+        <tr><th>Methods</th><th></th></tr>
+        <tr>
+          <td>ML Method</td>
+          <td>
+            <select id="ml-method">
+              <option value="ml-full">Full</option>
+              <option value="ml-ord">Ord</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Tolerance Criterion</td>
+          <td><input type="text" name="txt-ml-tol-cri" value="0.00001"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-4">
+      <table>
+        <tr>
+          <td>Order of Spatial Lags for Instruments</td>
+          <td><input id="spinner" name="value" value="1"></td>
+        </tr>
+        <tr>
+          <td>Include Lags of User-Specified Instruments</td>
+          <td><input type="checkbox" name="ckb-ml-diag" checked></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-5">
+      <table>
+        <tr>
+          <td>Show Variance-Covariance Matrix</td>
+          <td><input type="checkbox" name="ckb-out-showVCM"></td>
+        </tr>
+        <tr>
+          <td>Save Predicted Values and Residuals</td>
+          <td><input type="checkbox" name="ckb-out-savePR"></td>
+        </tr>
+        <tr>
+          <td>Save Detailed Model Specification</td>
+          <td><input type="checkbox" name="ckb-out-saveDMS"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-6">
+      <table>
+        <tr>
+          <td>Error by Regimes</td>
+          <td><input type="checkbox" name="ckb-reg-err" checked></td>
+        </tr>
+        <tr>
+          <td>Spatial Lag by Regimes</td>
+          <td><input type="checkbox" name="ckb-reg-lag"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-7">
+      <table>
+        <tr><th>Diagnostics</th></tr>
+        <tr>
+          <td>OLS Diagnostics</td>
+          <td><input type="checkbox" name="ckb-other-ols" checked></td>
+        </tr>
+        <tr>
+          <td>White Test (OLS only)</td>
+          <td><input type="checkbox" name="ckb-other-white"></td>
+        </tr>
+        <tr>
+          <td>Moran's I of the Residuals</td>
+          <td><input type="checkbox" name="ckb-other-moran"></td>
+        </tr>
+        <tr><th><b>Data</b></th><th></th></tr>
+        <tr>
+          <td>Replace Missing Values With</td>
+          <td><input type="text" name="txt-other-miss" value=""></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+ 
+<script>
+$(function() {
+  $( "#y_catalog" ).accordion();
+  $( "#x_catalog" ).accordion();
+  $( "#w_catalog_model" ).accordion();
+  $( "#w_catalog_kernel" ).accordion();
+  $( "#vars ul li" ).draggable({
+    helper: "clone"
+  });
+
+  $( ".drop_box ol li" ).dblclick(function() {
+    console.log($(this));
+  });
+
+  $( ".drop_box ol" ).droppable({
+    activeClass: "ui-state-default",
+    hoverClass: "ui-state-hover",
+    accept: ":not(.ui-sortable-helper)",
+    drop: function( event, ui ) {
+      $( this ).find( ".placeholder" ).remove();
+      // customized behavior for different dropbox
+      console.log($(this).closest("div").attr("id"),$(this).children().length);
+      var box_id = $(this).closest("div").attr("id");
+      var n_items = $(this).children().length;
+      if ( n_items > 0) {
+        if (box_id === 'y_box'||box_id==='t_box'||box_id==='r_box') 
+          return; 
+      }
+      // drop gragged item
+      $( "<li></li>" ).text( ui.draggable.text() ).appendTo( this ).dblclick(function(){
+        $(this).remove();
+        ui.draggable.show();
+      });
+      ui.draggable.hide();
+    }
+  }).sortable({
+    items: "li:not(.placeholder)",
+    sort: function() {
+      // gets added unintentionally by droppable interacting with sortable
+      // using connectWithSortable fixes this, but doesn't allow you to customize active/hoverClass options
+      $( this ).removeClass( "ui-state-default" );
+    }
+  });
+
+  // model type
+  $('input:radio[name=model_type]').click( function() {
+    var model_type = $(this).val();
+    /*if ( model_type === 'spatialerror' || model_type === 'spatiallag') {
+      $('input:radio[name=method]').prop('disabled', false);
+      $('input:radio[value=gmm]').prop('checked', true);
+    }*/
+  });
+
+  $( "#dialog-preference" ).dialog({
+    height: 400,
+    width: 540,
+    autoOpen: false,
+    modal: true,
+    dialogClass: "dialogWithDropShadow",
+    buttons: {
+      "Restore Defaults": function() {
+        $( this ).dialog( "close" );
+      },
+      Cancel: function() {
+        $( this ).dialog( "close" );
+      },
+      "Save": function() {
+        $( this ).dialog( "close" );
+      },
+    }
+  });
+  $( "#dialog-spreg-result" ).dialog({
+    height: 500,
+    width: 600,
+    autoOpen: false,
+    modal: true,
+    dialogClass: "dialogWithDropShadow",
+    buttons: {
+      "Save to pdf": function() {
+        $( this ).dialog( "close" );
+      },
+      Cancel: function() {
+        $( this ).dialog( "close" );
+      },
+    }
+  });
+  var options = {
+    valueNames: ['name']
+  };
+  var varList = new List('vars', options);
+
+  var GetTextsFromObjs = function(objs) {
+    var texts = [];
+    objs.each(function(i, obj){
+      if (obj.className != "placeholder") {
+        texts.push($(obj).text());
+      }
+    });
+    return texts;
+  };
+  var GetValsFromObjs = function(objs) {
+    var vals = [];
+    objs.each(function(i, obj){
+      if (obj.className != "placeholder") {
+        vals.push($(obj).val());
+      }
+    });
+    return vals;
+  };
+
+  $( "#dialog-regression" ).dialog({
+    dialogClass: "dialogWithDropShadow",
+    width: 900,
+    autoOpen: false,
+    modal: true,
+  });
+
+  $( "#tabs" ).tabs();
+  $( "#spreg-result-tabs" ).tabs();
+
+  $( "#first" ).button({
+    icons: {
+      primary: "ui-icon-folder-open"
+    }
+  });
+  $( "#save_btn" ).button({
+    icons: {
+      primary: "ui-icon-disk"
+    }
+  });
+  $( "#sec" ).button({
+    icons: {
+      primary: "ui-icon-)circle-close"
+    }
+  });
+  $( "#btn_preference" ).button({
+    icons: {
+      primary: "ui-icon-gear",
+    }
+  }).click(function(){
+    $('#dialog-preference').dialog('open');
+  });
+
+  $( "#btn_result" ).button({
+    icons: {
+      primary: "ui-icon-document",
+    }
+  }).click(function(){
+    $('#dialog-spreg-result').dialog('open');
+  }).hide();
+  
+  $( "#btn_create_w" ).button({
+    icons: {
+      primary: "ui-icon-plus",
+    }
+  }).click(function(){
+    $('#dialog-weights').dialog('open');
+  });
+
+  $( "#btn_run" ).button({
+    icons: {
+      primary: "ui-icon-circle-triangle-e",
+    },
+  }).click(function(){
+    var layer_uuid = localStorage.getItem('current_layer');
+    if (  layer_uuid == undefined ) {
+      console.log("Error: layer_uuid is not defined.");
+      return;
+    }
+    var w_list = GetValsFromObjs($('#sel-model-w-files :selected'));
+    console.log(w_list);
+    var wk_list = GetValsFromObjs($('#sel-kernel-w-files :selected'));
+    console.log(wk_list);
+    var model_type = $('input:radio[name=model_type]:checked').val();
+    console.log(model_type);
+    var method = $('input:radio[name=method]:checked').val();
+    console.log(method);
+    var error = [0,0,0];
+    $('input:checkbox[name=stderror]').each(function(i,obj){
+      if (obj.checked){ 
+        error[i] = 1;
+      }
+    });
+    console.log(error);
+    // y, x, w, 
+    var x = GetTextsFromObjs($('#x_box li'));
+    console.log(x);
+    var y = GetTextsFromObjs($('#y_box li'))[0];
+    console.log(y[0]);
+    var ye = GetTextsFromObjs($('#ye_box li'));
+    console.log(ye);
+    var h = GetTextsFromObjs($('#inst_box li'));
+    console.log(h[0]); 
+    var r = GetTextsFromObjs($('#r_box li'));
+    console.log(r[0]); 
+    var t = GetTextsFromObjs($('#t_box li'));
+    console.log(t[0]); 
+    // run model
+    params = { 'layer_uuid': layer_uuid, 'w': w_list, 'wk': wk_list, 'type': model_type, 'method': method, 'error': error, 'x': x, 'y': y, 'ye': ye, "h": h, "r": r, "t": t, csrfmiddlewaretoken: '{{ csrf_token }}'};
+    $.post("/myapp/spatial_regression/", params, function(){
+        // spinning for run 
+          $('#btn_result').hide();
+      }).done(function(data) {
+        // get results
+        console.log(data);
+        try {
+          data = JSON.parse(data);
+          if ( data['success'] == 1 ) {
+            $('#btn_result').show();
+            if ( data['report'] ) {
+              $.each(data['report'], function(id, result) {
+                $('#txt-spreg-summary').val(result['summary']);
+                var predy = "";
+                $.each(result['predy'][0], function(i, val){
+                  predy += val + "\n";
+                });
+                $('#txt-spreg-predy').val(predy);
+              });
+            }
+            $('#btn_result').popupDiv('#divPop','Click this button to see result.');
+          }
+        } catch (e) {console.log(e);}
+      });
+  });
+});
+</script>
+
+<div id="dialog-weights"  title="Weights Creation Dialog">
+  <style>
+  .ui-widget-overlay { background: #aaa repeat-x; opacity: .8;}
+  table { border-spacing: 0;}
+  th { text-align: left; padding: 10px 0 10px 0; }
+  td { text-align: left;}
+  .custom-combobox {
+    position: relative;
+    display: inline-block;
+  }
+  .custom-combobox-toggle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    margin-left: -1px;
+    padding: 0;
+    /* support: IE7 */
+    *height: 1.7em;
+    *top: 0.1em;
+  }
+  .custom-combobox-input {
+    margin: 0;
+    padding: 0.3em;
+  }
+  </style>
+  <table>
+    <tr><td><li>Please input a Weights name</li></td><td>
+      <input type="text" id="txt-w-name">
+    </td></tr>
+    <tr><td><li>Select an ID variable for weights file:</li></td><td>
+      <select id='sel-w-id'>
+        <option value="POLYID" selected>POLYID</option>
+        <option value="X">X</option>
+        <option value="Y">Y</option>
+      </select>
+    </td></tr>
+  </table>
+  <br/>
+  <br/>
+  <div id="tabs-dlg-weights">
+    <ul>
+      <li><a href="#tabs-1">Contiguity</a></li>
+      <li><a href="#tabs-2">Distance</a></li>
+      <li><a href="#tabs-3">Adaptive Kernel</a></li>
+    </ul>
+    <div id="tabs-1">
+      <form id="cont-form">
+      <table>
+        <tr>
+          <td>Contiguity Type</td>
+          <td>
+            <select id="sel-cont-type">
+              <option value="rook" selected>Rook</option>
+              <option value="queen">Queen</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Order of Contiguity</td>
+          <td><input id="spinner-cont-order" value=1></td>
+        </tr>
+        <tr>
+          <td>Include Lower Orders</td>
+          <td><input type="checkbox" id="cbx-cont-ilo"></td>
+        </tr>
+      </table>
+      </form>
+    </div>
+    <div id="tabs-2">
+      <table>
+        <tr>
+          <td>Select Distance Metric</td>
+          <td>
+            <select>
+              <option value="euclidean" selected>Euclidean Distance</option>
+              <option value="arcmile">Arc Distance (miles)</option>
+              <option value="arckilometer">Arc Distance (kilometers)</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist"> k-Nearest Neighbors</td>
+          <td># of neighbors <input id="spinner-dist-knn-n" value="1"></td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist">Binary Distane Band</td>
+          <td>
+            <input type="text" name="txt-w-dist-thre" value="0.0" style="float:left;margin-right:100px;width:100px">
+            <div id="dist-slider" style="margin: 5px 0 0 120px;"></div>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist">Power of Inverse Distance</td>
+          <td><input id="spinner-pow-idist" value="1"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-3">
+      <table>
+        <tr>
+          <td>Select Kernel Function Type</td>
+          <td>
+            <select>
+              <option value="uniform" selected>Uniform</option>
+              <option value="triangular">Triangular</option>
+              <option value="quadratic">Quadratic</option>
+              <option value="quartic">Quartic</option>
+              <option value="gaussian">Gaussian</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Number of Neighbors</td>
+          <td><input type="text" name="txt-dist-kernel-n" value="1"></td>
+        </tr>
+    </div>
+  </div>
+  <table><tr><td><li>Select an ID variable for weights file:</li></td><td>
+  <script>
+    var slider_dist = $('#dist-slider').slider();
+    var spinner_pow_idist = $('#spinner-pow-idist').spinner();
+    var spinner_cont_order = $('#spinner-cont-order').spinner();
+    $('#spinner-dist-knn-n').spinner();
+    $('#tabs-dlg-weights').tabs();
+
+    $( "#btn_create" ).button().click(function(){
+      console.log($('#spinner-cont-order').val());
+    });
+    $( "#dialog-weights" ).dialog({
+      height: 380,
+      width: 440,
+      autoOpen: false,
+      modal: true,
+      dialogClass: "dialogWithDropShadow",
+      buttons: {
+        "Create": function() {
+          var layer_uuid = localStorage['current_layer']
+          var active = $('#tabs-dlg-weights').tabs("option","active");
+          var w_name = $('#txt-w-name').val();
+          var w_id = $('#sel-w-id').find(":selected").val();
+          if ( active === 0 ) {
+            var w_type = "contiguity";
+            var cont_type = $('#sel-cont-type').find(":selected").val();             
+            var cont_order = $('#spinner-cont-order').val();
+            var cont_ilo = $('#cbx-cont-ilo').prop("checked");
+            console.log(w_type, cont_type, cont_order, cont_ilo);
+            // submit request
+            $.post("../create_weights/", {
+              'layer_uuid': layer_uuid,
+              'w_id': w_id,
+              'w_name': w_name, 
+              'w_type':'contiguity', 
+              'cont_type':cont_type, 
+              'cont_order':cont_order, 
+              'cont_ilo':cont_ilo, 
+              csrfmiddlewaretoken: '{{ csrf_token }}'})
+            .done(function( data ) {
+              alert( "Data Loaded: " + data );
+            });
+
+          } else if ( active === 1 ) {
+            // distance
+          } else if ( active === 2 ) {
+            // kernel
+          }
+        },
+        "Close": function() {
+          $( this ).dialog( "close" );
+        },
+      }
+    });
+  </script>
+</div> 
+
+<script>
+</script>
+</body>
+</html>

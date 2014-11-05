@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Spatial Regression Index</title>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.1.1/list.min.js"></script>
+  <link rel="stylesheet" href="http://jqueryui.com/resources/demos/style.css">
+
+</head>
+<body>
+ 
+<div id="dialog" title="Spatial Regression Dialog"> 
+  <style>
+  .ui-widget-overlay { background: #aaa repeat-x; opacity: .8;}
+  table { border-spacing: 0;}
+  th { text-align: left; padding: 10px 0 10px 0; }
+  h1 { padding: .2em; margin: 0; font-size: 13px;}
+  ol li:hover {background-color: #eee;}
+  .list { margin:0; padding:0px 0 0; }
+  .list li {
+    display:block; background-color: #ddd; padding:1px; box-shadow: inset 0 1px 0 #fff;
+    height: 20px;  cursor: pointer; cursor: hand; vertical-align: bottom;
+  }
+  .list li p { margin: 0px; padding: 4px 0px 0px 10px; vertical-align: bottom; }
+  .list li:nth-child(odd) {background: #fff;}
+  .list li:hover { background-color: orange; }
+  
+  .dialogWithDropShadow{
+         -webkit-box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);  
+         -moz-box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5); 
+   }
+  #weights { width: 600px; height: 90px; margin-right: 2em; display:block;}
+  #model_spec { width: 600px; margin-right: 2em; height:370px; display:block;}
+  #estimation { width: 600px; margin-right: 2em; height:170px; display:block;}
+  #y_catalog {width: 48%; float: left;}
+  #x_catalog {width: 50%; float: right;}
+  .x_box {height: 200px;}
+  #var_list { width: 200px; }
+
+  /* style the list to maximize the droppable hitarea */
+  .drop_box ol { list-style-type: circle; height: 100px; margin: 0; padding: 1em 0 1em 2em; }
+  #x_box ol {height: 215px;}
+
+  .est_tab { border: 1px #bbb solid; border-radius:5px; width: 32%; height: 120px; float: left; margin: 15px 1px 0 0; padding-left: 5px;}
+  .est_tab p { margin: -5px 0 5px 5px; background-color: white; width: 100px; text-align:center; font-weight: bold;}
+  .est_tab input { margin-bottom: 8px;}
+
+  .weights_tab {border: 1px #bbb solid; border-radius:5px; width: 99%; height: 50px; float: left; margin: 5px 0px 0 0; padding-left: 5px;}
+  .weights_tab span {margin: 15px 0 0px 15px; background-color: white; width: 180px; text-align:center; font-weight: bold;}
+  </style>
+  <button id="btn_create_w">Create Weights</button> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <button id="first">Open Model</button>
+  <button id="save_btn">Save Model</button>
+  <button id="sec">Reset Model</button>
+  <button id="btn_preference">Preference</button>
+  <button id="btn_run">Run</button>
+  <table>
+    <tr>
+      <td>
+      </td>
+    </tr>
+    <tr>
+      <td valign=top>
+        <div id="weights">
+          <h1 class="ui-widget-header">Weights</h1>
+  
+          <div class="weights_tab">
+            <table>
+              <tr><td><label>Select Model Weights: </label></td>
+              <td>
+                <select id="combobox">
+                <option value="">Select one...</option>
+                <option value="ActionScript">NAT.gal</option>
+                <option value="AppleScript">NAT.knn4.gwt</option>
+                </select>
+              </td>
+              <td><img src="http://atulgawande.com/wp-content/plugins/tweet-blender/img/ajax-refresh-icon.gif"/></td>
+              </tr>
+              <tr><td><label>Select Kernel Weights: </label></td>
+              <td><select id="combobox">
+                <option value="">Select one...</option>
+                <option value="ActionScript">NAT.gal</option>
+                <option value="AppleScript">NAT.knn4.gwt</option>
+              </select>
+              </td>
+              <td><img src="http://atulgawande.com/wp-content/plugins/tweet-blender/img/ajax-refresh-icon.gif"/></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div id="model_spec">
+          <h1 class="ui-widget-header">Model Specifications</h1>
+          <p>Drag and drop variables from the Variables Panel.<br>Double click variable to remove it.</p>
+          <div id="y_catalog">
+            <h2><a href="#">Y (Required) </a></h2>
+            <div class="drop_box" id="y_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">YE </a></h2>
+            <div class="drop_box" id="ye_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">Instruments</a></h2>
+            <div class="drop_box" id="inst_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">R</a></h2>
+            <div class="drop_box" id="r_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">T</a></h2>
+            <div class="drop_box" id="i_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+          </div>
+          <div id="x_catalog">
+            <h2><a href="#">X (Required) </a></h2>
+            <div class="drop_box" id="x_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        <div id="estimation">
+          <h1 class="ui-widget-header">Estimation</h1>
+          <div class="est_tab">
+            <p>Model Type</p>
+            <input type="radio" name="model_type" value="standard">Standard<br>
+            <input type="radio" name="model_type" value="spatiallag">Spatial Lag<br>
+            <input type="radio" name="model_type" value="spatialerror">Spatial Error<br>
+            <input type="radio" name="model_type" value="spatiallagerror">Spatial Lag+Error<br>
+          </div>
+          <div class="est_tab">
+            <p>Method</p>
+            <input type="radio" name="method" value="ols">OLS<br>
+            <input type="radio" name="method" value="gmm">GMM<br>
+            <input type="radio" name="method" value="ml">ML<br>
+          </div>
+          <div class="est_tab">
+            <p>Standard Errors</p>
+            <input type="checkbox" name="stderror" value="white">White<br>
+            <input type="checkbox" name="stderror" value="hac">HAC<br>
+            <input type="checkbox" name="stderror" value="kphet">KP HET<br>
+          </div>
+        </div>
+      </td>
+      <td valign=top>
+        <div id="var_list">
+          <h1 class="ui-widget-header">Variables</h1>
+          <div class="ui-widget-content" id="vars">
+            <input class="search" placeholder="Search" />
+            <button class="sort" data-sort="name">
+            Sort
+            </button>
+            <ul class="list">
+              <li><p class="name">x1</p></li>
+              <li><p class="name">x2</p></li>
+              <li><p class="name">x3</p></li>
+              <li><p class="name">x4</p></li>
+              <li><p class="name">x5</p></li>
+              <li><p class="name">x6</p></li>
+              <li><p class="name">x7</p></li>
+              <li><p class="name">x8</p></li>
+              <li><p class="name">x9</p></li>
+              <li><p class="name">x10</p></li>
+              <li><p class="name">x11</p></li>
+              <li><p class="name">x12</p></li>
+              <li><p class="name">x13</p></li>
+              <li><p class="name">x14</p></li>
+              <li><p class="name">x15</p></li>
+              <li><p class="name">x16</p></li>
+              <li><p class="name">x17</p></li>
+              <li><p class="name">x17</p></li>
+              <li><p class="name">x17</p></li>
+              <li><p class="name">x17</p></li>
+              <li><p class="name">x17</p></li>
+              <li><p class="name">x17</p></li>
+              <li><p class="name">x17</p></li>
+              <li><p class="name">x17</p></li>
+              <li><p class="name">x17</p></li>
+              <li><p class="name">x17</p></li>
+              <li><p class="name">x17</p></li>
+            </ul>
+          </div>
+        </div>
+
+      </td>
+    </tr>
+  </table> 
+</div>
+
+<script>
+$(function() {
+  $( "#y_catalog" ).accordion();
+  $( "#x_catalog" ).accordion();
+  $( "#vars ul li" ).draggable({
+    helper: "clone"
+  });
+
+  $( ".drop_box ol li" ).dblclick(function() {
+    console.log($(this));
+  });
+
+  $( ".drop_box ol" ).droppable({
+    activeClass: "ui-state-default",
+    hoverClass: "ui-state-hover",
+    accept: ":not(.ui-sortable-helper)",
+    drop: function( event, ui ) {
+      $( this ).find( ".placeholder" ).remove();
+      // customized behavior for different dropbox
+      console.log($(this).closest("div").attr("id"),$(this).children().length);
+      var box_id = $(this).closest("div").attr("id");
+      var n_items = $(this).children().length;
+      if ( n_items > 0) {
+        if (box_id === 'y_box'||box_id==='ye_box'||box_id==='r_box') 
+          return; 
+      }
+      // drop gragged item
+      $( "<li></li>" ).text( ui.draggable.text() ).appendTo( this ).dblclick(function(){
+        $(this).remove();
+        ui.draggable.show();
+      });
+      ui.draggable.hide();
+    }
+  }).sortable({
+    items: "li:not(.placeholder)",
+    sort: function() {
+      // gets added unintentionally by droppable interacting with sortable
+      // using connectWithSortable fixes this, but doesn't allow you to customize active/hoverClass options
+      $( this ).removeClass( "ui-state-default" );
+    }
+  });
+  $( "#dialog" ).dialog({dialogClass: "dialogWithDropShadow"});
+
+  // model type
+  $('input:radio[name=model_type]').click( function() {
+    var model_type = $(this).val();
+    /*if ( model_type === 'spatialerror' || model_type === 'spatiallag') {
+      $('input:radio[name=method]').prop('disabled', false);
+      $('input:radio[value=gmm]').prop('checked', true);
+    }*/
+  });
+
+  $( "#dialog-preference" ).dialog({
+    height: 400,
+    width: 540,
+    autoOpen: false,
+    modal: true,
+    buttons: {
+      "Restore Defaults": function() {
+        $( this ).dialog( "close" );
+      },
+      Cancel: function() {
+        $( this ).dialog( "close" );
+      },
+      "Save": function() {
+        $( this ).dialog( "close" );
+      },
+    }
+  });
+  var options = {
+    valueNames: ['name']
+  };
+  var varList = new List('vars', options);
+
+  var GetValsFromObjs = function(objs) {
+    var vals = [];
+    objs.each(function(i, obj){
+      vals.push($(obj).text());
+    });
+    return vals;
+  };
+
+  $( "#dialog" ).dialog( "option", "width", 900 );
+  $( "#tabs" ).tabs();
+
+  $( "#first" ).button({
+    icons: {
+      primary: "ui-icon-folder-open"
+    }
+  });
+  $( "#save_btn" ).button({
+    icons: {
+      primary: "ui-icon-disk"
+    }
+  });
+  $( "#sec" ).button({
+    icons: {
+      primary: "ui-icon-)circle-close"
+    }
+  });
+  $( "#btn_preference" ).button({
+    icons: {
+      primary: "ui-icon-gear",
+      secondary: "ui-icon-triangle-1-s"
+    }
+  }).click(function(){
+    $('#dialog-preference').dialog('open');
+  });
+
+  $( "#btn_create_w" ).button({
+    icons: {
+      primary: "ui-icon-plus",
+    }
+  }).click(function(){
+    $('#dialog-weights').dialog('open');
+  });
+
+  $( "#btn_run" ).button({
+    icons: {
+      primary: "ui-icon-circle-triangle-e",
+    },
+  }).click(function(){
+    var sel_model_type = $('input:radio[name=model_type]:checked').val();
+    var sel_method = $('input:radio[name=method]:checked').val();
+    var sel_stderror = GetValsFromObjs($('input:checkbox[name=stderror]:checked'));
+    // y, x, w, 
+    var x_vals = GetValsFromObjs($('#x_box li'));
+    var y_vals = GetValsFromObjs($('#y_box li'));
+    var ye_vals = GetValsFromObjs($('ye_box li'));
+    var inst_vals = GetValsFromObjs($('inst_box li'));
+    var r_vals = GetValsFromObjs($('r_box li'));
+    var t_vals = GetValsFromObjs($('t_box li'));
+    // run model
+    console.log("run", sel_model_type, sel_method, sel_stderror);
+    //$.post("", {}
+  });
+});
+</script>
+
+<div id="dialog-preference" title="Preference">
+  <div id="tabs">
+    <ul>
+      <li><a href="#tabs-1">Std Dev</a></li>
+      <li><a href="#tabs-2">GMM</a></li>
+      <li><a href="#tabs-3">ML</a></li>
+      <li><a href="#tabs-4">Instruments</a></li>
+      <li><a href="#tabs-5">Output</a></li>
+      <li><a href="#tabs-6">Regimes</a></li>
+      <li><a href="#tabs-7">Other</a></li>
+    </ul>
+    <div id="tabs-1">
+      <p><b>Compute Standard Deviation with N or N-K</b></p>
+      <table>
+        <tr><td></td><td width="40">N-K</td><td width="40">N</td></tr>
+        <tr><td>OLS</td><td><input type="radio" name="ols-n-k" checked></td><td><input type="radio" name="ols-n"></td></tr>
+        <tr><td>2SLS</td><td><input type="radio" name="2sls-n-k"></td><td><input type="radio" name="2sls-n" checked></td></tr>
+        <tr><td>GM-Lag</td><td><input type="radio" name="gm-lag-n-k"></td><td><input type="radio" name="gm-lg-n" checked></td></tr>
+        <tr><td>All Other Models</td><td></td><td><input type="radio" name="ols-n" checked></td></tr>
+      </table>
+    </div>
+    <div id="tabs-2">
+      <table>
+        <tr><th>Improved Efficiency</th></tr>
+        <tr>
+          <td>Maximum Iteration</td>
+          <td><input id="spinner" name="gmm-max-ite" value=1></td>
+        </tr>
+        <tr>
+          <td>Stopping Criterion<br>(change in Lambda)</td>
+          <td><input id="spinner" name="gmm-stop-cri" value="0.00001"></td>
+        </tr>
+        <tr><th><b>Spatial Error Model</b></th><th></th></tr>
+        <tr>
+          <td>Inference on Lambda</td>
+          <td><input type="checkbox" name="gmm-inf-lmd" checked></td>
+        </tr>
+        <tr><th><b>Heteroskedasticity</b></th><th></th></tr>
+        <tr>
+          <td>Computation of Inverse</td>
+          <td>
+            <select>
+              <option value="gmm-powerexpansion" selected>Power Expansion</option>
+              <option value="gmm-trueinverse">True Inverse</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Step 1c from Arraiz et al (2010)</td>
+          <td><input type="checkbox" name="gmm-step1c"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-3">
+      <table>
+        <tr><th>Diagnostics</th></tr>
+        <tr>
+          <td>ML Diagnostics</td>
+          <td><input type="checkbox" name="ckb-ml-diag"></td>
+        </tr>
+        <tr><th>Methods</th><th></th></tr>
+        <tr>
+          <td>ML Method</td>
+          <td>
+            <select id="ml-method">
+              <option value="ml-full">Full</option>
+              <option value="ml-ord">Ord</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Tolerance Criterion</td>
+          <td><input type="text" name="txt-ml-tol-cri" value="0.00001"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-4">
+      <table>
+        <tr>
+          <td>Order of Spatial Lags for Instruments</td>
+          <td><input id="spinner" name="value" value="1"></td>
+        </tr>
+        <tr>
+          <td>Include Lags of User-Specified Instruments</td>
+          <td><input type="checkbox" name="ckb-ml-diag" checked></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-5">
+      <table>
+        <tr>
+          <td>Show Variance-Covariance Matrix</td>
+          <td><input type="checkbox" name="ckb-out-showVCM"></td>
+        </tr>
+        <tr>
+          <td>Save Predicted Values and Residuals</td>
+          <td><input type="checkbox" name="ckb-out-savePR"></td>
+        </tr>
+        <tr>
+          <td>Save Detailed Model Specification</td>
+          <td><input type="checkbox" name="ckb-out-saveDMS"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-6">
+      <table>
+        <tr>
+          <td>Error by Regimes</td>
+          <td><input type="checkbox" name="ckb-reg-err" checked></td>
+        </tr>
+        <tr>
+          <td>Spatial Lag by Regimes</td>
+          <td><input type="checkbox" name="ckb-reg-lag"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-7">
+      <table>
+        <tr><th>Diagnostics</th></tr>
+        <tr>
+          <td>OLS Diagnostics</td>
+          <td><input type="checkbox" name="ckb-other-ols" checked></td>
+        </tr>
+        <tr>
+          <td>White Test (OLS only)</td>
+          <td><input type="checkbox" name="ckb-other-white"></td>
+        </tr>
+        <tr>
+          <td>Moran's I of the Residuals</td>
+          <td><input type="checkbox" name="ckb-other-moran"></td>
+        </tr>
+        <tr><th><b>Data</b></th><th></th></tr>
+        <tr>
+          <td>Replace Missing Values With</td>
+          <td><input type="text" name="txt-other-miss" value=""></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+ 
+<div id="dialog-weights"  title="Weights Creation Dialog">
+  <style>
+  .ui-widget-overlay { background: #aaa repeat-x; opacity: .8;}
+  table { border-spacing: 0;}
+  th { text-align: left; padding: 10px 0 10px 0; }
+  </style>
+  <table>
+    <tr><td><li>Please input a Weights name</li></td><td>
+      <input type="text" id="txt-w-name">
+    </td></tr>
+    <tr><td><li>Select an ID variable for weights file:</li></td><td>
+      <select id='sel-w-id'>
+        <option value="POLYID" selected>POLYID</option>
+        <option value="X">X</option>
+        <option value="Y">Y</option>
+      </select>
+    </td></tr>
+  </table>
+  <br/>
+  <br/>
+  <div id="tabs-dlg-weights">
+    <ul>
+      <li><a href="#tabs-1">Contiguity</a></li>
+      <li><a href="#tabs-2">Distance</a></li>
+      <li><a href="#tabs-3">Adaptive Kernel</a></li>
+    </ul>
+    <div id="tabs-1">
+      <form id="cont-form">
+      <table>
+        <tr>
+          <td>Contiguity Type</td>
+          <td>
+            <select id="sel-cont-type">
+              <option value="rook" selected>Rook</option>
+              <option value="queen">Queen</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Order of Contiguity</td>
+          <td><input id="spinner-cont-order" value=1></td>
+        </tr>
+        <tr>
+          <td>Include Lower Orders</td>
+          <td><input type="checkbox" id="cbx-cont-ilo"></td>
+        </tr>
+      </table>
+      </form>
+    </div>
+    <div id="tabs-2">
+      <table>
+        <tr>
+          <td>Select Distance Metric</td>
+          <td>
+            <select>
+              <option value="euclidean" selected>Euclidean Distance</option>
+              <option value="arcmile">Arc Distance (miles)</option>
+              <option value="arckilometer">Arc Distance (kilometers)</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist"> k-Nearest Neighbors</td>
+          <td># of neighbors <input id="spinner-dist-knn-n" value="1"></td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist">Binary Distane Band</td>
+          <td>
+            <input type="text" name="txt-w-dist-thre" value="0.0" style="float:left;margin-right:100px;width:100px">
+            <div id="dist-slider" style="margin: 5px 0 0 120px;"></div>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist">Power of Inverse Distance</td>
+          <td><input id="spinner-pow-idist" value="1"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-3">
+      <table>
+        <tr>
+          <td>Select Kernel Function Type</td>
+          <td>
+            <select>
+              <option value="uniform" selected>Uniform</option>
+              <option value="triangular">Triangular</option>
+              <option value="quadratic">Quadratic</option>
+              <option value="quartic">Quartic</option>
+              <option value="gaussian">Gaussian</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Number of Neighbors</td>
+          <td><input type="text" name="txt-dist-kernel-n" value="1"></td>
+        </tr>
+    </div>
+  </div>
+  <table><tr><td><li>Select an ID variable for weights file:</li></td><td>
+  <script>
+    var slider_dist = $('#dist-slider').slider();
+    var spinner_pow_idist = $('#spinner-pow-idist').spinner();
+    var spinner_cont_order = $('#spinner-cont-order').spinner();
+    $('#spinner-dist-knn-n').spinner();
+    $('#tabs-dlg-weights').tabs();
+
+    $( "#btn_create" ).button().click(function(){
+      console.log($('#spinner-cont-order').val());
+    });
+    $( "#dialog-weights" ).dialog({
+      height: 300,
+      width: 440,
+      autoOpen: false,
+      modal: true,
+      buttons: {
+        "Create": function() {
+          var active = $('#tabs-dlg-weights').tabs("option","active");
+          var w_name = $('#txt-w-name').val();
+          var w_id = $('#sel-w-id').find(":selected").val();
+          if ( active === 0 ) {
+            var w_type = "contiguity";
+            var cont_type = $('#sel-cont-type').find(":selected").val();             
+            var cont_order = $('#spinner-cont-order').val();
+            var cont_ilo = $('#cbx-cont-ilo').prop("checked");
+            console.log(w_type, cont_type, cont_order, cont_ilo);
+            // submit request
+            $.post("../create_weights/", {
+              'w_id': w_id,
+              'w_name': w_name, 
+              'w_type':'contiguity', 
+              'cont_type':cont_type, 
+              'cont_order':cont_order, 
+              'cont_ilo':cont_ilo, 
+              csrfmiddlewaretoken: '{{ csrf_token }}'})
+            .done(function( data ) {
+              alert( "Data Loaded: " + data );
+            });
+
+          } else if ( active === 1 ) {
+            // distance
+          } else if ( active === 2 ) {
+            // kernel
+          }
+        },
+        "Close": function() {
+          $( this ).dialog( "close" );
+        },
+      }
+    });
+  </script>
+</div> 
+
+
+<script>
+</script>
+</body>
+</html>

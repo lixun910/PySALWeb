@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>GeoDa.app</title>
+<style>
+body{
+}
+#login {
+    width: 80%;
+    height: 300px;
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    margin: auto;
+}
+.logintable, logintable TD, logintable TH{
+  margin-left:10px;
+  font-family: Century Gothic;
+  font-size: 10pt;
+  color: #666;
+}
+.logintable input{
+  padding: 4px;
+  border: solid 1px #dcdcdc;
+  transition: box-shadow 0.3s, border 0.3s;
+}
+.signuptable input{
+  padding: 10px;
+  border: solid 1px #dcdcdc;
+  transition: box-shadow 0.3s, border 0.3s;
+  color: #333;
+}
+.signuptable input:focus,
+.signuptable input.focus {
+  border: solid 1px #707070;
+  box-shadow: 0 0 5px 1px #969696;
+}
+</style>
+<script src="{{url_prefix}}/media/js/jquery.min.js"></script>
+<script src="{{url_prefix}}/media/js/utils.js"></script>
+<link rel="stylesheet" href="{{url_prefix}}/media/css/{{theme_jquery}}/jquery-ui-1.10.4.custom.min.css">
+</head>
+<body>
+
+<div id="login"> 
+  <table width="980px">
+    <tr>
+    <td style="vertical-align:top"> 
+      <p>
+        <img src="{{url_prefix}}/media/img/cloud.png"/>
+        <font style="color: #666;" size=16 face="Century Gothic">{</font>
+        <font style="color: #666; font-size: 30px">'Spatial Data Analysis':</font>
+        <font style="color: #666; font-size: 30px" face="Copperplate">WEB</font>
+        </font><font style="color: #666;" size=16 face="Century Gothic">}</font>
+      </p>
+      <p style="text-align:right;">
+      <form id="form-login" method="post">{% csrf_token %}
+      <table class="logintable">
+        <tr>
+          <td>
+            Your Email:
+          </td>
+          <td>
+            Password:
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <input type="text" name="lemail" value=''></input>
+          </td>
+          <td>
+            <input type="password" name="lpassword" value=''></input>&nbsp;
+            <button id="btn_login" type="submit" class="ui-state-default button-text-only">Login </button>
+          </td>
+        </tr>
+      </table>
+      &nbsp;&nbsp;&nbsp;<font color="red" style="font-size:10px" face="Century Gothic">{{error_msg}}</font>
+      </form>
+      </p>
+    </td>
+    <td style="padding-left:60px">
+      <font style="font-size:30px" face="Century Gothic"> Sign Up </font>
+      <br/><br/> 
+      <form id="form-signup" method="post" action="../signup/">{% csrf_token %}
+      <table class="signuptable" width="400px">
+        <tr>
+          <td width=320>
+            <input type="text" name="first_name" value='First Name'></input>
+            <input type="text" name="last_name" value='Last Name'></input>
+          </td>
+          <td><p id="chk_name_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
+        </tr>
+        <tr>
+          <td>
+            <input style="width:268px" type="text" name="email" value='Email'></input>
+      <img id="img-id-chk" src="{{url_prefix}}/media/img/checkmark.png">
+      <img id="img-id-nochk" src="{{url_prefix}}/media/img/uncheckmark.gif">
+      <img id="img-id-spin" src="{{url_prefix}}/media/img/loading_small.gif">
+          </td>
+          <td><p id="chk_email_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
+        </tr>
+        <tr>
+          <td>
+            <input style="width:268px" type="text" name="reemail" value='Re-enter Email'></input>
+          </td>
+          <td><p id="chk_reemail_msg" style="margin-left: -180px;font-size:10px;font-family: Century Gothic;color: red; "></p></td>
+        </tr>
+        <tr>
+          <td>
+            <input style="width:268px" type="text" name="password" value='Enter Password'> </input>
+          </td>
+          <td><p id="chk_pwd_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
+        </tr>
+      </table>
+      <br/>
+      <font style="font-size:10px" face="Century Gothic"> &nbsp;&nbsp;By clicking Sign Up, you agree to our Terms and Policy.</font>
+      <br/>
+      <br/>
+      <p class="text-align:right;">
+      <button id="btn_signup" type="submit" class="ui-state-default button-text-only" style="width:100">Sign Up</button>
+      </p>
+      </form>
+    </td>
+  </tr>
+  </table>
+  <div style="width: 900px; border-top: 1px #ccc solid; margin-top:140px; padding-top:20px; opacity: 0.2;text-align: center;">
+  <img src="https://geodacenter.asu.edu/drupal_files/geoda_logo.png"><br/>
+  </div>
+</div>
+<script>
+$("#img-id-chk, #img-id-nochk, #img-id-spin").hide();          
+
+$('#btn_login').click( function() {
+  $.post("../login/", $("form-login").serialize())
+  .done(function(data) {
+    console.log(data);
+    location.reload();
+  })
+  .fail( function() {
+    console.log("error");
+  });
+});
+
+$('#btn_signup').submit( function(event) {
+  if ( $('#chk_email_mmsg').text() != "" || $('#chk_reemail_msg').text() != ""|| $('.ignuptable input[name=password]').val() == "" ) {
+    return;
+  }
+  event.preventDefault(); 
+});
+
+function checkDupEmail(email) {
+  //$('#img-id-spin').show();
+  $.get("../dup_email/", {'email': email})
+  .done( function(data) {
+   // $('#img-id-spin').hide();
+    if (data == 1) {
+      //$('#img-id-nochk').show();
+      $('#chk_email_msg').text("Email address already exists.");
+    } else {
+      $('#chk_email_msg').text("");
+      $('#img-id-chk').show();
+    }
+  })
+  .always(function(){
+  });
+}
+
+function setupInput(name, placeholder) {
+  $(".signuptable input[name="+name+"]").focus(function() {
+    if ($(this).val() == placeholder) {
+      $(this).val('');
+    }
+  }).blur(function(){
+    if ($(this).val() == '') {
+      $(this).val(placeholder);
+    } else {
+      if (name == "email") {
+        if (!isValidEmailAddress( $(this).val()) ){
+          $('#chk_email_msg').text("Email address is not valid.");
+        } else {
+          checkDupEmail( $(this).val() );
+        }
+      } else if (name == "reemail") {
+        if ( $(this).val() != $('.signuptable input[name=email]').val() ) {
+          $('#chk_reemail_msg').text("Re-entered Email address does not match.");
+        }
+      } else if (name == "password") {
+        if ( $(this).val() == "" ) {
+          $('#chk_pwd_msg').text("Password should not be empty.");
+        }
+      } else if (name == "first_name") {
+        if ( $(this).val() == "First Name" ) {
+          $('#chk_name_msg').text("First Name should not be empty.");
+        }
+      } else if (name == "last_name") {
+        if ( $(this).val() == "Last Name" ) {
+          $('#chk_name_msg').text("Last Name should not be empty.");
+        }
+      }
+    }
+  });
+}
+setupInput("first_name", "First Name");
+setupInput("last_name", "Last Name");
+setupInput("email", "Email");
+setupInput("reemail", "Re-enter Email");
+
+$('.signuptable input[name=password]').focus(function() {
+  if ($(this).val() == "Enter Password") {
+    $(this).attr("type", "password");
+    $(this).val('');
+  }
+});
+$('.signuptable input[name=password]').blur(function() {
+  if ($(this).val() == '') {
+    $(this).attr("type", "text");
+    $(this).val("Enter Password");
+  }
+});
+</script>
+</body>
+</html>
