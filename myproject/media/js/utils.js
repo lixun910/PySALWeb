@@ -37,6 +37,7 @@ jQuery.GetValsFromObjs = function(objs) {
   return vals;
 }
 
+
 function guid() {
   function s4() {
     return Math.floor((1 + Math.random()) * 0x10000)
@@ -151,3 +152,51 @@ function exportTableToCSV($table, filename) {
             'target': '_blank'
     });
 }
+
+// LZW-compress a string
+function lzw_encode(s) {
+}
+
+// Decompress an LZW-encoded string
+function lzw_decode(s) {
+}
+
+function create_legend(div, bins, colors) {
+  div.empty();
+  div.append('<table></table>');
+  var table = div.children();
+  for (var i=0, n = bins.length; i < n; i++) {
+    var txt = "";
+    if (typeof bins[i] == 'string' || bins[i] instanceof String) {
+        txt = bins[i];
+    } else {
+        var lower, upper = bins[i].toFixed(2);
+        if (i > 0) {
+          lower = bins[i-1].toFixed(2);
+        }
+        txt = lower ? "(" + lower + ", " + upper + "]" : "<=" + upper;
+    }
+    var html = '<tr><td><div style="height:15px;width:20px;border:1px solid black;background-color:' + colors[i] + '"></div></td><td align="left">'+ txt +'</td></tr>';
+    table.append(html);
+  }
+}
+
+
+var GetJSON = function(url, successHandler, errorHandler) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('get', url, true);
+  xhr.responseType = 'json';
+  xhr.onload = function() {
+    var status = xhr.status;
+    if (status == 200) {
+      successHandler && successHandler(xhr.response);
+    } else {
+      errorHandler && errorHandler(status);
+    }
+  };
+  xhr.send();
+};
+
+String.prototype.endsWith = function(suffix) {
+    return this.indexOf(suffix, this.length - suffix.length) !== -1;
+};

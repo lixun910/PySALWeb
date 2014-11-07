@@ -1,0 +1,244 @@
+html, body {
+  width: 100%;
+  height: 100%;
+}
+div {
+  display: block;
+}
+#header {
+  height: 80px;
+  margin-bottom: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+#header .container {
+  width: 90%;
+  height: 90px;
+  margin: 0 auto;
+  text-align: left;
+}
+#header .logo {
+  width: 480px;
+}
+body {
+  text-align: center;
+  font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+  font-size: 62.5%;
+  margin: 0;
+  padding: 0;
+}
+border: 1px solid #aaa;margin: 1px 10px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.bubble {
+  z-index: 10000;
+  position: absolute;
+  background-color: orange;
+  opacity: 0.8;
+  margin: 0;
+  padding:10px;
+  text-align:center;
+  width:180px;
+  -moz-border-radius:10px;
+  -webkit-border-radius:10px;
+  -webkit-box-shadow: 0px 0 3px rgba(0,0,0,0.25);
+  -moz-box-shadow: 0px 0 3px rgba(0,0,0,0.25);
+  box-shadow: 0px 0 3px rgba(0,0,0,0.25); 
+}
+#mapInfo{
+  z-index: 10000;
+  position: fixed;
+  background-color: #CCC;
+  opacity: 0.8;
+  margin: 0;
+  right: 0px;
+  top: 70px;
+  padding:10px;
+  text-align:center;
+  width:250px;
+  -moz-border-radius:10px;
+  -webkit-border-radius:10px;
+  -webkit-box-shadow: 0px 0 3px rgba(0,0,0,0.25);
+  -moz-box-shadow: 0px 0 3px rgba(0,0,0,0.25);
+  box-shadow: 0px 0 3px rgba(0,0,0,0.25); 
+}
+#dragdrop_div {
+  width: 60%;
+  padding: 10px;
+}
+
+#drop_zone {
+  position: relative;
+  z-index: 9999;
+  border: 2px dashed #bbb;
+  border-radius: 5px;
+  padding: 25px;
+  text-align: center;
+  font: 20pt bold 'Vollkorn';
+  color: #bbb;
+  width: 370px;
+}
+#dropbox_div {
+  width: 250px; 
+  height: 80px;
+  margin-top: 10px;
+  padding-top: 30px;
+  vertical-align: middle;
+  border-right:2px solid #ccc;
+  float: left;
+}
+#progress_bar {
+  padding: 3px;
+  border: 1px solid #000;
+  font-size: 14px;
+  clear: both;
+  opacity: 0;
+  -moz-transition: opacity 1s linear;
+  -o-transition: opacity 1s linear;
+  -webkit-transition: opacity 1s linear;
+}
+#progress_bar.loading {
+  opacity: 1.0;
+}
+#progress_bar .percent {
+  background-color: #99ccff;
+  height: auto;
+  width: 0;
+}
+.check_file {
+  background-image: url("../img/checkmark.png");
+  background-repeat:no-repeat;
+  background-position:right; 
+}
+.uncheck_file {
+  color: red;
+  font-weight: bold;
+}
+.awesome-bar {
+  display: block;
+  position: fixed;
+  width: 100%;
+  height: 48px;
+  z-index: 9999;
+  opacity: 0.9;
+  -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
+  -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
+  box-shadow: 0 14px 18px rgba(0,0,0,0.5);
+}
+#toolbar {
+  width: 95%;
+  height: 100px;
+  margin-top: 2px;
+  margin:0 auto;
+}
+.toolbar_tbl {
+  margin-top: 2px; 
+  border: none; 
+  overflow: hidden;
+}
+.block_button {
+  border-radius: 5px;
+  padding: 25px;
+  opacity: 0.8;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+#btnOpenData {background-image: url(../img/add-file.png);}
+#btnAddLayer {background-image: url(../img/addLayer.png);}
+#btnCartoDB {background-image: url(../img/cartodb.png);}
+#btnRoadNetwork {background-image: url(../img/network.png);}
+#btnSpaceTime {background-image: url(../img/st.png);}
+#btnSave {background-image: url(../img/save.png);}
+#btnShowTable {background-image: url(../img/table.png);}
+#btnCreateW {background-image: url(../img/newW.png);}
+#btnWHistogram{background-image: url(../img/wHist.png);}
+#btnKDE{background-image: url(../img/density.png);}
+#btnNewMap{background-image: url(../img/nmap.png);}
+#btnScatterPlot{background-image: url(../img/scatter.png);}
+#btnHist{background-image: url(../img/hist.png);}
+#btnPCP{background-image: url(../img/pcp.png);}
+#btnLISA{background-image: url(../img/lisa.png);}
+#btnMoran{background-image: url(../img/moran.png);}
+#btnSpreg{background-image: url(../img/spreg.png);}
+#btnAbout {background-image: url(../img/about.png);}
+#map-container {
+  position: relative; 
+  border: 0px solid red;
+  height: 100%;
+  width: 100%;
+}
+#map {
+  align:center; margin-top:0px;border: 0px solid red;width: 100%;height:100%;
+}
+.switch-wrapper {
+  margin-top: 5px;
+}
+#foreground {
+  position: absolute; top: 0; left: 0;width: 100%; height: 100%;
+}
+/*Weights Creation*/
+.ui-widget-overlay { background: #aaa repeat-x; opacity: .8;}
+table { border-spacing: 0;}
+th { text-align: left; padding: 10px 0 10px 0; }
+td { text-align: left;}
+.custom-combobox { position: relative; display: inline-block;}
+.custom-combobox-toggle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin-left: -1px;
+  padding: 0;
+  /* support: IE7 */
+  *height: 1.7em;
+  *top: 0.1em;
+}
+.custom-combobox-input {
+  margin: 0;
+  padding: 0.3em;
+}
+.dlg-loading {
+  background: white url('../img/loading_small.gif') center center no-repeat;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+/*spatial regression*/
+.ui-widget-overlay { background: #eee repeat-x; opacity: .8;}
+table { border-spacing: 0;}
+th { text-align: left; padding: 10px 0 10px 0; }
+h1 { padding: .2em; margin: 0; font-size: 13px;}
+ol li:hover {background-color: #eee;}
+.list { margin:0; padding:0px 0 0; }
+.list li {
+  display:block; background-color: #ddd; padding:1px; box-shadow: inset 0 1px 0 #fff; height: 20px;  cursor: pointer; cursor: hand; vertical-align: bottom;
+}
+.list li p { margin: 0px; padding: 4px 0px 0px 10px; vertical-align: bottom; }
+.list li:nth-child(odd) {background: #fff;}
+.list li:hover { background-color: orange; }
+.dialogWithDropShadow{
+  -webkit-box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);  
+  -moz-box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5); 
+}
+#weights { width: 600px; height: 90px; margin-right: 2em; display:block;}
+#weights select {width: 90%;}
+#w_catalog_model {width: 48%; float: left;}
+#w_catalog_kernel {width: 50%; float: right;}
+#model_spec { width: 600px; margin-right: 2em; height:370px; display:block;}
+#y_catalog {width: 48%; float: left;}
+#x_catalog {width: 50%; float: right;}
+#x_catalog.x_box {height: 200px;}
+#var_list { width: 200px; }
+/* style the list to maximize the droppable hitarea */
+.drop_box ol { list-style-type: circle; height: 100px; margin: 0; padding: 1em 0 1em 2em; }
+#x_box ol {height: 215px;}
+
+#estimation { width: 600px; margin-right: 2em; height:170px; display:block;}
+.est_tab { border: 1px #bbb solid; border-radius:5px; width: 32%; height: 120px; float: left; margin: 15px 1px 0 0; padding-left: 5px;}
+.est_tab p { margin: -5px 0 5px 5px; background-color: white; width: 100px; text-align:center; font-weight: bold;}
+.est_tab input { margin-bottom: 8px;}

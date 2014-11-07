@@ -88,7 +88,15 @@ def dup_email(request):
         
     return HttpResponse("0")
     
-        
+
+def new_main(request):
+    return render_to_response(
+        'myapp/new_portal.html',{
+            'url_prefix': settings.URL_PREFIX,\
+            'theme_jquery': settings.THEME_JQUERY,
+        },
+        context_instance=RequestContext(request)
+    )
         
 @login_required
 def main(request):
