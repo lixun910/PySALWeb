@@ -1,83 +1,9 @@
 // Author: xunli at asu.edu
 (function(window,undefined){
 
-  var GColor = function( r, g, b, a ) {
-    if ( isNaN(r) ) {
-      this.r = parseInt((this.cutHex(r)).substring(0,2),16);
-      this.g = parseInt((this.cutHex(r)).substring(2,4),16);
-      this.b = parseInt((this.cutHex(r)).substring(4,7),16);
-      this.a = 255;
-    } else {
-      this.r = r;
-      this.g = g;
-      this.b = b;
-      this.a = a;
-      if (!a) this.a = 1;
-    }
-  };
- 
-  GColor.prototype = {
-    cutHex: function(h) {
-      return (h.charAt(0)=="#") ? h.substring(1,7):h;
-    },
-    _toHex: function(n) {
-      n = parseInt(n,10);
-     if (isNaN(n)) return "00";
-     n = Math.max(0,Math.min(n,255));
-     return "0123456789ABCDEF".charAt((n-n%16)/16)
-      + "0123456789ABCDEF".charAt(n%16);
-    },
-    toString: function() {
-      //return "rgba(" + this.r|0 + "," + this.g|0 + "," + this.b|0 + "," + this.a + ")";
-      return "#"+this._toHex(this.r) + this._toHex(this.g) + this._toHex(this.b); 
-    },
-    toRGB: function(bg) {
-      if (!bg) {
-        bg = new GColor(255,255,255,1);
-      }
-      var a = this.a;
-      return new GColor(
-          (1 - a) * bg.r + a * this.r,
-          (1 - a) * bg.g + a * this.g,
-          (1 - a) * bg.b + a * this.b
-      );
-    },
-  };
-  
-  var GPoint = function( x, y ) {
-    this.x = x;
-    this.y = y;
-  };
-  
-  GPoint.prototype = {
-  };
-  
-  var GRect = function( x0, y0, x1, y1 ) {
-    this.x0 = x0 <= x1 ? x0 : x1;
-    this.y0 = y0 <= y1 ? y0 : y1;
-    this.x1 = x0 > x1 ? x0 : x1;
-    this.y1 = y0 > y1 ? y0 : y1;
-  };
-  
-  GRect.prototype = {
-    Contains: function( gpoint ) {
-      return gpoint.x >= this.x0 && gpoint.x <= this.x1 && 
-             gpoint.y >= this.y0 && gpoint.y <= this.y1;
-    },
-    GetW: function() {
-      return this.x1 - this.x0;
-    },
-    GetH: function() {
-      return this.y1 - this.y0;
-    },
-    Move: function(offsetX, offsetY) {
-      this.x0 += offsetX;
-      this.x1 += offsetX;
-      this.y0 += offsetY;
-      this.y1 += offsetY;
-    },
-  };
-
+  //////////////////////////////////////////////////////////////
+  // BaseMap not used 
+  //////////////////////////////////////////////////////////////
   var BaseMap = function() {
     this.shpType = undefined;
     this.bbox = [];
@@ -92,24 +18,55 @@
     this.screenObjects = [];
   };
   
-  
   //////////////////////////////////////////////////////////////
   // ShpMap
   //////////////////////////////////////////////////////////////
-  var ShpMap = function(shpFile, prj) {
-    this.shapefile = new Shapefile({shp:shpFile,jsRoot:'js'});
-    this.prj = prj;
-    this.shpType = this.shapefile.header.shapeType;
-    this.mapLeft = this.shapefile.header.bounds.left;
-    this.mapBottom = this.shapefile.header.bounds.bottom;
-    this.mapRight = this.shapefile.header.bounds.right;
-    this.mapTop = this.shapefile.header.bounds.top;
+  var ShpType = {
+  NULL: 0,
+  POINT: 1,
+  POLYLINE: 3,
+  POLYGON: 5,
+  MULTIPOINT: 8,
+  POINTZ: 11,
+  POLYLINEZ: 13,
+  POLYGONZ: 15,
+  MULTIPOINTZ: 18,
+  POINTM: 21,
+  POLYLINEM: 23,
+  POLYGONM: 25,
+  MULIPOINTM: 28,
+  MULTIPATCH: 31 // not supported
+};
+
+  var ShpMap = function(shpReader, LL, Lmap, prj) {
+    this.shpReader = shpReader;
+    var shpType = shpReader.type();
+    if (shpType == 1 || shpType == 11 || shpType == 21 || shpType == 28){
+      this.shpType = 'Point'; 
+    } else if (shpType == 5 || shpType == 15 || shpType == 25) {
+      this.shpType = 'Polygon'; 
+    } else {
+      this.shpType = 'Line'; 
+    }
+   
+    this.n = shpReader.getCounts().shapeCount; 
+    // xmin, ymin, xmax, ymax
+    this.bounds = this.shpReader.header().bounds;
+    this.mapLeft = this.bounds[0];
+    this.mapBottom = this.bounds[1];
+    this.mapRight = this.bounds[2];
+    this.mapTop = this.bounds[3];
     this.mapHeight = this.mapTop - this.mapBottom;
     this.mapWidth = this.mapRight - this.mapLeft;
     this.extent = [this.mapLeft, this.mapRight, this.mapBottom, this.mapTop];
     this.bbox = [];
     this.centroids = [];
     this.screenCoords = [];
+    
+    this.prj = prj;
+    this.LL = LL; 
+    this.Lmap = Lmap;
+    this.Lmap.fitBounds([[this.mapBottom,this.mapLeft],[this.mapTop,this.mapRight]]);
   };
 
   ShpMap.prototype.fitScreen = function(screenWidth, screenHeight, marginLeft, marginTop) {
@@ -119,6 +76,8 @@
         offsetY = marginTop; 
     var clip_screenWidth = screenWidth - marginLeft * 2;
     var clip_screenHeight = screenHeight - marginTop * 2;
+    var xyRatio = clip_screenWidth / clip_screenHeight;
+    
     if ( xyRatio >= whRatio ) {
       offsetX = (clip_screenWidth - clip_screenHeight * whRatio) / 2.0 + marginLeft;
     } else if ( xyRatio < whRatio ) {
@@ -128,64 +87,85 @@
     screenHeight =  screenHeight - offsetY * 2;
     scaleX = screenWidth / this.mapWidth;
     scaleY = screenHeight / this.mapHeight;
-    
-    this.screenObjects = [];
-    var parts, x, y, points, pt;
-    for ( var i=0, record; record = this.shapefile.records[i]; i++ ) {
-      points = record.points;
-      this.bbox.push( record.bounds);
-      if ( record.shapeType == "Point" ) {
-        for ( var p = 0; p < points.length; p++ ) {
-          var point = points[p];
-          x = point.x;
-          y = point.y;
-          this.centroids.push([x,y]);
-          if (this.prj) {
-            projPt = this.prj.forward([x,y]);
-            x = projPt[0];
-            y = projPt[1];
-          }
-          pt = this.mapToScreen(x,y);
-          x = pt[0], y = pt[1];
-          this.screenObjects.push([x, y]);
-        }
-      } else {
-        parts = record.parts;
-        var screenPart = [];
-        for ( var pt =0; pt < parts.length; pt++ ) {
-          var partIndex = parts[pt],
-              part = [],
-              point;
-          for ( var p = partIndex; p < (parts[pt+1] || points.length); p++) {
-            point = points[p];
-            x = point.x;
-            y = point.y;
-            x = scaleX * (x - this.mapLeft) + offsetX;
-            y = scaleY * (this.mapTop - y) + offsetY;
-            part.push([x, y]);
-          }
-          screenPart.push(part);
-        }
-        this.screenObjects.push(screenPart);
-      }
-    }
     this.offsetX = offsetX;
     this.offsetY = offsetY;
     this.scaleX = scaleX;
     this.scaleY = scaleY;
     this.scalePX = 1/scaleX;
     this.scalePY = 1/scaleY;
+    
+    this.screenObjects = [];
+    var shp, parts, x, y, points, p, pt;
+   
+    while (shp = this.shpReader.nextShape() ) { 
+      if (shp.isNull) return;
+      if (this.shpType == 'Point') {
+        var xy = shp.readPoints();
+        this.centroids.push(xy);
+        if ( this.prj) {
+          xy = this.prj.forward(xy);
+        }
+        pt = this.mapToScreen(xy[0], xy[1]);
+        this.screenObjects.push(pt);
+        
+      } else {
+        var xy = shp.readXY();
+        var parts = shp.readPartSizes();
+        var screenPart = [];
+        var start = 0;
+        
+        for (var i=0; i<parts.length; i++ ) {
+          var part = [],
+              len = parts[i];
+          for (j = 0; j < len; j++ ) {
+            x = xy[2*j + start];
+            y = xy[2*j+1 + start];
+            if (this.prj) {
+              pt = this.prj.foward([x,y]);
+              x = pt[0];
+              y = pt[1]; 
+            }
+            pt = this.mapToScreen(x,y);
+            part.push(pt);
+          }
+          start += len*2;
+          screenPart.push(part);
+        }
+        this.screenObjects.push(screenPart);
+      }
+      if (this.bbox.length <  this.n)  {
+        var bounds = shp.readBounds();
+        this.bbox.push([bounds[0], bounds[2], bounds[1], bounds[3]]);
+        this.centroids.push([(bounds[2]-bounds[0])/2.0, (bounds[3]-bounds[1])/2.0]);
+      }
+    }
   };
   
   ShpMap.prototype.screenToMap = function(px, py) {
-    var x = this.scalePX * (px - this.offsetX) + this.mapLeft;
-    var y = this.mapTop - this.scalePY * (py - this.offsetY);
+    var x, y;
+    if (this.LL) {
+      px = px - _self.offsetX;
+      py = py - _self.offsetY;
+      var pt = this.Lmap.layerPointToLatLng(new this.LL.point(px,py));
+      x = pt.lng;
+      y = pt.lat;
+    } else {
+      x = this.scalePX * (px - this.offsetX) + this.mapLeft;
+      y = this.mapTop - this.scalePY * (py - this.offsetY);
+    }
     return [x, y];
   };
   
   ShpMap.prototype.mapToScreen = function(x, y) {
-    var px = this.scaleX * (x - this.mapLeft) + this.offsetX;
-    var py = this.scaleY * (this.mapTop - y) + this.offsetY;
+    var px, py;
+    if (this.LL) {
+      var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
+      px = pt.x + _self.offsetX;
+      py = pt.y + _self.offsetY;
+    } else {
+      px = this.scaleX * (x - this.mapLeft) + this.offsetX;
+      py = this.scaleY * (this.mapTop - y) + this.offsetY;
+    }
     return [px, py];
   };
 
@@ -451,9 +431,88 @@
     var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
     return [pt.x + _self.offsetX, pt.y + _self.offsetY];
   };
+  
+  
   //////////////////////////////////////////////////////////////
   // GeoVizMap
   //////////////////////////////////////////////////////////////
+  var GColor = function( r, g, b, a ) {
+    if ( isNaN(r) ) {
+      this.r = parseInt((this.cutHex(r)).substring(0,2),16);
+      this.g = parseInt((this.cutHex(r)).substring(2,4),16);
+      this.b = parseInt((this.cutHex(r)).substring(4,7),16);
+      this.a = 255;
+    } else {
+      this.r = r;
+      this.g = g;
+      this.b = b;
+      this.a = a;
+      if (!a) this.a = 1;
+    }
+  };
+ 
+  GColor.prototype = {
+    cutHex: function(h) {
+      return (h.charAt(0)=="#") ? h.substring(1,7):h;
+    },
+    _toHex: function(n) {
+      n = parseInt(n,10);
+     if (isNaN(n)) return "00";
+     n = Math.max(0,Math.min(n,255));
+     return "0123456789ABCDEF".charAt((n-n%16)/16)
+      + "0123456789ABCDEF".charAt(n%16);
+    },
+    toString: function() {
+      //return "rgba(" + this.r|0 + "," + this.g|0 + "," + this.b|0 + "," + this.a + ")";
+      return "#"+this._toHex(this.r) + this._toHex(this.g) + this._toHex(this.b); 
+    },
+    toRGB: function(bg) {
+      if (!bg) {
+        bg = new GColor(255,255,255,1);
+      }
+      var a = this.a;
+      return new GColor(
+          (1 - a) * bg.r + a * this.r,
+          (1 - a) * bg.g + a * this.g,
+          (1 - a) * bg.b + a * this.b
+      );
+    },
+  };
+  
+  var GPoint = function( x, y ) {
+    this.x = x;
+    this.y = y;
+  };
+  
+  GPoint.prototype = {
+  };
+  
+  var GRect = function( x0, y0, x1, y1 ) {
+    this.x0 = x0 <= x1 ? x0 : x1;
+    this.y0 = y0 <= y1 ? y0 : y1;
+    this.x1 = x0 > x1 ? x0 : x1;
+    this.y1 = y0 > y1 ? y0 : y1;
+  };
+  
+  GRect.prototype = {
+    Contains: function( gpoint ) {
+      return gpoint.x >= this.x0 && gpoint.x <= this.x1 && 
+             gpoint.y >= this.y0 && gpoint.y <= this.y1;
+    },
+    GetW: function() {
+      return this.x1 - this.x0;
+    },
+    GetH: function() {
+      return this.y1 - this.y0;
+    },
+    Move: function(offsetX, offsetY) {
+      this.x0 += offsetX;
+      this.x1 += offsetX;
+      this.y0 += offsetY;
+      this.y1 += offsetY;
+    },
+  };
+
   var GeoVizMap = function(map, mapcanvas, params) {
     // noForeground: don't draw the map , only for highlight
     this.noForeground = params ? params["noforeground"] : false;
@@ -762,11 +821,11 @@
       }
       if ( colors == undefined ) { 
         for ( var i=0, n=polygons.length; i<n; i++ ) {
-          ctx.beginPath();
           var obj = polygons[i];
           if ( Array.isArray(obj[0][0])) {
             // multi parts 
             for ( var j=0, nParts=obj.length; j<nParts; j++ ) {
+              ctx.beginPath();
               ctx.moveTo(obj[j][0][0], obj[j][0][1]);
               for ( var k=1, nPoints=obj[j].length; k<nPoints; k++) {
                 var x = obj[j][k][0],
@@ -777,6 +836,7 @@
               ctx.stroke();
             }
           } else {
+            ctx.beginPath();
             ctx.moveTo(obj[0][0], obj[0][1]);
             for ( var k=1, nPoints=obj.length; k<nPoints; k++) {
               var x = obj[k][0],
@@ -794,28 +854,31 @@
             ctx.fillStyle = c;
           }
           for ( var i=0, n=ids.length; i< n; ++i) {
-            ctx.beginPath();
             var obj = polygons[ids[i]];
-            if ( Array.isArray(obj[0][0])) {
+            if ( obj[0][0] && Array.isArray(obj[0][0])) {
               // multi parts 
               for ( var j=0, nParts=obj.length; j<nParts; j++ ) {
+                ctx.beginPath();
                 ctx.moveTo(obj[j][0][0], obj[j][0][1]);
                 for ( var k=1, nPoints=obj[j].length; k<nPoints; k++) {
                   var x = obj[j][k][0],
                       y = obj[j][k][1];
                   ctx.lineTo(x, y);
                 }
+                ctx.fill();
+                ctx.stroke();
               }
             } else {
+              ctx.beginPath();
               ctx.moveTo(obj[0][0], obj[0][1]);
               for ( var k=1, nPoints=obj.length; k<nPoints; k++) {
                 var x = obj[k][0],
                     y = obj[k][1];
                 ctx.lineTo(x, y);
               }
+              ctx.fill();
+              ctx.stroke();
             }
-            ctx.fill();
-            ctx.stroke();
           }
         }
       }
@@ -1057,19 +1120,20 @@
       }
       if (_self.brushRect == undefined ||
           _self.brushRect && !_self.brushRect.Contains(new GPoint(x, y)) ) {
-        console.log("cancel brushing");
+        console.log("cancel brushing", _self.brushRect, _self.brushRect, x, y);
         _self.brushRect = undefined;
         _self.isBrushing = false;
         //context.globalAlpha = this.ALPHA;
       }
     },
     OnMouseMove: function(evt) {
+     console.log("dd");
       if ( _self.isMouseDown == true ) {
         var currentX = evt.offsetX, 
             currentY = evt.offsetY,
             startX = _self.startX,
             startY = _self.startY;
-         
+        
         var x0 = startX >= currentX ? currentX : startX;
         var x1 = startX < currentX ? currentX : startX;
         var y0 = startY >= currentY ? currentY : startY;

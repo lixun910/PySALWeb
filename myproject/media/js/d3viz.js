@@ -128,6 +128,18 @@
     }
   };
   
+  d3viz.prototype.ShowShpMap = function(shpReader, L, lmap, prj, callback) {
+    if ( this.canvas == undefined) {
+      this.canvas = $('<canvas id="foreground"></canvas>').appendTo(this.container);
+    }
+    //self.map = new GeoVizMap(new ShpMap(shapefile, L, lmap, prj), self.canvas);
+    self.map = new GeoVizMap(new ShpMap(shpReader, L, lmap, prj), self.canvas);
+    self.mapDict[uuid] = self.map;
+    //self.dataDict[uuid] = data;
+    if (typeof callback === "function") {
+      callback();
+    }
+  };
   /**
    * Create a new Leaftlet map
    */
