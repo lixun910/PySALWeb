@@ -1120,14 +1120,12 @@
       }
       if (_self.brushRect == undefined ||
           _self.brushRect && !_self.brushRect.Contains(new GPoint(x, y)) ) {
-        console.log("cancel brushing", _self.brushRect, _self.brushRect, x, y);
         _self.brushRect = undefined;
         _self.isBrushing = false;
         //context.globalAlpha = this.ALPHA;
       }
     },
     OnMouseMove: function(evt) {
-     console.log("dd");
       if ( _self.isMouseDown == true ) {
         var currentX = evt.offsetX, 
             currentY = evt.offsetY,

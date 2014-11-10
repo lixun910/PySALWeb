@@ -307,9 +307,6 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   var dropZone = document.getElementById('drop_zone');
   var progress = document.querySelector('.percent');
-  //require(["mapdata"], function(util) {
-  //  SetupDragDrop(dropZone, progress);
-  //});
   var SetupDragDrop = function(dropZone, progress) {
     if (!dropZone || !progress ) return;
     var reader;
