@@ -132,7 +132,6 @@
     if ( this.canvas == undefined) {
       this.canvas = $('<canvas id="foreground"></canvas>').appendTo(this.container);
     }
-    //self.map = new GeoVizMap(new ShpMap(shapefile, L, lmap, prj), self.canvas);
     self.map = new GeoVizMap(new ShpMap(shpReader, L, lmap, prj), self.canvas);
     self.mapDict[uuid] = self.map;
     //self.dataDict[uuid] = data;
@@ -140,24 +139,20 @@
       callback();
     }
   };
+  
   /**
    * Create a new Leaftlet map
    */
-  d3viz.prototype.ShowLeafletMap = function(uuid, L, lmap, prj, options, callback) {
-    var json_url = this.GetJsonUrl(uuid);
-    //already have canvas as foreground
-    //this.canvas = $('<canvas id="' + uuid + '"></canvas>').appendTo(this.container);
-    this.GetJSON( json_url, function(data) {
-      if ( typeof data == "string") {
-        data = JSON.parse(data);
-      }
-      self.map = new GeoVizMap(new LeafletMap(data, L, lmap, prj), self.canvas, options);
-      self.mapDict[uuid] = self.map;
-      self.dataDict[uuid] = data;
-      if (typeof callback === "function") {
-        callback();
-      }
-    });
+  d3viz.prototype.ShowLeafletMap = function(json, L, lmap, prj, options, callback) {
+    if ( typeof data == "string") {
+      data = JSON.parse(data);
+    }
+    self.map = new GeoVizMap(new LeafletMap(json, L, lmap, prj), self.canvas, options);
+    self.mapDict[uuid] = self.map;
+    self.dataDict[uuid] = json;
+    if (typeof callback === "function") {
+      callback();
+    }
   };
   
   d3viz.prototype.AddLeafletMap = function(subUuid, L, lmap, prj, callback) {

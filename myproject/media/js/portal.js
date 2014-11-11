@@ -353,7 +353,7 @@ $(document).ready(function() {
       var formData = new FormData(),
           files = evt.dataTransfer.files, // FileList object.
           bJson = 0, bShp = 0, bDbf =0, bShx =0,
-          shpFileName = "", shpFile;
+          shpFileName = "", shpFile, jsonFile;
       gHasProj = false,
       $.each(files, function(i, f) {
         var name = f.name,
@@ -361,11 +361,9 @@ $(document).ready(function() {
             suffix = getSuffix(name);
         if (suffix === 'geojson' || suffix === 'json') {
           bJson = 1;
-          shpFileName = name;
-          shpFile = f;
+          jsonFile = f;
         } else if (suffix === "shp") {
           bShp = 1;
-          shpFileName = name;
           shpFile = f;
         } else if (suffix === "shx") {
           bShx = 1;
@@ -439,24 +437,21 @@ $(document).ready(function() {
       document.getElementById('progress_bar').className = 'loading';
       // display map directly
       if (shpFile) {
-        $('#map').show();
-        viz.canvas = $('#foreground');
         var reader = new FileReader();
         reader.onload = function(e) {
-          var name = shpFile.name,
-              type =  'shp';
-          var shp = new ShpReader(name, type, reader.result);
+          $('#map').show();
+          viz.canvas = $('#foreground');
+          var shp = new ShpReader(name, reader.result);
           viz.ShowShpMap(shp, L, lmap, prj, OnMapShown);
         };
         reader.readAsArrayBuffer(shpFile);
-        /*
-        var shapefile = new Shapefile({shp:shpFile}, function() {
-          //viz.ShowShpMap(shapefile, L, lmap, prj);
-          viz.canvas = $('#foreground');
-          //viz.ShowShpMap(shapefile);
-          //viz.ShowShpMap(shapefile, L, lmap, prj, OnMapShown);
-        });
-        */
+      } else if (jsonFile) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var shp = new ShpReader(name, type, reader.result);
+          viz.ShowShpMap(shp, L, lmap, prj, OnMapShown);
+        };
+        reader.readAsText(jsonFile);
       }
     };
   };
