@@ -36,6 +36,7 @@ $(document).ready(function() {
   // Local Storage Brushing/Linking
   localStorage.clear();  
   viz = new d3viz(winID, $('#map-container')); 
+  viz.canvas = $('#foreground');
   viz.SetupBrushLink();
   viz.SetupWebSocket();
   
@@ -302,7 +303,7 @@ $(document).ready(function() {
       });
     }
   };
-   //////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////
   //  Drag & Drop
   //////////////////////////////////////////////////////////////
   var dropZone = document.getElementById('drop_zone');
@@ -391,11 +392,10 @@ $(document).ready(function() {
           formData.append('userfile', f, f.name);
         }
       });
-      /*
       // upload files to server
       formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', '../upload.py');
+      xhr.open('POST', '../upload/');
       xhr.onload = function() {
         console.log("[Upload]", this.responseText);
         try{
@@ -403,20 +403,20 @@ $(document).ready(function() {
           if ( data['uuid'] != undefined) {
             var path = data["path"];
             if ( gAddLayer == false ) { // open new map
-              uuid = data["uuid"];
-              viz.nameDict[uuid] = data['filename'];
+              //uuid = data["uuid"];
+              //viz.nameDict[uuid] = data['filename'];
               if ( gHasProj || gShowLeaflet == true) {
-                showLeafletMap(uuid);
+                //showLeafletMap(uuid);
               } else {
-                showPlainMap(uuid);
+                //showPlainMap(uuid);
               }
             } else { // add new layer
               var subUuid = data["uuid"];
               viz.nameDict[subUuid] = data['filename'];
               if ( gHasProj || gShowLeaflet == true) {
-                viz.AddLeafletMap(subUuid, L, lmap, prj);
+                //viz.AddLeafletMap(subUuid, L, lmap, prj);
               } else {
-                viz.AddPlainMap(subUuid);
+                //viz.AddPlainMap(subUuid);
               }
             }
             UpdateLocalMapSel();
@@ -433,23 +433,23 @@ $(document).ready(function() {
       }; 
       xhr.upload.onprogress = updateProgress;
       xhr.send(formData);
-      */ 
       document.getElementById('progress_bar').className = 'loading';
       // display map directly
       if (shpFile) {
         var reader = new FileReader();
         reader.onload = function(e) {
-          $('#map').show();
-          viz.canvas = $('#foreground');
           var shp = new ShpReader(name, reader.result);
-          viz.ShowShpMap(shp, L, lmap, prj, OnMapShown);
+          if ( gAddLayer == false ) { // open new map
+            viz.ShowShpMap(shp, L, lmap, prj, OnMapShown);
+          } else {
+            
+          }
         };
         reader.readAsArrayBuffer(shpFile);
       } else if (jsonFile) {
         var reader = new FileReader();
         reader.onload = function(e) {
-          var shp = new ShpReader(name, type, reader.result);
-          viz.ShowShpMap(shp, L, lmap, prj, OnMapShown);
+          viz.ShowJsonMap(reader.result, L, lmap, prj, OnMapShown);
         };
         reader.readAsText(jsonFile);
       }

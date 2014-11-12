@@ -66,7 +66,9 @@
     this.prj = prj;
     this.LL = LL; 
     this.Lmap = Lmap;
-    this.Lmap.fitBounds([[this.mapBottom,this.mapLeft],[this.mapTop,this.mapRight]]);
+    if ( this.Lmap) {
+      this.Lmap.fitBounds([[this.mapBottom,this.mapLeft],[this.mapTop,this.mapRight]]);
+    }
   };
 
   ShpMap.prototype.fitScreen = function(screenWidth, screenHeight, marginLeft, marginTop) {
@@ -144,8 +146,8 @@
   ShpMap.prototype.screenToMap = function(px, py) {
     var x, y;
     if (this.LL) {
-      px = px - _self.offsetX;
-      py = py - _self.offsetY;
+      //px = px - this.offsetX;
+      //py = py - this.offsetY;
       var pt = this.Lmap.layerPointToLatLng(new this.LL.point(px,py));
       x = pt.lng;
       y = pt.lat;
@@ -160,8 +162,8 @@
     var px, py;
     if (this.LL) {
       var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
-      px = pt.x + _self.offsetX;
-      py = pt.y + _self.offsetY;
+      px = pt.x;// + this.offsetX;
+      py = pt.y;// + this.offsetY;
     } else {
       px = this.scaleX * (x - this.mapLeft) + this.offsetX;
       py = this.scaleY * (this.mapTop - y) + this.offsetY;
@@ -172,13 +174,13 @@
   //////////////////////////////////////////////////////////////
   // JsonMap
   //////////////////////////////////////////////////////////////
-  var JsonMap = function(geoJson, extent, prj) {
+  var JsonMap = function(geoJson, LL, Lmap, prj) {
     this.geojson = geoJson;
     this.prj = prj;
     this.shpType = this.geojson.features[0].geometry.type;
     this.bbox = [];
     this.centroids = [];
-    this.extent = extent==undefined ? this.getExtent() : extent;
+    this.extent = this.getExtent();
     this.mapLeft = this.extent[0];
     this.mapRight = this.extent[1];
     this.mapBottom = this.extent[2];
@@ -186,6 +188,12 @@
     this.mapWidth = this.extent[1] - this.extent[0];
     this.mapHeight = this.extent[3] - this.extent[2];
     this.screenObjects = [];
+    
+    this.LL = LL; 
+    this.Lmap = Lmap;
+    if ( this.Lmap) {
+      this.Lmap.fitBounds([[this.mapBottom,this.mapLeft],[this.mapTop,this.mapRight]]);
+    }
   };
   
   JsonMap.prototype.updateExtent = function(basemap) {
@@ -228,14 +236,14 @@
               part[k][0] = x;
               part[k][1] = y;
             }
-              if (x > maxX) {maxX = x;}
-              if (x < minX) {minX = x;}
-              if (y > maxY) {maxY = y;}
-              if (y < minY) {minY = y;}
-              if (x > bmaxX) {bmaxX = x;}
-              if (x < bminX) {bminX = x;}
-              if (y > bmaxY) {bmaxY = y;}
-              if (y < bminY) {bminY = y;}
+            if (x > maxX) {maxX = x;}
+            if (x < minX) {minX = x;}
+            if (y > maxY) {maxY = y;}
+            if (y < minY) {minY = y;}
+            if (x > bmaxX) {bmaxX = x;}
+            if (x < bminX) {bminX = x;}
+            if (y > bmaxY) {bmaxY = y;}
+            if (y < bminY) {bminY = y;}
           }
         }
       } else if ( typeof coords[0] == 'number') {
@@ -266,14 +274,14 @@
             coords[k][0] = x;
             coords[k][1] = y;
           }
-            if (x > maxX) {maxX = x;}
-            if (x < minX) {minX = x;}
-            if (y > maxY) {maxY = y;}
-            if (y < minY) {minY = y;}
-            if (x > bmaxX) {bmaxX = x;}
-            if (x < bminX) {bminX = x;}
-            if (y > bmaxY) {bmaxY = y;}
-            if (y < bminY) {bminY = y;}
+          if (x > maxX) {maxX = x;}
+          if (x < minX) {minX = x;}
+          if (y > maxY) {maxY = y;}
+          if (y < minY) {minY = y;}
+          if (x > bmaxX) {bmaxX = x;}
+          if (x < bminX) {bminX = x;}
+          if (y > bmaxY) {bmaxY = y;}
+          if (y < bminY) {bminY = y;}
         }
       }
       if ( this.shpType == "Polygon" || this.shpType == "MultiPolygon" ||
@@ -388,14 +396,30 @@
   };
   
   JsonMap.prototype.screenToMap = function(px, py) {
-    var x = this.scalePX * (px - this.offsetX) + this.mapLeft;
-    var y = this.mapTop - this.scalePY * (py - this.offsetY);
+    var x, y;
+    if (this.LL) {
+      //px = px - this.offsetX;
+      //py = py - this.offsetY;
+      var pt = this.Lmap.layerPointToLatLng(new this.LL.point(px,py));
+      x = pt.lng;
+      y = pt.lat;
+    } else {
+      x = this.scalePX * (px - this.offsetX) + this.mapLeft;
+      y = this.mapTop - this.scalePY * (py - this.offsetY);
+    }
     return [x, y];
   };
   
   JsonMap.prototype.mapToScreen = function(x, y) {
-    var px = this.scaleX * (x - this.mapLeft) + this.offsetX;
-    var py = this.scaleY * (this.mapTop - y) + this.offsetY;
+    var px, py;
+    if (this.LL) {
+      var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
+      px = pt.x;// + this.offsetX;
+      py = pt.y;// + this.offsetY;
+    } else {
+      px = this.scaleX * (x - this.mapLeft) + this.offsetX;
+      py = this.scaleY * (this.mapTop - y) + this.offsetY;
+    }
     return [px, py];
   };
   

@@ -128,12 +128,44 @@
     }
   };
   
-  d3viz.prototype.ShowShpMap = function(shpReader, L, lmap, prj, callback) {
-    if ( this.canvas == undefined) {
-      this.canvas = $('<canvas id="foreground"></canvas>').appendTo(this.container);
+  /**
+   * ShowMainMap() could be:
+   * 1. Drag&Drop local ESRI Shape file
+   * 2. Drag&Drop local GeoJson file
+   * 3. Dropbox file url of ESRI Shape file
+   * 4. Dropbox file url of GeoJson file
+   */
+  d3viz.prototype.ShowMainMap = function(o, type, L, lmap, prj, callback) {
+    var map;
+    if ( typeof o == "string") {
+      // file url
+      if (type == 'shapefile') {
+      } else if (type == 'geojson') {
+      }
+    } else if (!!o.lastModifiedDate) {
+      // drag& drop file 
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        if (type == 'shapefile') {
+          map = new ShpMap(reader.result, L, lmap, prj);
+        } else if (type == 'geojson') {
+          o = JSON.parse(o);
+          map = new JsonMap(reader.result, L, lmap, prj);
+        }
+        self.map = new GeoVizMap(map, self.canvas);
+        if (typeof callback === "function") {
+          callback();
+        }
+      }
+      if (type == 'shapefile') {
+        reader.readAsArrayBuffer(o);
+      } else if (type == 'geojson') {
+        reader.readAsText(o);
+      }
+    } else {
+      return false;
     }
-    self.map = new GeoVizMap(new ShpMap(shpReader, L, lmap, prj), self.canvas);
-    self.mapDict[uuid] = self.map;
+    //self.mapDict[uuid] = self.map;
     //self.dataDict[uuid] = data;
     if (typeof callback === "function") {
       callback();
@@ -143,13 +175,13 @@
   /**
    * Create a new Leaftlet map
    */
-  d3viz.prototype.ShowLeafletMap = function(json, L, lmap, prj, options, callback) {
+  d3viz.prototype.ShowLeafletMap = function(data, L, lmap, prj, options, callback) {
     if ( typeof data == "string") {
       data = JSON.parse(data);
     }
-    self.map = new GeoVizMap(new LeafletMap(json, L, lmap, prj), self.canvas, options);
+    self.map = new GeoVizMap(new LeafletMap(data, L, lmap, prj), self.canvas, options);
     self.mapDict[uuid] = self.map;
-    self.dataDict[uuid] = json;
+    self.dataDict[uuid] = data;
     if (typeof callback === "function") {
       callback();
     }
