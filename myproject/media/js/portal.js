@@ -237,34 +237,21 @@ $(document).ready(function() {
     ]
   });
   //$('#dialog-open-file').dialog('open');
-  // switch leaflet
-  var showLeafletMap = function(uuid, noForeground) {
-    if (uuid && viz) {
-      if (foreground == undefined) {
-        foreground = $('#foreground').attr("id", uuid); 
-        viz.canvas = foreground;
-      }
+  var showMap = function(o, type, noForeground) {
+    if (viz) {
       gShowLeaflet = true;
       if ( gHasProj && prj == undefined) {
         // wait for reading *.prj file 
-        setTimeout(function(){showLeafletMap(uuid);}, 10);  
+        setTimeout(function(){showLeafletMap(o, type, noForeground);}, 10);  
       } else {
         $('#map').show();
         if (noForeground==undefined) noForeground = false;
-        viz.ShowLeafletMap(uuid, L, lmap, prj, {
-          "hratio": 1, "vratio": 1, "alpha": 0.8, "noforeground": noForeground
-        }, OnMapShown);
+        if (gShowLeaflet) {
+          viz.ShowMainMap(o, type,  OnMapShown, L, lmap, prj);
+        } else {
+          viz.ShowMainMap(o, type, OnMapShown);
+        }
       }
-    }
-  };
-  var showPlainMap = function(uuid) {
-    if (uuid && viz) {
-      if (foreground == undefined) {
-        foreground = $('#foreground').attr("id", uuid); 
-        viz.canvas = foreground;
-      }
-      gShowLeaflet = false;
-      viz.ShowMap(uuid,OnMapShown); 
     }
   };
   
@@ -274,11 +261,11 @@ $(document).ready(function() {
     off_label: 'Leaflet Background? OFF',
     on_callback: function() {
       gShowLeaflet = true;
-      showLeafletMap(uuid);
+      //showMap(uuid);
     },
     off_callback: function() {
       gShowLeaflet = false;
-      showPlainMap(uuid);
+      //showMap(uuid);
     },
   });
   
@@ -436,27 +423,98 @@ $(document).ready(function() {
       document.getElementById('progress_bar').className = 'loading';
       // display map directly
       if (shpFile) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-          var shp = new ShpReader(name, reader.result);
-          if ( gAddLayer == false ) { // open new map
-            viz.ShowShpMap(shp, L, lmap, prj, OnMapShown);
-          } else {
-            
-          }
-        };
-        reader.readAsArrayBuffer(shpFile);
+        if ( gAddLayer == false ) { // open new map
+          showMap(shpFile, 'shapefile');
+        } else {
+        }
       } else if (jsonFile) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-          viz.ShowJsonMap(reader.result, L, lmap, prj, OnMapShown);
-        };
-        reader.readAsText(jsonFile);
+        if ( gAddLayer == false ) { // open new map
+          showMap(jsonFile, 'json');
+        } else {
+        }
       }
     };
   };
   
   SetupDragDrop(dropZone, progress);
+  
+  //////////////////////////////////////////////////////////////
+  //  DropBox
+  //////////////////////////////////////////////////////////////
+  var dropboxOptions = {
+    success: function(files) {
+      if ( files.length > 0 ) { 
+        var prj;
+        var ready = false;
+        var fileLink = files[0].link;
+        var suffix = getSuffix(fileLink);
+        var params = {csrfmiddlewaretoken: '{{ csrf_token }}'};
+        if ( suffix === 'geojson' || suffix === 'json') {
+          viz.ShowMainMap(fileLink, 'json', L, lmap, prj, OnMapShown);
+          params['json'] = fileLink;
+          //ready = true;
+        } else if ($.inArray( suffix, ['shp', 'dbf','shx','prj']) >= 0) {
+          var shpUrl, shxUrl, dbfUrl, prjUrl, fname = getFileNameNoExt( fileLink );
+          $.each(files, function(i, file) {
+            var f = file.link;
+            if ( getSuffix(f)=='shp' && fname==getFileNameNoExt(f) ) {
+              shpUrl = f;
+            } else if ( getSuffix(f)=='dbf' && fname==getFileNameNoExt(f) ) {
+              dbfUrl = f;
+            } else if ( getSuffix(f)=='shx' && fname==getFileNameNoExt(f) ) {
+              shxUrl = f;
+            } else if ( getSuffix(f)=='prj' && fname==getFileNameNoExt(f) ) {
+              prjUrl = f;
+            }
+          });
+          if (shpUrl && shxUrl && dbfUrl) {
+            params['shp'] = shpUrl;
+            params['shx'] = shxUrl;
+            params['dbf'] = dbfUrl;
+            if (prjUrl) {
+              params['prj'] = prjUrl;
+              $.get(prjUrl, function(data) {
+                var ip = data;
+                prj = proj4(ip, proj4.defs('WGS84'));
+                viz.ShowMainMap(shpUrl, 'shapefile', L, lmap, prj, OnMapShown);
+              });
+            } else {
+              viz.ShowMainMap(shpUrl, 'shapefile', L, lmap, prj, OnMapShown);
+            } 
+            //ready = true;
+          } else {
+            ShowMsgBox("Error","Please select *.shp, *.dbf, and *.shx files at the same time.");
+          }
+        }
+        if ( ready ) {
+          //$('#dlg-run').dialog("open").html('<img src="{{url_prefix}}/media/img/loading.gif"/><br/>Loading ...');
+          //$('#dlg-run').siblings('.ui-dialog-titlebar').hide();
+          //$('#dlg-run').css("background-color","rgb(255,255,255, 0.9)");
+          $.get("../upload/", params).done( function(data) {
+            /*
+            $('#dlg-run').dialog("close");
+            if ( data['layer_uuid'] != undefined) {
+              var layer_uuid = data["layer_uuid"];
+              localStorage['current_layer']= layer_uuid;
+              fillForms(true);
+              // get canvas
+              SaveMapThumbnail(layer_uuid, containerID);
+            }
+            */
+          });
+        }
+      }
+    },
+    cancel: function() {
+      //$('#progressCont').hide();
+    },
+    linkType: "direct", // or "preview"
+    multiselect: true, // or true
+    extensions: ['.json', '.geojson', '.zip', '.shp','.shx','.dbf','.prj'],
+  };
+  var button = Dropbox.createChooseButton(dropboxOptions);
+  $("#dropbox_div").append(button);
+
   //////////////////////////////////////////////////////////////
   //  CartoDB
   //////////////////////////////////////////////////////////////

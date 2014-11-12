@@ -837,7 +837,7 @@ ShpType.hasBounds = function(t) {
 //      var data = s.read();
 //    });
 //
-function ShpReader(name, src) {
+function ShpReader(src) {
   var file = new BufferBytes(src);
   var header = parseHeader(file.readBytes(100, 0));
   var RecordClass = ShpReader.getRecordClass(header.type);

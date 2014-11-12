@@ -73,7 +73,6 @@
       }
     }, false);
   };
-    
    
   /**
    * Setup and function for PopUp window
@@ -99,33 +98,9 @@
     );
   };
  
-   
   d3viz.prototype.GetJsonUrl = function(uuid) {
     var json_url = "./tmp/" + uuid + ".json";
     return json_url; 
-  };
-  
-  /**
-   * Show a base map
-   * parameters: canvas -- $() jquery object
-   * parameters: container -- $() jquery object
-   */
-  d3viz.prototype.ShowMap = function(uuid, callback) {
-    var json_url = this.GetJsonUrl(uuid);
-    if ( this.canvas == undefined) {
-      this.canvas = $('<canvas id="' + uuid + '"></canvas>').appendTo(this.container);
-    }
-    this.GetJSON( json_url, function(data) {
-      if ( typeof data == "string") {
-        data = JSON.parse(data);
-      }
-      self.map = new GeoVizMap(new JsonMap(data), self.canvas);
-      self.mapDict[uuid] = self.map;
-      self.dataDict[uuid] = data;
-    });
-    if (typeof callback === "function") {
-      callback();
-    }
   };
   
   /**
@@ -135,41 +110,65 @@
    * 3. Dropbox file url of ESRI Shape file
    * 4. Dropbox file url of GeoJson file
    */
-  d3viz.prototype.ShowMainMap = function(o, type, L, lmap, prj, callback) {
+  d3viz.prototype.ShowMainMap = function(o, type, precall, callback, L, lmap, prj) {
+    if (typeof precall === "function") {
+      precall();
+    }
+    
     var map;
+    var options = {"hratio": 1, "vratio": 1, "alpha": 0.8, "noforeground": false};
+
     if ( typeof o == "string") {
       // file url
       if (type == 'shapefile') {
-      } else if (type == 'geojson') {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", o, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function(evt) {
+          map = new ShpMap(new ShpReader(xhr.response), L, lmap, prj);
+          self.map = new GeoVizMap(map, self.canvas);
+          if (typeof callback === "function") {
+            callback();
+          }
+        };
+        xhr.send(null);
+      } else if (type == 'geojson' || type == 'json') {
+        var json_url = o;
+        this.GetJSON( json_url, function(json) {
+          map = new JsonMap(json, L, lmap, prj); 
+          self.map = new GeoVizMap(map, self.canvas);
+          if (typeof callback === "function") {
+            callback();
+          }
+        });
       }
+      
     } else if (!!o.lastModifiedDate) {
       // drag& drop file 
       var reader = new FileReader();
       reader.onload = function(e) {
         if (type == 'shapefile') {
-          map = new ShpMap(reader.result, L, lmap, prj);
-        } else if (type == 'geojson') {
-          o = JSON.parse(o);
-          map = new JsonMap(reader.result, L, lmap, prj);
+          map = new ShpMap(new ShpReader(reader.result), L, lmap, prj);
+        } else if (type == 'geojson' || type == 'json') {
+          var json = JSON.parse(reader.result);
+          map = new JsonMap(json, L, lmap, prj);
         }
         self.map = new GeoVizMap(map, self.canvas);
         if (typeof callback === "function") {
           callback();
         }
-      }
+      };
       if (type == 'shapefile') {
         reader.readAsArrayBuffer(o);
-      } else if (type == 'geojson') {
+      } else if (type == 'geojson' || type == 'json') {
         reader.readAsText(o);
       }
+      
     } else {
       return false;
     }
     //self.mapDict[uuid] = self.map;
     //self.dataDict[uuid] = data;
-    if (typeof callback === "function") {
-      callback();
-    }
   };
   
   /**
@@ -510,6 +509,7 @@
   should stack the new layer as multi-layer scenario.
   */
   d3viz.prototype.SetupWebSocket = function(server_addr) {
+    /*
     if (! ("WebSocket" in window)) WebSocket = MozWebSocket; // firefox
     this.socket = new WebSocket("ws://127.0.0.1:9000");
     var socket = this.socket;
@@ -521,41 +521,12 @@
           msg = JSON.parse(e.data);
           command = msg.command;  
           winID = msg.wid;
-          
-          if ( command == "request_params" && self.id == winID) {
-            if (typeof self.RequestParam_callback === "function") {
-              self.RequestParam_callback(msg.parameters);
-            }
-          } else if ( command == "rsp_create_w" && self.id == winID) {
-            self.CreateWeights_callback(msg.content);
-            
-          } else if ( command == "rsp_spatial_regression" && self.id == winID) {
-            self.RunSpreg_callback(msg);
-            
-          } else if ( command == "rsp_new_lisa_map" && self.id == winID) {
-            self.LISA_callback(msg);
-            
-          } else if ( command == "select" ) {
-            self.SelectOnMap(msg); //
-            
-          } else if ( command == "rsp_cartodb_get_all_tables" && self.id == winID) {
-            self.callback_GetAllTables(msg);
-          } else if ( command == "rsp_cartodb_download_table" && self.id == winID) {
-            self.callback_DownloadTable(msg);
-          } else if ( command == "rsp_cartodb_upload_table" && self.id == winID) {
-            self.callback_UploadTable(msg);
-          } else if ( command == "rsp_cartodb_spatial_count" && self.id == winID) {
-            self.callback_SpatialCount(msg);
-          } else if ( command == "rsp_road_segment" && self.id == winID) {
-            self.callback_RoadSegment(msg);
-          } else if ( command == "rsp_road_snap_point" && self.id == winID) {
-            self.callback_RoadSnapPoint(msg);
-          } 
         } catch (err) {
           console.error("Parsing server msg error:", msg, err);            
         }
       };
     };
+    */
   };
  
   // End and expose d3viz to 'window'
