@@ -119,8 +119,8 @@
     var options = {"hratio": 1, "vratio": 1, "alpha": 0.8, "noforeground": false};
 
     if ( typeof o == "string") {
-      // file url
       if (type == 'shapefile') {
+        // file url
         var xhr = new XMLHttpRequest();
         xhr.open("GET", o, true);
         xhr.responseType = 'arraybuffer';
@@ -143,7 +143,7 @@
         });
       }
       
-    } else if (!!o.lastModifiedDate) {
+    } else if (!!o.lastModifiedDate || o.constructor == Blob) {
       // drag& drop file 
       var reader = new FileReader();
       reader.onload = function(e) {
@@ -164,6 +164,13 @@
         reader.readAsText(o);
       }
       
+    } else if (typeof o == 'object'){
+      // JSON object 
+      map = new JsonMap(o, L, lmap, prj); 
+      self.map = new GeoVizMap(map, self.canvas);
+      if (typeof callback === "function") {
+        callback();
+      }
     } else {
       return false;
     }

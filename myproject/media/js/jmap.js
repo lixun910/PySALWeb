@@ -123,7 +123,7 @@
             x = xy[2*j + start];
             y = xy[2*j+1 + start];
             if (this.prj) {
-              pt = this.prj.foward([x,y]);
+              pt = this.prj.forward([x,y]);
               x = pt[0];
               y = pt[1]; 
             }

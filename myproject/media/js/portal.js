@@ -40,6 +40,9 @@ $(document).ready(function() {
   viz.SetupBrushLink();
   viz.SetupWebSocket();
   
+  var BeforeMapShown = function() {
+  };
+  
   var OnMapShown = function() {
     $('#loading').remove();
     $('#dialog-open-file').dialog('close');
@@ -247,9 +250,9 @@ $(document).ready(function() {
         $('#map').show();
         if (noForeground==undefined) noForeground = false;
         if (gShowLeaflet) {
-          viz.ShowMainMap(o, type,  OnMapShown, L, lmap, prj);
+          viz.ShowMainMap(o, type, BeforeMapShown, OnMapShown, L, lmap, prj);
         } else {
-          viz.ShowMainMap(o, type, OnMapShown);
+          viz.ShowMainMap(o, type, BeforeMapShown, OnMapShown);
         }
       }
     }
@@ -360,7 +363,45 @@ $(document).ready(function() {
         } else if (suffix === "prj") {
           gHasProj = true;
           reader.readAsText(f);
-        }
+        } else if (suffix === "zip") { // extract zip file
+          zip.createReader(new zip.BlobReader(f), function(zipReader) {
+            zipReader.getEntries(function(entries) {
+              console.log(entries.length);
+              entries.forEach(function(entry) {
+                var suffix = getSuffix(entry.filename);
+                var writer;
+                if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
+                  writer = new zip.TextWriter();
+                } else {
+                  writer = new zip.BlobWriter();
+                }
+                entry.getData(writer, function(o) {
+                  console.log(entry.filename);
+                  if (entry.filename[0] === '_') return;
+                  if (suffix === 'geojson' || suffix === 'json') {
+                    bJson = 1;
+                    o = JSON.parse(o);
+                    showMap(o, 'geojson');
+                    return;
+                  } else if (suffix === "shp") {
+                    bShp = 1;
+                    shpFile = o;
+                  } else if (suffix === "shx") {
+                    bShx = 1;
+                  } else if (suffix === "dbf") {
+                    bDbf = 1;
+                  } else if (suffix === "prj") {
+                    gHasProj = true;
+                    prj = proj4(o, proj4.defs('WGS84'));
+                  }
+                  if (bShp && bShx && bDbf) {
+                    showMap(shpFile, 'shapefile');
+                  }
+                });
+              });
+            });
+          });
+        } 
       });
       // check files
       if (!bJson && !bShp && !bShx && !bDbf ) {
@@ -375,10 +416,12 @@ $(document).ready(function() {
         ShowMsgBox("Info", "The *.prj file is not found. The map will not be shown using Leaflet. You can still use the swtich button to display the map on Leaflet."); 
       }
       $.each(files, function(i, f) {
+        // compress and then append to formData
         if ($.inArray(getSuffix(f.name), ['json','geojson','shp','shx','dbf', 'prj'] ) >=0) {
           formData.append('userfile', f, f.name);
         }
       });
+      /*
       // upload files to server
       formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
       var xhr = new XMLHttpRequest();
@@ -420,6 +463,7 @@ $(document).ready(function() {
       }; 
       xhr.upload.onprogress = updateProgress;
       xhr.send(formData);
+      */
       document.getElementById('progress_bar').className = 'loading';
       // display map directly
       if (shpFile) {
@@ -485,6 +529,10 @@ $(document).ready(function() {
           } else {
             ShowMsgBox("Error","Please select *.shp, *.dbf, and *.shx files at the same time.");
           }
+        } else if (suffix === 'zip') {
+          FetchZipResource(fileLink, function(data) {
+            
+          });
         }
         if ( ready ) {
           //$('#dlg-run').dialog("open").html('<img src="{{url_prefix}}/media/img/loading.gif"/><br/>Loading ...');
