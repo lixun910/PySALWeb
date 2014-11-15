@@ -1,12 +1,3 @@
-var html_load_img = "<img src=img/loading_small.gif>",
-    html_check_img = "<img src=img/checkmark.png>",
-    html_uncheck_img = "<img src=img/uncheckmark.png>";
-
-function ShowMsgBox(title, content) {
-  $("#msg-title").text(title);
-  $("#msg-content").text(content);
-  $('#dlg-msg').dialog('open');
-}
 
 var viz, 
     cartolx, carto_uid, carto_key, carto_layer,
@@ -16,13 +7,32 @@ var viz,
     gShowLeaflet =false, 
     gAddLayer    =false;
 
+var fields_combobox= {
+  '#sel-var' : ['Integer','Real'], 
+  '#sel-w-id': ['Integer'], 
+  '#sel-scatter-x':['Integer','Real'], 
+  '#sel-scatter-y':['Integer','Real'], 
+  '#sel-moran-var':['Integer','Real'],
+  '#sel-lisa-var':['Integer','Real'],
+  '#sel-st-lisa-var':['Integer','Real'],
+  };
+  
+var html_load_img = "<img src=img/loading_small.gif>",
+    html_check_img = "<img src=img/checkmark.png>",
+    html_uncheck_img = "<img src=img/uncheckmark.png>";
+
+var ShowMsgBox = function(title, content) {
+  $("#msg-title").text(title);
+  $("#msg-content").text(content);
+  $('#dlg-msg').dialog('open');
+  };
+  
 $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Map
   //////////////////////////////////////////////////////////////
   winID = getParameterByName("wid");
   
-  // create Leaflet map 
   lmap = new L.Map('map');
 
   L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
@@ -47,8 +57,6 @@ $(document).ready(function() {
     $('#loading').remove();
     $('#dialog-open-file').dialog('close');
     
-    InitDialogs();
-    
     if (gShowLeaflet == true) {
       map = viz.map;
       lmap.on('zoomstart', function() {
@@ -72,43 +80,34 @@ $(document).ready(function() {
     }
   };
   
-  var InitDialogs = function(){
-    // fill dialogs
-    if (uuid && uuid in viz.dataDict) {
-      var data = viz.dataDict[uuid];
+  var InitDialogs = function(fields){
       var field_names = [];
-      for (var field in data.features[0].properties) {
+      for (var field in fields) {
         field_names.push(field);
       }
       field_names.sort();
-      var var_combobox= ['#sel-var', '#sel-w-id', '#sel-scatter-x', '#sel-scatter-y', '#sel-moran-var','#sel-lisa-var','#sel-st-lisa-var'];
-      $.each( var_combobox, function(i, var_cmb ) {
+      for (var var_cmb in fields_combobox) {
+        var var_types = fields_combobox[var_cmb];
         $(var_cmb).find('option').remove().end();
-        $.each(field_names, function(j, field_name) {
-          if (field_name != "GEODAID") {
-            $(var_cmb).append($('<option>', {value: field_name}).text(field_name));
+        for (var field in fields) {
+          var type = fields[field];
+          if (var_types.indexOf(type) >= 0) {
+            $(var_cmb).append($('<option>', {value: field}).text(field));
           }
-        });
-      });
+        }
+      }
       // in regression dialog
-      //var boxes = ['#y_box','#y_box','#y_box','#y_box']; 
-      if ( !$('#y_box').find(".placeholder")) 
-        $('#y_box').find('li').remove().end();
-      if ( !$('#x_box').find(".placeholder")) 
-        $('#x_box').find('li').remove().end();
-      if ( !$('#ye_box').find(".placeholder")) 
-        $('#ye_box').find('li').remove().end();
-      if ( !$('#inst_box').find(".placeholder")) 
-        $('#inst_box').find('li').remove().end();
-      if ( !$('#r_box').find(".placeholder")) 
-        $('#r_box').find('li').remove().end();
+      $.each(['#y_box','#y_box','#y_box','#y_box'], function(i, box) {
+        if ( !$(box).find(".placeholder")) {
+          $(box).find('li').remove().end();
+        } 
+      });
       $('#ul-x-variables').find('li').remove().end();
-      $.each(field_names, function(i, field_name) {
-        var item = $('#ul-x-variables').append('<li><p class="name">'+field_name+'</p></li>');
+      $.each(field_names, function(i, field) {
+        var item = $('#ul-x-variables').append('<li><p class="name">'+field+'</p></li>');
       });
       $( "#vars ul li" ).draggable({ helper: "clone" });
       new List('vars', {valueNames:['name']});
-    }
   };
   //////////////////////////////////////////////////////////////
   //  Init UI
@@ -132,8 +131,8 @@ $(document).ready(function() {
     dialogClass: "dialogWithDropShadow",
     width: 400, height: 200, autoOpen: false, modal: true,
     buttons: {OK: function() {$( this ).dialog( "close" );}}
-  });
-  $('#dlg-msg').hide();
+  }).hide();
+  
   $('#btnOpenData').click(function(){
     gAddLayer = false;
     $('#dialog-open-file').dialog('option','title','Open Map Dialog');
@@ -298,191 +297,189 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   var dropZone = document.getElementById('drop_zone');
   var progress = document.querySelector('.percent');
-  var SetupDragDrop = function(dropZone, progress) {
-    if (!dropZone || !progress ) return;
-    var reader;
-    
-    if (typeof window.FileReader === 'undefined') {
-      console.log( 'File API not available.');
-    }
-    
-    function updateProgress(evt) {
-      // evt is an ProgressEvent.
-      if (evt.lengthComputable) {
-        var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
-        // Increase the progress bar length.
-        if (percentLoaded < 100) {
-          progress.style.width = percentLoaded + '%';
-          progress.textContent = percentLoaded + '%';
-        }
+  
+  if (typeof window.FileReader === 'undefined') {
+    console.log( 'File API not available.');
+  }
+  
+  var UpdateProgress = function(evt) {
+    // evt is an ProgressEvent.
+    if (evt.lengthComputable) {
+      var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
+      // Increase the progress bar length.
+      if (percentLoaded < 100) {
+        progress.style.width = percentLoaded + '%';
+        progress.textContent = percentLoaded + '%';
       }
     }
-    
-    dropZone.ondragover = function(evt) {
-      $("#"+evt.target.id).css("color", "black");
-      return false;
-    };
-    
-    dropZone.ondragend = function(evt) {
-      $("#"+evt.target.id).css("color", "#bbb");
-      return false;
-    };
-    
-    dropZone.ondrop = function(evt) {
-      evt.preventDefault();
-      $("#"+evt.target.id).css("color", "#bbb");
-      // Reset progress indicator on new file selection.
-      progress.style.width = '0%';
-      progress.textContent = '0%';
-      reader = new FileReader();
-      reader.onload = function(e) {
-        console.log(reader.result);
-        // read *.prj file
-        var ip = reader.result;
-        prj = proj4(ip, proj4.defs('WGS84'));
-      };
-      var formData = new FormData(),
-          files = evt.dataTransfer.files, // FileList object.
-          bJson = 0, bShp = 0, bDbf =0, bShx =0,
-          shpFileName = "", shpFile, jsonFile;
-      gHasProj = false,
-      $.each(files, function(i, f) {
-        var name = f.name,
-            uuid = name,
-            suffix = getSuffix(name);
-        if (suffix === 'geojson' || suffix === 'json') {
-          bJson = 1;
-          jsonFile = f;
-        } else if (suffix === "shp") {
-          bShp = 1;
-          shpFile = f;
-        } else if (suffix === "shx") {
-          bShx = 1;
-        } else if (suffix === "dbf") {
-          bDbf = 1;
-        } else if (suffix === "prj") {
-          gHasProj = true;
-          reader.readAsText(f);
-        } else if (suffix === "zip") { // extract zip file
-          zip.createReader(new zip.BlobReader(f), function(zipReader) {
-            zipReader.getEntries(function(entries) {
-              console.log(entries.length);
-              entries.forEach(function(entry) {
-                var suffix = getSuffix(entry.filename);
-                var writer;
-                if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
-                  writer = new zip.TextWriter();
-                } else {
-                  writer = new zip.BlobWriter();
-                }
-                entry.getData(writer, function(o) {
-                  console.log(entry.filename);
-                  if (entry.filename[0] === '_') return;
-                  if (suffix === 'geojson' || suffix === 'json') {
-                    bJson = 1;
-                    o = JSON.parse(o);
-                    showMap(o, 'geojson');
-                    return;
-                  } else if (suffix === "shp") {
-                    bShp = 1;
-                    shpFile = o;
-                  } else if (suffix === "shx") {
-                    bShx = 1;
-                  } else if (suffix === "dbf") {
-                    bDbf = 1;
-                  } else if (suffix === "prj") {
-                    gHasProj = true;
-                    prj = proj4(o, proj4.defs('WGS84'));
-                  }
-                  if (bShp && bShx && bDbf) {
-                    showMap(shpFile, 'shapefile');
-                  }
-                });
-              });
-            });
-          });
-        } 
-      });
-      // check files
-      if (!bJson && !bShp && !bShx && !bDbf ) {
-        ShowMsgBox("Error", "Please drag&drop either one json/geojson file, or ESRI Shapefiles (*.shp, *.dbf, *.shx and *.prj) ");
-        return false;
-      } else if (!bJson && (!bShp || !bShx || !bDbf )) {
-        ShowMsgBox("Error", "Please drag&drop three files (*.shp, *.dbf, *.shx and *.prj)  at the same time. (Tips: use ctrl (windows) or command (mac) to select multiple files.)");
-        return false;
-      } 
-      if (!bJson && !gHasProj ) {
-        gProjSwitchOn = false;
-        ShowMsgBox("Info", "The *.prj file is not found. The map will not be shown using Leaflet. You can still use the swtich button to display the map on Leaflet."); 
-      }
-      $.each(files, function(i, f) {
-        // compress and then append to formData
-        if ($.inArray(getSuffix(f.name), ['json','geojson','shp','shx','dbf', 'prj'] ) >=0) {
-          formData.append('userfile', f, f.name);
-        }
-      });
-      /*
-      // upload files to server
-      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', '../upload/');
-      xhr.onload = function() {
-        console.log("[Upload]", this.responseText);
-        try{
-          var data = JSON.parse(this.responseText);
-          if ( data['uuid'] != undefined) {
-            var path = data["path"];
-            if ( gAddLayer == false ) { // open new map
-              //uuid = data["uuid"];
-              //viz.nameDict[uuid] = data['filename'];
-              if ( gHasProj || gShowLeaflet == true) {
-                //showLeafletMap(uuid);
-              } else {
-                //showPlainMap(uuid);
-              }
-            } else { // add new layer
-              var subUuid = data["uuid"];
-              viz.nameDict[subUuid] = data['filename'];
-              if ( gHasProj || gShowLeaflet == true) {
-                //viz.AddLeafletMap(subUuid, L, lmap, prj);
-              } else {
-                //viz.AddPlainMap(subUuid);
-              }
-            }
-            UpdateLocalMapSel();
-            var msg =  {"command":"new_data", "uuid": data['uuid'],"path":path};
-            viz.NewDataFromWeb(msg);
-          }
-        } catch(e){
-          console.log("[Error][Upload Files]", e);
-        }
-        // Ensure that the progress bar displays 100% at the end.
-        progress.style.width = '100%';
-        progress.textContent = '100%';
-        setTimeout("document.getElementById('progress_bar').className='';", 2000);
-      }; 
-      xhr.upload.onprogress = updateProgress;
-      xhr.send(formData);
-      */
-      document.getElementById('progress_bar').className = 'loading';
-      // display map directly
-      if (shpFile) {
-        if ( gAddLayer == false ) { // open new map
-          showMap(shpFile, 'shapefile');
-        } else {
-        }
-      } else if (jsonFile) {
-        if ( gAddLayer == false ) { // open new map
-          showMap(jsonFile, 'json');
-        } else {
-        }
-      }
-    };
   };
   
-  SetupDragDrop(dropZone, progress);
+  var UploadFilesToServer = function(formData, precall, callback) {
+    if (typeof precall === "function") {
+      precall();
+    }
+    // upload files to server
+    formData.append('csrfmiddlewaretoken', csrftoken);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../upload/');
+    xhr.onload = function() {
+      console.log("[Upload]", this.responseText);
+      try{
+        var data = JSON.parse(this.responseText);
+        InitDialogs(data.fields);
+      } catch(e){
+        console.log("[Error][Upload Files]", e);
+      }
+      if (typeof callback === "function") {
+        callback();
+      }
+    }; 
+    xhr.upload.onprogress = UpdateProgress;
+    xhr.send(formData);
+  };
+ 
+  var ProcessDropZipFile = function(f) {
+    zip.createReader(new zip.BlobReader(f), function(zipReader) {
+      zipReader.getEntries(function(entries) {
+        entries.forEach(function(entry) {
+          var suffix = getSuffix(entry.filename);
+          var writer, bJson=0, bShp=0;
+          if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
+            writer = new zip.TextWriter();
+          } else {
+            writer = new zip.BlobWriter();
+          }
+          entry.getData(writer, function(o) {
+            if (entry.filename[0] === '_') 
+              return;
+            if (suffix === 'geojson' || suffix === 'json') {
+              bJson = 1;
+              o = JSON.parse(o);
+              showMap(o, 'geojson');
+              return;
+            } else if (suffix === "shp") {
+              bShp += 1;
+              shpFile = o;
+            } else if (suffix === "shx") {
+              bShp += 1;
+            } else if (suffix === "dbf") {
+              bShp += 1;
+            } else if (suffix === "prj") {
+              gHasProj = true;
+              prj = proj4(o, proj4.defs('WGS84'));
+            }
+            if (bShp == 3) {
+              showMap(shpFile, 'shapefile');
+            }
+          });
+        });
+      });
+    });  
+  };
   
-  //////////////////////////////////////////////////////////////
+  dropZone.ondragover = function(evt) {
+    $("#"+evt.target.id).css("color", "black");
+    return false;
+  };
+  
+  dropZone.ondragend = function(evt) {
+    $("#"+evt.target.id).css("color", "#bbb");
+    return false;
+  };
+  
+  dropZone.ondrop = function(evt) {
+    evt.preventDefault();
+    $("#"+evt.target.id).css("color", "#bbb");
+    // Reset progress indicator on new file selection.
+    progress.style.width = '0%';
+    progress.textContent = '0%';
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      console.log(reader.result);
+      // read *.prj file
+      var ip = reader.result;
+      prj = proj4(ip, proj4.defs('WGS84'));
+    };
+    gHasProj = false;
+    var files = evt.dataTransfer.files, // FileList object.
+        bShp=0, shpFile, dbfFile, shxFile, 
+        bJson=0, jsonFile;
+    for (var i=0, n=files.length; i<n; i++) {
+      var f = files[i],
+          name = f.name,
+          suffix = getSuffix(name);
+      if (suffix === "zip") { // extract zip file
+        ProcessDropZipFile(f);
+        return;
+      } 
+      if (suffix === 'geojson' || suffix === 'json') {
+        bJson = 1;
+        jsonFile = f;
+      } else if (suffix === "shp") {
+        bShp += 1;
+        shpFile = f;
+      } else if (suffix === "shx") {
+        bShp += 1;
+        shxFile = f;
+      } else if (suffix === "dbf") {
+        bShp += 1;
+        dbfFile = f;
+      } else if (suffix === "prj") {
+        gHasProj = true;
+        reader.readAsText(f);
+      }     
+    }
+    // check files
+    if (bJson < 1 && bShp < 3) {
+      ShowMsgBox("Error", "Please drag&drop either one json/geojson file, or ESRI Shapefiles (*.shp, *.dbf, *.shx and *.prj) ");
+      return false;
+    } else if (bJson < 1 && bShp < 3) {
+      ShowMsgBox("Error", "Please drag&drop three files (*.shp, *.dbf, *.shx and *.prj)  at the same time. (Tips: use ctrl (windows) or command (mac) to select multiple files.)");
+      return false;
+    } 
+    if (bShp == 3 && !gHasProj ) {
+      gProjSwitchOn = false;
+      ShowMsgBox("Info", "The *.prj file is not found. The map will not be shown using Leaflet. You can still use the swtich button to display the map on Leaflet."); 
+    }
+    // compress the file to zip? no, let users to zip the files if they want 
+    // to upload fast
+     
+    // upload file
+    var formData = new FormData();
+    for (var i=0, n=files.length; i<n; i++) {
+      var f = files[i],
+          suffix = getSuffix(name);
+      // compress and then append to formData
+      if (['json','geojson','shp','shx','dbf', 'prj'].indexOf(suffix) >=0) {
+        formData.append('userfile', f, f.name);
+      }
+    }
+    
+    UploadFilesToServer(formData, function(){
+      document.getElementById('progress_bar').className = 'uploading...';
+    },function(){
+      // Ensure that the progress bar displays 100% at the end.
+      progress.style.width = '100%';
+      progress.textContent = '100%';
+      setTimeout("document.getElementById('progress_bar').className='';", 2000);
+    });
+    
+    // display map directly
+    if (shpFile) {
+      if ( gAddLayer == false ) { // open new map
+        showMap(shpFile, 'shapefile');
+      } else {
+      }
+    } else if (jsonFile) {
+      if ( gAddLayer == false ) { // open new map
+        showMap(jsonFile, 'json');
+      } else {
+      }
+    }
+  };
+  
+  
+ //////////////////////////////////////////////////////////////
   //  DropBox
   //////////////////////////////////////////////////////////////
   var dropboxOptions = {
@@ -492,7 +489,7 @@ $(document).ready(function() {
         var ready = false;
         var fileLink = files[0].link;
         var suffix = getSuffix(fileLink);
-        var params = {csrfmiddlewaretoken: '{{ csrf_token }}'};
+        var params = {'csrfmiddlewaretoken':  csrftoken};
         if ( suffix === 'geojson' || suffix === 'json') {
           viz.ShowMainMap(fileLink, 'json', L, lmap, prj, OnMapShown);
           params['json'] = fileLink;

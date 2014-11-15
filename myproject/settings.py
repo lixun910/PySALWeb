@@ -15,7 +15,8 @@ PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
 
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+#TEMPLATE_DEBUG = DEBUG
+TEMPLATE_DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1']
 
 ADMINS = (

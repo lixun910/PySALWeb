@@ -217,7 +217,7 @@ def upload(request):
     
     if request.method == 'POST': 
         # Get data from form
-        filelist = request.FILES.getlist('docfile')
+        filelist = request.FILES.getlist('userfile')
         if len(filelist) == 0:
             return HttpResponse(RSP_FAIL, content_type="application/json")
         filenames = []
@@ -309,11 +309,12 @@ def upload(request):
         # and max_thresdhold
         from django.db import connection 
         connection.close()
-        mp.Process(target=GeoDB.ExportToDB, 
-                   args=(shp_path,layer_uuid)).start()
+        mp.Process(target=GeoDB.ExportToDB, args=(shp_path,layer_uuid)).start()
         print "uploaded done."
-        return HttpResponse('{"layer_uuid":"%s"}'%layer_uuid, 
-                            content_type="application/json")
+        result = meta_data
+        result['layer_uuid'] = layer_uuid
+        
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
     return HttpResponse(RSP_FAIL, content_type="application/json")
 

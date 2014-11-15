@@ -62,6 +62,8 @@
     this.bbox = [];
     this.centroids = [];
     this.screenCoords = [];
+    this.moveX = 0;
+    this.moveY = 0;
     
     this.prj = prj;
     this.LL = LL; 
@@ -71,7 +73,9 @@
     }
   };
 
-  ShpMap.prototype.fitScreen = function(screenWidth, screenHeight, marginLeft, marginTop) {
+  ShpMap.prototype.fitScreen = function(screenWidth, screenHeight, marginLeft, marginTop, moveX, moveY) {
+    if (moveX) this.moveX = moveX;
+    if (moveY) this.moveY = moveY;
     // convert raw points to screen coordinators
     var whRatio = this.mapWidth / this.mapHeight,
         offsetX = marginLeft,
@@ -89,8 +93,8 @@
     screenHeight =  screenHeight - offsetY * 2;
     scaleX = screenWidth / this.mapWidth;
     scaleY = screenHeight / this.mapHeight;
-    this.offsetX = offsetX;
-    this.offsetY = offsetY;
+    this.offsetX = offsetX + moveX; 
+    this.offsetY = offsetY + moveY;
     this.scaleX = scaleX;
     this.scaleY = scaleY;
     this.scalePX = 1/scaleX;
@@ -146,8 +150,8 @@
   ShpMap.prototype.screenToMap = function(px, py) {
     var x, y;
     if (this.LL) {
-      //px = px - this.offsetX;
-      //py = py - this.offsetY;
+      px = px - this.moveX;
+      py = py - this.moveY;
       var pt = this.Lmap.layerPointToLatLng(new this.LL.point(px,py));
       x = pt.lng;
       y = pt.lat;
@@ -162,8 +166,8 @@
     var px, py;
     if (this.LL) {
       var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
-      px = pt.x;// + this.offsetX;
-      py = pt.y;// + this.offsetY;
+      px = pt.x + this.moveX;
+      py = pt.y + this.moveY;
     } else {
       px = this.scaleX * (x - this.mapLeft) + this.offsetX;
       py = this.scaleY * (this.mapTop - y) + this.offsetY;
@@ -188,6 +192,9 @@
     this.mapWidth = this.extent[1] - this.extent[0];
     this.mapHeight = this.extent[3] - this.extent[2];
     this.screenObjects = [];
+    
+    this.moveX = 0;
+    this.moveY = 0;
     
     this.LL = LL; 
     this.Lmap = Lmap;
@@ -297,7 +304,9 @@
     return [minX, maxX, minY, maxY];
   };
   
-  JsonMap.prototype.fitScreen = function(screenWidth, screenHeight,marginLeft, marginTop) {
+  JsonMap.prototype.fitScreen = function(screenWidth, screenHeight,marginLeft, marginTop, moveX, moveY) {
+    if (moveX) this.moveX = moveX;
+    if (moveY) this.moveY = moveY;
     // convert raw points to screen coordinators
     var whRatio = this.mapWidth / this.mapHeight,
         offsetX = marginLeft,
@@ -398,8 +407,8 @@
   JsonMap.prototype.screenToMap = function(px, py) {
     var x, y;
     if (this.LL) {
-      //px = px - this.offsetX;
-      //py = py - this.offsetY;
+      px = px - this.moveX;
+      py = py - this.moveY;
       var pt = this.Lmap.layerPointToLatLng(new this.LL.point(px,py));
       x = pt.lng;
       y = pt.lat;
@@ -414,8 +423,8 @@
     var px, py;
     if (this.LL) {
       var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
-      px = pt.x;// + this.offsetX;
-      py = pt.y;// + this.offsetY;
+      px = pt.x + this.moveX;
+      py = pt.y + this.moveY;
     } else {
       px = this.scaleX * (x - this.mapLeft) + this.offsetX;
       py = this.scaleY * (this.mapTop - y) + this.offsetY;
@@ -1091,7 +1100,7 @@
       marginTop = newHeight * (1-_self.vratio)/2.0;
       _self.margin_left = marginLeft;
       _self.margin_top = marginTop;
-      _self.map.fitScreen(newWidth, newHeight,marginLeft, marginTop);
+      _self.map.fitScreen(newWidth, newHeight,marginLeft, marginTop, this.offsetX, this.offsetY);
       for (var uuid in _self.layers) {
         _self.layers[uuid].fitScreen(newWidth, newHeight,marginLeft,marginTop);
       }
