@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 import numpy as np
 import json, time, os, logging, StringIO
 import zipfile
+import urllib
 import multiprocessing as mp
 from hashlib import md5
 
@@ -207,31 +208,43 @@ def upload(request):
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     
     layer_uuid = ""
-    proc = False
     shp_name = ""
     shp_path = ""
     isJson = False
     isShp = False
     isDBF = False
     isShx = False
+    proc = False
     
     if request.method == 'POST': 
         # Get data from form
         filelist = request.FILES.getlist('userfile')
         if len(filelist) == 0:
             return HttpResponse(RSP_FAIL, content_type="application/json")
-        filenames = []
-        fileurls = []
         
+        elif len(filelist) == 1 and str(filelist[0]).endswith("zip"):
+            loc = '%s/temp/%s/' % (settings.MEDIA_ROOT, md5(userid))
+            ziploc = loc + str(filelist[0])
+            with open(zippath, 'wb+') as dest:
+                for chunk in filelist[0].chunks():
+                    dest.write(chunk)
+            zf = zipfile.ZipFile(ziploc) 
+            zf.namelist
+            zf.extractall(loc)
         # save all files
+        fileurls = []
+        filenames = []
+        
         for docfile in filelist:
             filename = str(docfile)
             filenames.append(filename)
             shpuuid =  md5(userid+filename).hexdigest()
             if filename[filename.rfind("."):] in [".shp",".json",".geojson"]:
                 layer_uuid = shpuuid
-            newdoc = Document(uuid = shpuuid, userid = userid,\
-                              filename=filename, docfile = docfile)
+            newdoc = Document(uuid = shpuuid, 
+                              userid = userid,
+                              filename = filename, 
+                              docfile = docfile)
             newdoc.save()
             fileurls.append(newdoc.docfile.url)
             
@@ -250,7 +263,11 @@ def upload(request):
                 
             if name.endswith("json") or name.endswith("shp"):
                 shp_name = name
-                shp_path = settings.PROJECT_ROOT + fileurls[i]
+                shp_path = settings.PROJECT_ROOT
+                pitems = fileurls[i].split('/')
+                for item in pitems:
+                    if item != "":
+                        shp_path = os.path.join(shp_path, item)
                 
             if isJson or (isShp and isDBF and isShx): 
                 proc = True
@@ -262,32 +279,48 @@ def upload(request):
         shp_url = request.GET.get('shp', None)
         shx_url = request.GET.get('shx', None)
         dbf_url = request.GET.get('dbf', None)
-        import urllib
+        prj_url = request.GET.get('prj', None)
+        
+        def get_abs_path():
+            return '%s/temp/%s/%s' % (
+                settings.MEDIA_ROOT,
+                md5(userid),
+                shp_name
+                )
+            
         if json_url != None:
             shp_name = json_url.split("/")[-1]
-            shp_path = settings.MEDIA_ROOT + "/temp/" + shp_name
+            shp_path = get_abs_path(shp_name)
             shp_path = get_valid_path(shp_path)
-            shp_name = shp_path[shp_path.rindex("/") + 1:]
             urllib.urlretrieve(json_url, shp_path)
+            shp_name = os.path.split(shp_path)[1]
             driver = "GeoJSON"
             proc = True
+            
         elif shp_url and shx_url and dbf_url:
             shp_name = shp_url.split("/")[-1]
-            shp_path = settings.MEDIA_ROOT + "/temp/" + shp_name
+            shp_path = get_abs_path(shp_name)
             shp_path = get_valid_path(shp_path)
-            shp_name = shp_path[shp_path.rindex("/") + 1:]
+            shp_name = os.path.split(shp_path)[1]
             dbf_path = shp_path[:-3] + "dbf"
             shx_path = shp_path[:-3] + "shx"
-            print "upload from dropbox", shp_name, shp_path
             urllib.urlretrieve(shp_url, shp_path)
             urllib.urlretrieve(dbf_url, dbf_path)
             urllib.urlretrieve(shx_url, shx_path)
+            if prj_url:
+                prj_path = shp_path[:-3] + "prj"
+                urllib.urlretrieve(prj_url, prj_path)
             driver = "ESRI shapefile"
             proc = True
+            
         # save to file information database
         layer_uuid =  md5(userid + shp_name).hexdigest()
-        #docfile = File(open(shp_path))
-        newdoc = Document(uuid= layer_uuid, userid= userid,filename=shp_name, docfile = "temp/"+shp_name)
+        newdoc = Document(
+            uuid= layer_uuid, 
+            userid= userid,
+            filename=shp_name, 
+            docfile = get_abs_path(shp_name)
+        )
         newdoc.save()
     
     if proc:
@@ -298,11 +331,15 @@ def upload(request):
         print "get meta data", shp_path
         meta_data = GeoDB.GetMetaData(shp_path, table_name, driver)
         print "save meta data", meta_data
-        new_geodata = Geodata(uuid=layer_uuid, userid=userid, 
-                              origfilename=shp_name, n=meta_data['n'], 
-                              geotype=str(meta_data['geom_type']), 
-                              bbox=str(meta_data['bbox']), 
-                              fields=json.dumps(meta_data['fields']))
+        new_geodata = Geodata(
+            uuid=layer_uuid, 
+            userid=userid, 
+            origfilename=shp_name, 
+            n=meta_data['n'], 
+            geotype=str(meta_data['geom_type']), 
+            bbox=str(meta_data['bbox']), 
+            fields=json.dumps(meta_data['fields'])
+        )
         new_geodata.save()
         # export to spatial database in background
         # note: this background process also compute min_threshold

@@ -1,4 +1,4 @@
-import os, json
+import os, json, sys
 import subprocess
 from osgeo import ogr
 from django.conf import settings
@@ -21,31 +21,6 @@ def GetDS():
     DS = ogr.Open(conn_str) 
     print 'open DS:', DS
     return DS
-    """
-    if DS is None:
-        print 'Connecting to GeoDB'
-        if settings.DB == 'postgres':
-            db_set = settings.DATABASES['default']
-            db_host = db_set['HOST']
-            db_port = db_set['PORT']
-            db_uname = db_set['USER']
-            db_upwd = db_set['PASSWORD']
-            db_name = db_set['NAME']
-            conn_str = "PG: host=%s dbname=%s user=%s password=%s" \
-                     % (db_host, db_name, db_uname, db_upwd)
-            print "conn_str", conn_str
-            DS = ogr.Open(conn_str) 
-        else:
-            GEODB_PATH = os.path.realpath(os.path.dirname(__file__)) \
-                       + '/../database/geodata.sqlite'
-            SQLITE_DRIVER = ogr.GetDriverByName('SQLite')
-            DS = SQLITE_DRIVER.Open(GEODB_PATH, 0) # readonly
-        print 'OK to GeoDB. DS:', DS
-        return DS
-    else:
-        print 'return cached DS:', DS
-        return DS
-    """
 
 def CloseDS(ds):
     ds.Destroy()
@@ -57,9 +32,12 @@ def ExportToDB(shp_path, layer_uuid):
     print "export starting..", layer_uuid
     table_name = TBL_PREFIX + layer_uuid
     if settings.DB == 'postgres':
-        script = 'ogr2ogr -skipfailures -append -f "PostgreSQL" -overwrite PG:"host=%s dbname=%s user=%s password=%s" %s -nln %s -nlt GEOMETRY -lco PRECISION=NO > /dev/null'  % (db_host, db_name, db_uname, db_upwd, shp_path, table_name)
+        if sys.platform == 'win32':
+            script = 'ogr2ogr -skipfailures -append -f "PostgreSQL" -overwrite PG:"host=%s dbname=%s user=%s password=%s" %s -nln %s -nlt GEOMETRY -lco PRECISION=NO'  % (db_host, db_name, db_uname, db_upwd, shp_path, table_name)
+        else:
+            script = 'ogr2ogr -skipfailures -append -f "PostgreSQL" -overwrite PG:"host=%s dbname=%s user=%s password=%s" %s -nln %s -nlt GEOMETRY -lco PRECISION=NO > /dev/null'  % (db_host, db_name, db_uname, db_upwd, shp_path, table_name)
         print script
-        rtn = subprocess.call( script, shell=True)
+        rtn = subprocess.call(script, shell=True)
     else:
         script = 'ogr2ogr -skipfailures -append -overwrite %s  %s -nln %s > /dev/null'  % (GEODB_PATH, shp_path, table_name)
         rtn = subprocess.call( script, shell=True)
