@@ -130,31 +130,15 @@ def remove_map(request):
             for f in filelist:
                 f = shp_dir + os.sep + f
                 os.remove(f)
-                
+               
             geodata = Geodata.objects.get(uuid=layer_uuid)
+            
             # remove record in Document
-            file_uuid = md5(geodata.userid + geodata.origfilename).hexdigest()
-            if shp_name.endswith(".shp"):
-                docs = Document.objects.filter(userid=userid)
-                
-                docfile = get_rel_path(userid, shp_name) 
-                shp_doc = docs.filter(docfile=docfile)
-                if shp_doc: shp_doc.delete()
-                
-                docfile = get_rel_path(userid, shp_name[:-3]+"dbf") 
-                dbf_doc = docs.filter(docfile=docfile)
-                if dbf_doc: dbf_doc.delete()
-                
-                docfile = get_rel_path(userid, shp_name[:-3]+"shx") 
-                shx_doc = docs.filter(docfile=docfile)
-                if shx_doc: shx_doc.delete()
-                
-                docfile = get_rel_path(userid, shp_name[:-3]+"prj") 
-                prj_doc = docs.filter(docfile=docfile)
-                if prj_doc: prj_doc.delete()
-            else:
-                document = Document.objects.get(uuid=file_uuid)
-                document.delete()
+            user_uuid = md5(userid).hexdigest() 
+            docfile = get_rel_path(user_uuid, shp_name) 
+            docs = Document.objects.filter(docfile=docfile)
+            if doc: 
+                doc.delete()
             
             # remove record in Geodata
             geodata.delete()
@@ -224,6 +208,11 @@ def upload(request):
     isShp = 0
     proc = False
     
+    def _save_upload_file(f, path):
+        with open(path, 'wb+') as destination:
+            for chunk in f.chunks():
+                destination.write(chunk)        
+
     def _process_zip(userid, extractloc, ziploc):
         isJson = False
         isShp = 0
@@ -256,10 +245,7 @@ def upload(request):
         if len(shp_path)  > 0 and isShp >= 3:
             # save to file information database
             docfile = get_docfile_path(shp_path)
-            newdoc = Document(
-                userid=userid,
-                docfile=docfile
-            )
+            newdoc = Document(userid=userid, docfile=docfile)
             newdoc.save()
         # remove temporary files
         shutil.rmtree(extractloc)
@@ -273,25 +259,20 @@ def upload(request):
         
         elif len(filelist) == 1 and str(filelist[0]).endswith("zip"):
             # extract zip file at a temp folder under md5(userid)
-            tmpname = gen_rnd_str()
-            baseloc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
-            extractloc = os.path.join(baseloc, tmpname)
-            ziploc = os.path.join(extractloc, str(filelist[0]))
-            if os.path.exists(extractloc):
-                shutil.rmtree(extractloc)
-            os.mkdir(extractloc) 
-            with open(ziploc, 'wb+') as dest:
-                for chunk in filelist[0].chunks():
-                    dest.write(chunk)
-            isJson,isShp,shp_path,driver=_process_zip(userid,extractloc,ziploc) 
+            tmp_name = gen_rnd_str()
+            base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
+            extract_loc = os.path.join(base_loc, tmp_name)
+            ziploc = os.path.join(extract_loc, str(filelist[0]))
+            if os.path.exists(extract_loc):
+                shutil.rmtree(extract_loc)
+            os.mkdir(extract_loc) 
+            _save_upload_file(filelist[0], ziploc)
+            isJson,isShp,shp_path,driver= _process_zip(userid,extract_loc,ziploc) 
         else:
             # save all files
-            fileurls = []
-            filenames = []
-            shpFile = None
+            shpFile, shxFile, dbfFile, prjFile = (None,)*4
             for docfile in filelist:
                 filename = str(docfile)
-                filenames.append(filename)
                 if filename.endswith("json"):
                     driver = "GeoJSON"
                     isJson = True
@@ -302,14 +283,16 @@ def upload(request):
                     shpFile = docfile
                 elif filename.endswith("dbf"):
                     isShp += 1
+                    dbfFile = docfile
                 elif filename.endswith("shx"):
                     isShp += 1
+                    shxFile = docfile
+                elif filename.endswith("prj"):
+                    isShp += 1
+                    prjFile = docfile
                 
-            if (isJson or isShp >=3) and shpFile:
-                newdoc = Document(
-                    userid = userid,
-                    docfile = shpFile
-                )
+            if isJson or isShp >=3:
+                newdoc = Document(userid = userid, docfile = shpFile)
                 newdoc.save()
                 real_file_path = newdoc.docfile.url
                 shp_path = settings.PROJECT_ROOT
@@ -317,6 +300,15 @@ def upload(request):
                 for item in pitems:
                     if item != "":
                         shp_path = os.path.join(shp_path, item)
+                if dbfFile:
+                    dbf_path = shp_path[:-3] + "dbf"
+                    _save_upload_file(dbfFile, dbf_path)
+                if shxFile:
+                    shx_path = shp_path[:-3] + "shx"
+                    _save_upload_file(shxFile, shx_path)
+                if prjFile:
+                    prj_path = shp_path[:-3] + "prj"
+                    _save_upload_file(prjFile, prj_path)
             
         if (isJson or isShp >= 3) and len(shp_path)> 0: 
             proc = True
@@ -332,11 +324,7 @@ def upload(request):
         
         if zip_url != None:
             tmp_name = gen_rnd_str()
-            base_loc = os.path.join(
-                settings.MEDIA_ROOT, 
-                'temp', 
-                user_uuid,
-            )
+            base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
             extract_loc = os.path.join(base_loc, tmp_name)
             zip_name = zip_url.split('/')[-1]
             zip_loc = os.path.join(extract_loc, zip_name)
@@ -346,7 +334,7 @@ def upload(request):
         else:
             if json_url != None:
                 shp_name = json_url.split("/")[-1]
-                shp_path = get_abs_path(shp_name)
+                shp_path = get_abs_path(userid, shp_name)
                 shp_path = get_valid_path(shp_path)
                 urllib.urlretrieve(json_url, shp_path)
                 shp_name = os.path.split(shp_path)[1]
@@ -356,7 +344,7 @@ def upload(request):
                 
             elif shp_url and shx_url and dbf_url:
                 shp_name = shp_url.split("/")[-1]
-                shp_path = get_abs_path(shp_name)
+                shp_path = get_abs_path(userid, shp_name)
                 shp_path = get_valid_path(shp_path)
                 shp_name = os.path.split(shp_path)[1]
                 dbf_path = shp_path[:-3] + "dbf"
@@ -374,7 +362,7 @@ def upload(request):
             # save to file information database
             newdoc = Document(
                 userid= userid,
-                docfile = get_rel_path(userid, shp_name)
+                docfile = get_rel_path(user_uuid, shp_name)
             )
             newdoc.save()
         if (isJson or isShp >= 3) and len(shp_path)> 0: 

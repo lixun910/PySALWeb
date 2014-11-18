@@ -97,10 +97,15 @@ def get_valid_path(orig_path):
     
 
 def get_abs_path(userid, shp_name):
-    return os.path.join(settings.MEDIA_ROOT, md5(userid).hexdigest(), shp_name)
+    return os.path.join(
+        settings.MEDIA_ROOT, 
+        "temp", 
+        md5(userid).hexdigest(), 
+        shp_name
+    )
 
-def get_rel_path(userid, shp_name):
-    return os.path.join('temp', userid, shp_name) 
+def get_rel_path(user_uuid, shp_name):
+    return os.path.join('temp', user_uuid, shp_name) 
 
 def get_docfile_path(path):
     base, fname = os.path.split(path) 

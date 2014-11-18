@@ -72,31 +72,38 @@ function getFileNameNoExt(url) {
 }
 
 function FetchZipResource(url, onSuccess) {
-    console.log(url);
-    var xhr = new XMLHttpRequest();
-    xhr.responseType="blob";
-    xhr.open("GET", url, true);
-    xhr.onload = function(e) {
-        if(this.status == 200) {
-            var blob = this.response;
-            // use a zip.BlobReader object to read zipped data stored into blob variable
-            zip.createReader(new zip.BlobReader(blob), function(zipReader) {
-                // get entries from the zip file
-                zipReader.getEntries(function(entries) {
-                    // get data from the first file
-                    console.log(entries[0]);
-                    entries[0].getData(new zip.TextWriter("text/plain"), function(content) {
-                        console.log("content:",content);
-                        content = content.replace(/\n/g, "");
-                        //console.log(content);
-                        zipReader.close();
-                        onSuccess(content);
-                    });
-                });
-            });
-        }
+  console.log(url);
+  var xhr = new XMLHttpRequest();
+  xhr.responseType="blob";
+  xhr.open("GET", url, true);
+  xhr.onload = function(e) {
+    if(this.status == 200) {
+      var blob = this.response;
+      // use a zip.BlobReader object to read zipped data stored into blob variable
+      zip.createReader(new zip.BlobReader(blob), function(zipReader) {
+        // get entries from the zip file
+        zipReader.getEntries(function(entries) {
+          var suffix = getSuffix(entry.filename);
+          var writer;
+          if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
+            writer = new zip.TextWriter();
+          } else {
+            writer = new zip.BlobWriter();
+          }
+          // get data from the first file
+          //console.log(entries[0]);
+          entries[0].getData(new zip.TextWriter("text/plain"), function(content) {
+            console.log("content:",content);
+            content = content.replace(/\n/g, "");
+            //console.log(content);
+            zipReader.close();
+            onSuccess(content);
+          });
+        });
+      });
     }
-    xhr.send();
+  }
+  xhr.send();
 }
 
 function sortKeys(dict) {

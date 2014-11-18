@@ -496,70 +496,72 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   var dropboxOptions = {
     success: function(files) {
-      if ( files.length > 0 ) { 
-        var prj;
-        var ready = false;
-        var fileLink = files[0].link;
-        var suffix = getSuffix(fileLink);
-        var params = {'csrfmiddlewaretoken':  csrftoken};
-        if ( suffix === 'geojson' || suffix === 'json') {
-          viz.ShowMainMap(fileLink, 'json', L, lmap, prj, OnMapShown);
-          params['json'] = fileLink;
-          //ready = true;
-        } else if ($.inArray( suffix, ['shp', 'dbf','shx','prj']) >= 0) {
-          var shpUrl, shxUrl, dbfUrl, prjUrl, fname = getFileNameNoExt( fileLink );
-          $.each(files, function(i, file) {
-            var f = file.link;
-            if ( getSuffix(f)=='shp' && fname==getFileNameNoExt(f) ) {
-              shpUrl = f;
-            } else if ( getSuffix(f)=='dbf' && fname==getFileNameNoExt(f) ) {
-              dbfUrl = f;
-            } else if ( getSuffix(f)=='shx' && fname==getFileNameNoExt(f) ) {
-              shxUrl = f;
-            } else if ( getSuffix(f)=='prj' && fname==getFileNameNoExt(f) ) {
-              prjUrl = f;
-            }
-          });
-          if (shpUrl && shxUrl && dbfUrl) {
-            params['shp'] = shpUrl;
-            params['shx'] = shxUrl;
-            params['dbf'] = dbfUrl;
-            if (prjUrl) {
-              params['prj'] = prjUrl;
-              $.get(prjUrl, function(data) {
-                var ip = data;
-                prj = proj4(ip, proj4.defs('WGS84'));
-                viz.ShowMainMap(shpUrl, 'shapefile', L, lmap, prj, OnMapShown);
-              });
-            } else {
-              viz.ShowMainMap(shpUrl, 'shapefile', L, lmap, prj, OnMapShown);
-            } 
-            //ready = true;
-          } else {
-            ShowMsgBox("Error","Please select *.shp, *.dbf, and *.shx files at the same time.");
+      if ( files.length == 0 ) { 
+        return;
+      }
+      var prj;
+      var ready = false;
+      var fileLink = files[0].link;
+      var suffix = getSuffix(fileLink);
+      var params = {'csrfmiddlewaretoken':  csrftoken};
+      if ( suffix === 'geojson' || suffix === 'json') {
+        viz.ShowMainMap(fileLink, 'json', BeforeMapShown, OnMapShown, L, lmap, prj);
+        params['json'] = fileLink;
+        ready = true;
+      } else if ($.inArray( suffix, ['shp', 'dbf','shx','prj']) >= 0) {
+        var shpUrl, shxUrl, dbfUrl, prjUrl, fname = getFileNameNoExt( fileLink );
+        $.each(files, function(i, file) {
+          var f = file.link;
+          if ( getSuffix(f)=='shp' && fname==getFileNameNoExt(f) ) {
+            shpUrl = f;
+          } else if ( getSuffix(f)=='dbf' && fname==getFileNameNoExt(f) ) {
+            dbfUrl = f;
+          } else if ( getSuffix(f)=='shx' && fname==getFileNameNoExt(f) ) {
+            shxUrl = f;
+          } else if ( getSuffix(f)=='prj' && fname==getFileNameNoExt(f) ) {
+            prjUrl = f;
           }
-        } else if (suffix === 'zip') {
-          FetchZipResource(fileLink, function(data) {
-            
-          });
+        });
+        if (shpUrl && shxUrl && dbfUrl) {
+          params['shp'] = shpUrl;
+          params['shx'] = shxUrl;
+          params['dbf'] = dbfUrl;
+          if (prjUrl) {
+            params['prj'] = prjUrl;
+            $.get(prjUrl, function(data) {
+              var ip = data;
+              prj = proj4(ip, proj4.defs('WGS84'));
+              viz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, prj);
+            });
+          } else {
+            viz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, prj);
+          } 
+          ready = true;
+        } else {
+          ShowMsgBox("Error","Please select *.shp, *.dbf, and *.shx files at the same time.");
         }
-        if ( ready ) {
-          //$('#dlg-run').dialog("open").html('<img src="{{url_prefix}}/media/img/loading.gif"/><br/>Loading ...');
-          //$('#dlg-run').siblings('.ui-dialog-titlebar').hide();
-          //$('#dlg-run').css("background-color","rgb(255,255,255, 0.9)");
-          $.get("../upload/", params).done( function(data) {
-            /*
-            $('#dlg-run').dialog("close");
-            if ( data['layer_uuid'] != undefined) {
-              var layer_uuid = data["layer_uuid"];
-              localStorage['current_layer']= layer_uuid;
-              fillForms(true);
-              // get canvas
-              SaveMapThumbnail(layer_uuid, containerID);
-            }
-            */
-          });
-        }
+      } else if (suffix === 'zip') {
+        FetchZipResource(fileLink, function(o, type) {
+          viz.ShowMainMap(o, type, BeforeMapShown, OnMapShown, L, lmap, prj);
+        });
+        ready = true;
+      }
+      if ( ready ) {
+        //$('#dlg-run').dialog("open").html('<img src="{{url_prefix}}/media/img/loading.gif"/><br/>Loading ...');
+        //$('#dlg-run').siblings('.ui-dialog-titlebar').hide();
+        //$('#dlg-run').css("background-color","rgb(255,255,255, 0.9)");
+        $.get("../upload/", params).done( function(data) {
+          /*
+          $('#dlg-run').dialog("close");
+          if ( data['layer_uuid'] != undefined) {
+            var layer_uuid = data["layer_uuid"];
+            localStorage['current_layer']= layer_uuid;
+            fillForms(true);
+            // get canvas
+            SaveMapThumbnail(layer_uuid, containerID);
+          }
+          */
+        });
       }
     },
     cancel: function() {
