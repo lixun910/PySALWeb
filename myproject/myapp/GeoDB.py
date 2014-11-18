@@ -29,7 +29,7 @@ def CloseDS(ds):
     
 def ExportToDB(shp_path, layer_uuid):
     global db_host, db_port, db_uname, db_upwd, db_name
-    print "export starting..", layer_uuid
+    print "export starting..", shp_path
     table_name = TBL_PREFIX + layer_uuid
     if settings.DB == 'postgres':
         if sys.platform == 'win32':

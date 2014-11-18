@@ -75,7 +75,7 @@ LOGIN_URL = '/myapp/login/'
 
 THEME_JQUERY = 'redmond'
 
-GEODATA_PATH = PROJECT_ROOT + '/database/geodata.sqlite'
+GEODATA_PATH = os.path.join(PROJECT_ROOT, 'database', 'geodata.sqlite')
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')

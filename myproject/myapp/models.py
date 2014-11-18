@@ -10,10 +10,12 @@ def get_upload_path(instance, filename):
     return upload_dir
 
 class Document(models.Model):
+    uuid = models.AutoField(primary_key=True)
+    
     #md5 [userid, filename]
-    uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
+    #uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
     userid = models.CharField(max_length=80)
-    filename = models.CharField(max_length=255)
+    #filename = models.CharField(max_length=255)
     #docfile = models.FileField(upload_to=get_upload_path,storage=OverwriteStorage())
     docfile = models.FileField(upload_to=get_upload_path)
 

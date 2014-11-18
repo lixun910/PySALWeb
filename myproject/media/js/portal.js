@@ -339,11 +339,12 @@ $(document).ready(function() {
   };
  
   var ProcessDropZipFile = function(f) {
+    var bShp=0;
     zip.createReader(new zip.BlobReader(f), function(zipReader) {
       zipReader.getEntries(function(entries) {
         entries.forEach(function(entry) {
           var suffix = getSuffix(entry.filename);
-          var writer, bJson=0, bShp=0;
+          var writer;
           if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
             writer = new zip.TextWriter();
           } else {
@@ -353,7 +354,6 @@ $(document).ready(function() {
             if (entry.filename[0] === '_') 
               return;
             if (suffix === 'geojson' || suffix === 'json') {
-              bJson = 1;
               o = JSON.parse(o);
               showMap(o, 'geojson');
               return;
@@ -410,6 +410,18 @@ $(document).ready(function() {
           suffix = getSuffix(name);
       if (suffix === "zip") { // extract zip file
         ProcessDropZipFile(f);
+        
+        var formData = new FormData();
+        formData.append('userfile', f, f.name);
+        
+        UploadFilesToServer(formData, function(){
+          document.getElementById('progress_bar').className = 'uploading...';
+        },function(){
+          // Ensure that the progress bar displays 100% at the end.
+          progress.style.width = '100%';
+          progress.textContent = '100%';
+          setTimeout("document.getElementById('progress_bar').className='';", 2000);
+        });
         return;
       } 
       if (suffix === 'geojson' || suffix === 'json') {

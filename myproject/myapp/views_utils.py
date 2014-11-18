@@ -4,6 +4,8 @@ from django.http import HttpResponse
 from django.conf import settings
 
 
+import string
+import random
 import logging
 import json, time, os
 from hashlib import md5
@@ -93,6 +95,20 @@ def get_valid_path(orig_path):
             shp_path = "%s_1.%s" % (shp_path, ext)
     return shp_path
     
+
+def get_abs_path(userid, shp_name):
+    return os.path.join(settings.MEDIA_ROOT, md5(userid).hexdigest(), shp_name)
+
+def get_rel_path(userid, shp_name):
+    return os.path.join('temp', userid, shp_name) 
+
+def get_docfile_path(path):
+    base, fname = os.path.split(path) 
+    base, userid = os.path.split(base)
+    return os.path.join('temp', userid, fname)
+            
+def gen_rnd_str(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 if __name__ == "__main__":
     #helper_get_W_list(["7819b820f3d4be9d99d3ea2602c11ad5"])
