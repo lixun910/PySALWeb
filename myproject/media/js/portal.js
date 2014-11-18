@@ -244,7 +244,7 @@ $(document).ready(function() {
       gShowLeaflet = true;
       if ( gHasProj && prj == undefined) {
         // wait for reading *.prj file 
-        setTimeout(function(){showLeafletMap(o, type, noForeground);}, 10);  
+        setTimeout(function(){showMap(o, type, noForeground);}, 10);  
       } else {
         $('#map').show();
         if (noForeground==undefined) noForeground = false;

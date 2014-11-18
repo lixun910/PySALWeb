@@ -106,12 +106,17 @@
     while (shp = this.shpReader.nextShape() ) { 
       if (shp.isNull) return;
       if (this.shpType == 'Point') {
-        var xy = shp.readPoints();
+        var xy = shp.readPoints()[0];
+        x = xy[0];
+        y = xy[1];
         this.centroids.push(xy);
+        this.bbox.push([x,y,x,y]);
         if ( this.prj) {
-          xy = this.prj.forward(xy);
+          pt = this.prj.forward(xy);
+          x = pt[0];
+          y = pt[1];
         }
-        pt = this.mapToScreen(xy[0], xy[1]);
+        pt = this.mapToScreen(x,y);
         this.screenObjects.push(pt);
         
       } else {
@@ -138,11 +143,11 @@
           screenPart.push(part);
         }
         this.screenObjects.push(screenPart);
-      }
-      if (this.bbox.length <  this.n)  {
-        var bounds = shp.readBounds();
-        this.bbox.push([bounds[0], bounds[2], bounds[1], bounds[3]]);
-        this.centroids.push([(bounds[2]-bounds[0])/2.0, (bounds[3]-bounds[1])/2.0]);
+        if (this.bbox.length <  this.n)  {
+          var bounds = shp.readBounds();
+          this.bbox.push([bounds[0], bounds[2], bounds[1], bounds[3]]);
+          this.centroids.push([(bounds[2]-bounds[0])/2.0, (bounds[3]-bounds[1])/2.0]);
+        }
       }
     }
   };

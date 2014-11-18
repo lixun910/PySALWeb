@@ -305,7 +305,7 @@ def upload(request):
                 elif filename.endswith("shx"):
                     isShp += 1
                 
-            if isJson and isShp >=3 and shpFile:
+            if (isJson or isShp >=3) and shpFile:
                 newdoc = Document(
                     userid = userid,
                     docfile = shpFile
