@@ -228,7 +228,7 @@ def upload(request):
                     driver = "GeoJSON"
                     isJson = True
                 o_shp_path = os.path.join(extractloc, fname)
-                shp_path = os.path.join(baseloc, fname)
+                shp_path = get_abs_path(userid, fname)
                 shp_name = fname
                 shp_path = get_valid_path(shp_path)
                 shutil.copy(o_shp_path, shp_path)
@@ -326,12 +326,15 @@ def upload(request):
             tmp_name = gen_rnd_str()
             base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
             extract_loc = os.path.join(base_loc, tmp_name)
+            if os.path.exists(extract_loc):
+                shutil.rmtree(extract_loc)
+            os.mkdir(extract_loc) 
             zip_name = zip_url.split('/')[-1]
             zip_loc = os.path.join(extract_loc, zip_name)
             urllib.urlretrieve(zip_url, zip_loc)
             isJson,isShp,shp_path,driver=_process_zip(userid,extract_loc,zip_loc) 
             
-        else:
+        elif json_url or (shp_url and shx_url and dbf_url):
             if json_url != None:
                 shp_name = json_url.split("/")[-1]
                 shp_path = get_abs_path(userid, shp_name)
@@ -365,6 +368,7 @@ def upload(request):
                 docfile = get_rel_path(user_uuid, shp_name)
             )
             newdoc.save()
+            
         if (isJson or isShp >= 3) and len(shp_path)> 0: 
             proc = True
             

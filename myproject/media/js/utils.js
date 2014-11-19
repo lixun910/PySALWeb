@@ -72,7 +72,6 @@ function getFileNameNoExt(url) {
 }
 
 function FetchZipResource(url, onSuccess) {
-  console.log(url);
   var xhr = new XMLHttpRequest();
   xhr.responseType="blob";
   xhr.open("GET", url, true);
