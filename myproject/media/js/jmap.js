@@ -36,7 +36,7 @@
   POLYGONM: 25,
   MULIPOINTM: 28,
   MULTIPATCH: 31 // not supported
-};
+  };
 
   var ShpMap = function(shpReader, LL, Lmap, prj) {
     this.shpReader = shpReader;

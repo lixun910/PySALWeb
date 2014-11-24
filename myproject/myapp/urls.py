@@ -17,8 +17,7 @@ urlpatterns += patterns('myproject.myapp.views',
     url(r'^save_pdf/$', 'save_pdf', name='save textarea to pdf'),
     #url(r'^list/$', 'list', name='list'),
     #url(r'^main/$', TemplateView.as_view(template_name='myapp/main.html')),
-    #url(r'^main/$','main', name='main'), 
-    url(r'^main/$','new_main', name='main'), 
+    url(r'^main/$','main', name='main'), 
 ) 
 
 urlpatterns += patterns('myproject.myapp.views_map',

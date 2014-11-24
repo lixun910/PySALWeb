@@ -6,13 +6,17 @@
    */
   var d3viz = function(wid, container, canvas) {
   
+    this.version = "0.1";
     this.id = wid;
     this.socket = undefined;
-    this.map = undefined;
-    this.version = "0.1";
-    this.mapDict = {}; // uuid:GeoVizMap
-    this.dataDict = {};
+    this.name = undefined;
+    this.uuid = undefined;
+    this.mapCanvas = undefined; // GeoVizMap
+    this.mapDict = {}; // uuid:map
+    
+    this.dataDict = {};  // not used
     this.nameDict = {}; // uuid:name
+    
     this.prj = undefined;
     this.canvas = canvas;
     this.container = container;
@@ -35,6 +39,18 @@
     self = this;
   };
  
+  d3viz.prototype.SetupMainMap = function(map, uuid, name) {
+    this.uuid = uuid;
+    this.name = name;
+    this.nameDict[name] = uuid;
+    this.mapDict[uuid] = map; // add base map to dict for brushing
+  };
+  
+  d3viz.prototype.AddMapLayer = function(map, uuid, name) {
+    this.nameDict[name] = uuid;
+    this.mapDict[uuid] = map; // add base map to dict for brushing
+  };
+  
   d3viz.prototype.GetJSON = function(url, successHandler, errorHandler) {
     var xhr = new XMLHttpRequest();
     xhr.open('get', url, true);
@@ -126,9 +142,9 @@
         xhr.responseType = 'arraybuffer';
         xhr.onload = function(evt) {
           map = new ShpMap(new ShpReader(xhr.response), L, lmap, prj);
-          self.map = new GeoVizMap(map, self.canvas);
+          self.mapCanvas = new GeoVizMap(map, self.canvas);
           if (typeof callback === "function") {
-            callback();
+            callback(map);
           }
         };
         xhr.send(null);
@@ -136,9 +152,9 @@
         var json_url = o;
         this.GetJSON( json_url, function(json) {
           map = new JsonMap(json, L, lmap, prj); 
-          self.map = new GeoVizMap(map, self.canvas);
+          self.mapCanvas = new GeoVizMap(map, self.canvas);
           if (typeof callback === "function") {
-            callback();
+            callback(map);
           }
         });
       }
@@ -153,9 +169,9 @@
           var json = JSON.parse(reader.result);
           map = new JsonMap(json, L, lmap, prj);
         }
-        self.map = new GeoVizMap(map, self.canvas);
+        self.mapCanvas = new GeoVizMap(map, self.canvas);
         if (typeof callback === "function") {
-          callback();
+          callback(map);
         }
       };
       if (type == 'shapefile') {
@@ -167,61 +183,13 @@
     } else if (typeof o == 'object'){
       // JSON object 
       map = new JsonMap(o, L, lmap, prj); 
-      self.map = new GeoVizMap(map, self.canvas);
+      self.mapCanvas = new GeoVizMap(map, self.canvas);
       if (typeof callback === "function") {
-        callback();
+        callback(map);
       }
-    } else {
-      return false;
-    }
-    //self.mapDict[uuid] = self.map;
-    //self.dataDict[uuid] = data;
+    } 
   };
   
-  /**
-   * Create a new Leaftlet map
-   */
-  d3viz.prototype.ShowLeafletMap = function(data, L, lmap, prj, options, callback) {
-    if ( typeof data == "string") {
-      data = JSON.parse(data);
-    }
-    self.map = new GeoVizMap(new LeafletMap(data, L, lmap, prj), self.canvas, options);
-    self.mapDict[uuid] = self.map;
-    self.dataDict[uuid] = data;
-    if (typeof callback === "function") {
-      callback();
-    }
-  };
-  
-  d3viz.prototype.AddLeafletMap = function(subUuid, L, lmap, prj, callback) {
-    var json_url = this.GetJsonUrl(subUuid);
-    this.GetJSON( json_url, function(data) {
-      if ( typeof data == "string") {
-        data = JSON.parse(data);
-      }
-      self.map.addLayer(subUuid, new LeafletMap(data, L, lmap, prj));
-      self.mapDict[subUuid] = self.map;
-      self.dataDict[subUuid] = data;
-    });
-    if (typeof callback === "function") {
-      callback();
-    }
-  };
-  
-  d3viz.prototype.AddPlainMap = function(subUuid) {
-    var json_url = this.GetJsonUrl(subUuid);
-    this.GetJSON( json_url, function(data) {
-      if ( typeof data == "string") {
-        data = JSON.parse(data);
-      }
-      self.map.addLayer(subUuid, new JsonMap(data));
-      self.mapDict[subUuid] = self.map;
-      self.dataDict[subUuid] = data;
-    });
-    if (typeof callback === "function") {
-      callback();
-    }
-  };
   /**
    * add layer in an existing map
    * parameters: canvas -- $() jquery object
@@ -236,7 +204,7 @@
         if ( typeof data == "string") {
           data = JSON.parse(data);
         }
-        self.map.addLayer(uuid, new JsonMap(data)); 
+        self.mapCanvas.addLayer(uuid, new JsonMap(data)); 
         //self.mapDict[uuid] = self.map;
         self.dataDict[uuid] = data;
       });
@@ -255,10 +223,11 @@
       if ( typeof data == "string") {
         data = JSON.parse(data);
       }
-      self.map = new GeoVizMap(new JsonMap(data), self.canvas, {
+      var map = new JsonMap(data);
+      self.mapCanvas = new GeoVizMap(map, self.canvas, {
         "color_theme" : colorTheme
       });
-      self.mapDict[uuid] = self.map;
+      self.mapDict[uuid] = map;
       self.dataDict[uuid] = data;
       if (typeof callback === "function") {
         callback();
@@ -268,7 +237,7 @@
   
   d3viz.prototype.UpdateThematicMap = function(uuid, newColorTheme, callback) {
     var map = self.mapDict[uuid];
-    map.updateColor(newColorTheme);
+    self.mapCanvas.updateColor(newColorTheme);
     if (typeof callback === "function") {
       callback();
     }

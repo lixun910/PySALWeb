@@ -221,7 +221,7 @@ def spatial_regression(request):
     h = np.array([data[name] for name in name_h]).T if name_h else []
     r = np.array(data[name_r]) if name_r else None
     t = np.array(data[name_t]) if name_t else None
-    layer_name = Geodata.objects.get(uuid=layer_uuid).origfilename
+    layer_name = Geodata.objects.get(uuid=layer_uuid).filepath
     
     try:
         preference = Preference.objects.get(userid=userid)

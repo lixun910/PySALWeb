@@ -377,14 +377,22 @@ def upload(request):
         table_name = None
         print "get meta data", shp_path
         base_name, shp_name = os.path.split(shp_path)
-        shp_name = os.path.join("temp", user_uuid, shp_name)
-        meta_data = GeoDB.GetMetaData(shp_path, table_name, driver)
+        shp_path = os.path.join("temp", user_uuid, shp_name)
+        if shp_path.endswith('shp'):
+            json_path = shp_path[:-3] + "json"
+        else:
+            json_path = shp_path[:-3] + "simp.json"
+        abs_shp_path = os.path.join(settings.MEDIA_ROOT, shp_path)
+        meta_data = GeoDB.GetMetaData(abs_shp_path, table_name, driver)
+        
         print "save meta data", meta_data
         layer_uuid = md5(shp_path).hexdigest()
         new_geodata = Geodata(
             uuid=layer_uuid,
             userid=userid, 
-            origfilename=shp_name, 
+            name=shp_name,
+            filepath=shp_path, 
+            jsonpath=json_path,
             n=meta_data['n'], 
             geotype=str(meta_data['geom_type']), 
             bbox=str(meta_data['bbox']), 
@@ -396,11 +404,11 @@ def upload(request):
         # and max_thresdhold
         from django.db import connection 
         connection.close()
-        mp.Process(target=GeoDB.ExportToDB, args=(shp_path,layer_uuid)).start()
+        mp.Process(target=GeoDB.ExportToDB, args=(abs_shp_path,layer_uuid)).start()
         print "uploaded done."
         result = meta_data
         result['layer_uuid'] = layer_uuid
-        
+        result['name'] = shp_name
         return HttpResponse(json.dumps(result), content_type="application/json")
 
     return HttpResponse(RSP_FAIL, content_type="application/json")

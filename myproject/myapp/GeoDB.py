@@ -1,4 +1,4 @@
-import os, json, sys
+import os, json, sys, shutil
 import subprocess
 from osgeo import ogr
 from django.conf import settings
@@ -85,17 +85,27 @@ def ExportToESRIShape(json_path):
 def ExportToJSON(shp_path):
     # will be called in subprocess
     import subprocess
+    prj = None
     if shp_path.endswith("json"):
         json_path = shp_path[0:shp_path.rfind(".")] + ".simp.json"
     else:
+        if os.path.exists(shp_path[:-3]+"prj"):
+            prj = "-t_srs EPSG:4326" # convert all projections to WGS84
         json_path = shp_path[0:shp_path.rfind(".")] + ".json"
-    script = 'ogr2ogr -select "" -f "GeoJSON" %s %s' %(json_path,shp_path)
+      
+    if os.path.exists(json_path):
+        os.remove(json_path)
+        
+    if prj: 
+        script = 'ogr2ogr -select "" -f "GeoJSON" %s %s %s' %(prj, json_path,shp_path)
+    else:
+        script = 'ogr2ogr -select "" -f "GeoJSON" %s %s' %(json_path,shp_path)
     rtn = subprocess.call( script, shell=True)
     
     
 def SaveDBTableToShp(geodata, table_name):
     from myproject.myapp.models import Geodata, Document
-    file_uuid = md5(geodata.userid + geodata.origfilename).hexdigest()
+    file_uuid = md5(geodata.userid + geodata.filepath).hexdigest()
     document = Document.objects.get(uuid=file_uuid)
     shp_path = settings.PROJECT_ROOT + document.docfile.url
     shp_path = shp_path[0: shp_path.rindex(".")] + ".shp"
@@ -104,7 +114,6 @@ def SaveDBTableToShp(geodata, table_name):
     script = 'ogr2ogr -f "ESRI Shapefile" %s PG:"host=%s dbname=%s user=%s password=%s" %s' %(tmp_path, db_host, db_name, db_uname, db_upwd, table_name)
     print "SaveDBTableToShp", script
     rtn = subprocess.call( script, shell=True)    
-    import shutil
     shutil.copy(tmp_path[:-3]+"dbf", shp_path[:-3]+"dbf")
     # remove tmp files 
     shp_dir = shp_path[0: shp_path.rindex("/")]
@@ -113,7 +122,6 @@ def SaveDBTableToShp(geodata, table_name):
     for f in filelist:
         f = shp_dir + os.sep + f
         os.remove(f)
-        
     
 def IsLayerExist(layer_uuid):
     DS = GetDS()

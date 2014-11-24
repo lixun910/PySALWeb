@@ -1,7 +1,7 @@
 
-var viz, 
-    cartolx, carto_uid, carto_key, carto_layer,
-    foreground, lmap, map, uuid, winID, 
+var cartolx, carto_uid, carto_key, carto_layer,
+    foreground, lmap, uuid, winID, 
+    gViz, gVizMap, gMap,
     prj, gProjSwitchOn = true,
     gHasProj     =false, 
     gShowLeaflet =false, 
@@ -27,6 +27,105 @@ var ShowMsgBox = function(title, content) {
   $('#dlg-msg').dialog('open');
   };
   
+var local_map_names_sel = [
+  '#sel-carto-table-upload',
+  '#sel-road-seg',
+  '#sel-road-snap-point-layer',
+  '#sel-road-snap-road-layer',
+  '#sel-road-w-layer',
+  '#sel-spacetime-space'];
+  
+var ShowExistMap = function(uuid, json_path) {
+  gViz.ShowMainMap(json_path, 'json', BeforeMapShown, OnMapShown, L, lmap, prj);
+};
+  
+var ShowMap = function(o, type, noForeground) {
+  if (gViz) {
+    gShowLeaflet = true;
+    if ( gHasProj && prj == undefined) {
+      // wait for reading *.prj file 
+      setTimeout(function(){ShowMap(o, type, noForeground);}, 10);  
+    } else {
+      $('#map').show();
+      if (noForeground==undefined) noForeground = false;
+      if (gShowLeaflet) {
+        gViz.ShowMainMap(o, type, BeforeMapShown, OnMapShown, L, lmap, prj);
+      } else {
+        gViz.ShowMainMap(o, type, BeforeMapShown, OnMapShown);
+      }
+    }
+  }
+};
+
+var BeforeMapShown = function() {
+};
+
+var OnMapShown = function(map) {
+  gMap = map;
+  $('#loading').remove();
+  $('#dialog-open-file').dialog('close');
+  
+  if (gShowLeaflet == true) {
+    lmap.on('zoomstart', function() {
+      gViz.mapCanvas.clean();
+    });
+    lmap.on('zoomend', function() {
+      gViz.mapCanvas.update();
+    });
+    lmap.on('movestart', function(e) {
+      gViz.mapCanvas.clean();
+    });
+    lmap.on('moveend', function(e) {
+      var op = e.target.getPixelOrigin();
+      var np = e.target._getTopLeftPoint();
+      var offsetX = -np.x + op.x;
+      var offsetY = -np.y + op.y;
+      gViz.mapCanvas.update({"offsetX":offsetX, "offsetY":offsetY});
+    });
+  } else {
+    $('#map').hide();
+  }
+};
+
+var InitDialogs = function(data) {
+  var layer_uuid = data.layer_uuid,
+      layer_name = data.name,
+      fields = data.fields,
+      field_names = [];
+      
+  if (gAddLayer) {
+    gViz.AddMapLayer(gMap, layer_uuid, layer_name);
+  } else {
+    gViz.SetupMainMap(gMap, layer_uuid, layer_name); 
+    for (var field in fields) {
+      field_names.push(field);
+    }
+    field_names.sort();
+    for (var var_cmb in fields_combobox) {
+      var var_types = fields_combobox[var_cmb];
+      $(var_cmb).find('option').remove().end();
+      for (var field in fields) {
+        var type = fields[field];
+        if (var_types.indexOf(type) >= 0) {
+          $(var_cmb).append($('<option>', {value: field}).text(field));
+        }
+      }
+    }
+    // in regression dialog
+    $.each(['#y_box','#y_box','#y_box','#y_box'], function(i, box) {
+      if ( !$(box).find(".placeholder")) {
+        $(box).find('li').remove().end();
+      } 
+    });
+    $('#ul-x-variables').find('li').remove().end();
+    $.each(field_names, function(i, field) {
+      var item = $('#ul-x-variables').append('<li><p class="name">'+field+'</p></li>');
+    });
+    $( "#vars ul li" ).draggable({ helper: "clone" });
+    new List('vars', {valueNames:['name']});
+  } 
+};
+
 $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Map
@@ -45,69 +144,22 @@ $(document).ready(function() {
 
   // Local Storage Brushing/Linking
   localStorage.clear();  
-  viz = new d3viz(winID, $('#map-container')); 
-  viz.canvas = $('#foreground');
-  viz.SetupBrushLink();
-  viz.SetupWebSocket();
+  gViz = new d3viz(winID, $('#map-container')); 
+  gViz.canvas = $('#foreground');
+  gViz.SetupBrushLink();
+  //gViz.SetupWebSocket();
   
-  var BeforeMapShown = function() {
-  };
-  
-  var OnMapShown = function() {
-    $('#loading').remove();
-    $('#dialog-open-file').dialog('close');
-    
-    if (gShowLeaflet == true) {
-      map = viz.map;
-      lmap.on('zoomstart', function() {
-        map.clean();
-      });
-      lmap.on('zoomend', function() {
-        map.update();
-      });
-      lmap.on('movestart', function(e) {
-        map.clean();
-      });
-      lmap.on('moveend', function(e) {
-        var op = e.target.getPixelOrigin();
-        var np = e.target._getTopLeftPoint();
-        var offsetX = -np.x + op.x;
-        var offsetY = -np.y + op.y;
-        map.update({"offsetX":offsetX, "offsetY":offsetY});
-      });
-    } else {
-      $('#map').hide();
-    }
-  };
-  
-  var InitDialogs = function(fields){
-      var field_names = [];
-      for (var field in fields) {
-        field_names.push(field);
-      }
-      field_names.sort();
-      for (var var_cmb in fields_combobox) {
-        var var_types = fields_combobox[var_cmb];
-        $(var_cmb).find('option').remove().end();
-        for (var field in fields) {
-          var type = fields[field];
-          if (var_types.indexOf(type) >= 0) {
-            $(var_cmb).append($('<option>', {value: field}).text(field));
-          }
+  // get all map names/uuid from server
+  var UpdateLocalMapSel = function(){
+    if (gViz) {
+      $.each(local_map_names_sel, function(i,sel){
+        $(sel).find('option').remove().end();
+        for( var uuid in gViz.nameDict) {
+          var name = gViz.nameDict[uuid];
+          $(sel).append($('<option>', {value: uuid}).text(name));
         }
-      }
-      // in regression dialog
-      $.each(['#y_box','#y_box','#y_box','#y_box'], function(i, box) {
-        if ( !$(box).find(".placeholder")) {
-          $(box).find('li').remove().end();
-        } 
       });
-      $('#ul-x-variables').find('li').remove().end();
-      $.each(field_names, function(i, field) {
-        var item = $('#ul-x-variables').append('<li><p class="name">'+field+'</p></li>');
-      });
-      $( "#vars ul li" ).draggable({ helper: "clone" });
-      new List('vars', {valueNames:['name']});
+    }
   };
   
   var SaveMapThumbnail = function(layer_uuid, containerID) {
@@ -154,8 +206,12 @@ $(document).ready(function() {
       setTimeout(function(){ $(divToPop).fadeOut('slow');}, 2000);
     });
   };
-  $('#divPop,#divDownload, #img-id-chk, #img-id-spin, #img-id-nochk, .dlg-loading, #progress_bar_openfile, #progress_bar_cartodb,#progress_bar_road,#progress_bar_spacetime,#divCartoBrush,#progress_bar_lisa').hide();
-  
+  $('#divPop,#divDownload, \
+    #img-id-chk, #img-id-spin, #img-id-nochk, \
+    .dlg-loading, #progress_bar_openfile, \
+    #progress_bar_cartodb,#progress_bar_road,\
+    #progress_bar_spacetime,#divCartoBrush,\
+    #progress_bar_lisa').hide();
   $( "#dlg-msg" ).dialog({
     dialogClass: "dialogWithDropShadow",
     width: 400, height: 200, autoOpen: false, modal: true,
@@ -172,15 +228,34 @@ $(document).ready(function() {
     $('#dialog-open-file').dialog('option','title','Add Layer Dialog');
     $('#dialog-open-file').dialog('open');
   });
-  $('#btnCartoDB').click(function(){$('#dialog-cartodb').dialog('open');});
-  $('#btnRoadNetwork').click(function(){$('#dialog-road').dialog('open');});
-  $('#btnSpaceTime').click(function(){$('#dialog-spacetime').dialog('open');});
-  $('#btnCreateW').click(function(){$('#dialog-weights').dialog('open');});
-  $('#btnSpreg').click(function(){$('#dialog-regression').dialog('open');});
-  $('#btnNewMap').click(function(){$('#dlg-quantile-map').dialog('open');});
-  $('#btnScatterPlot').click(function(){$('#dlg-scatter-plot').dialog('open');});
-  $('#btnMoran').click(function(){$('#dlg-moran-scatter-plot').dialog('open');});
-  $('#btnLISA').click(function(){$('#dlg-lisa-map').dialog('open');});
+  $('#btnCartoDB').click(function(){
+    $('#dialog-cartodb').dialog('open');
+  });
+  $('#btnRoadNetwork').click(function(){
+    $('#dialog-road').dialog('open');
+  });
+  $('#btnSpaceTime').click(function(){
+    $('#dialog-spacetime').dialog('open');
+  });
+  $('#btnCreateW').click(function(){
+    $('#dialog-weights').dialog('open');
+  });
+  $('#btnSpreg').click(function(){
+    $('#dialog-regression').dialog('open');
+  });
+  $('#btnNewMap').click(function(){
+    $('#dlg-quantile-map').dialog('open');
+  });
+  $('#btnScatterPlot').click(function(){
+    $('#dlg-scatter-plot').dialog('open');
+  });
+  $('#btnMoran').click(function(){
+    $('#dlg-moran-scatter-plot').dialog('open');
+  });
+  $('#btnLISA').click(function(){
+    $('#dlg-lisa-map').dialog('open');
+  });
+  
   //////////////////////////////////////////////////////////////
   //  Open File 
   //////////////////////////////////////////////////////////////
@@ -229,7 +304,7 @@ $(document).ready(function() {
             });
             //lmap.addLayer(carto_layer);
             $('#divDownload').show();
-            viz.CartoDownloadTable(carto_uid, carto_key, table_name, function(msg){
+            gViz.CartoDownloadTable(carto_uid, carto_key, table_name, function(msg){
               gHasProj = true;
               var ip = msg.projection; 
               prj = proj4(ip, proj4.defs('WGS84'));
@@ -241,10 +316,6 @@ $(document).ready(function() {
             });
           } else if (sel_id == 2) {
             var socrata_url = $('#txt-socrata-url').val();
-            // download socrata data (geojson to local disk) 
-            // |__ convert geojso to ESRI shapefile
-            // |__ rename the geojson to UUID.json
-            // |__ return UUID
             $.post("./cgi-bin/download_json.py", {url:socrata_url}, function(){
               $('#progress_bar_openfile').show();
             })
@@ -268,23 +339,6 @@ $(document).ready(function() {
     ]
   });
   //$('#dialog-open-file').dialog('open');
-  var showMap = function(o, type, noForeground) {
-    if (viz) {
-      gShowLeaflet = true;
-      if ( gHasProj && prj == undefined) {
-        // wait for reading *.prj file 
-        setTimeout(function(){showMap(o, type, noForeground);}, 10);  
-      } else {
-        $('#map').show();
-        if (noForeground==undefined) noForeground = false;
-        if (gShowLeaflet) {
-          viz.ShowMainMap(o, type, BeforeMapShown, OnMapShown, L, lmap, prj);
-        } else {
-          viz.ShowMainMap(o, type, BeforeMapShown, OnMapShown);
-        }
-      }
-    }
-  };
   
   $("#switch").switchButton({
     checked: true,
@@ -292,11 +346,11 @@ $(document).ready(function() {
     off_label: 'Leaflet Background? OFF',
     on_callback: function() {
       gShowLeaflet = true;
-      //showMap(uuid);
+      //ShowMap(uuid);
     },
     off_callback: function() {
       gShowLeaflet = false;
-      //showMap(uuid);
+      //ShowMap(uuid);
     },
   });
   
@@ -309,18 +363,7 @@ $(document).ready(function() {
     off_callback: function() {
     },
   });
-  var local_map_names_sel = ['#sel-carto-table-upload','#sel-road-seg','#sel-road-snap-point-layer','#sel-road-snap-road-layer','#sel-road-w-layer','#sel-spacetime-space'];
-  var UpdateLocalMapSel = function(){
-    if (viz) {
-      $.each(local_map_names_sel, function(i,sel){
-        $(sel).find('option').remove().end();
-        for( var uuid in viz.nameDict) {
-          var name = viz.nameDict[uuid];
-          $(sel).append($('<option>', {value: uuid}).text(name));
-        }
-      });
-    }
-  };
+  
   //////////////////////////////////////////////////////////////
   //  Drag & Drop
   //////////////////////////////////////////////////////////////
@@ -355,8 +398,8 @@ $(document).ready(function() {
     xhr.onload = function() {
       console.log("[Upload]", this.responseText);
       try{
-        var data = JSON.parse(this.responseText);
-        InitDialogs(data.fields);
+        var metadata = JSON.parse(this.responseText);
+        InitDialogs(metadata);
       } catch(e){
         console.log("[Error][Upload Files]", e);
       }
@@ -386,7 +429,7 @@ $(document).ready(function() {
               return;
             if (suffix === 'geojson' || suffix === 'json') {
               o = JSON.parse(o);
-              showMap(o, 'geojson');
+              ShowMap(o, 'geojson');
               $('#progress_bar_openfile').hide();
               return;
             } else if (suffix === "shp") {
@@ -401,7 +444,7 @@ $(document).ready(function() {
               prj = proj4(o, proj4.defs('WGS84'));
             }
             if (bShp >= 3) {
-              showMap(shpFile, 'shapefile');
+              ShowMap(shpFile, 'shapefile');
               $('#progress_bar_openfile').hide();
             }
           });
@@ -512,12 +555,12 @@ $(document).ready(function() {
     // display map directly
     if (shpFile) {
       if ( gAddLayer == false ) { // open new map
-        showMap(shpFile, 'shapefile');
+        ShowMap(shpFile, 'shapefile');
       } else {
       }
     } else if (jsonFile) {
       if ( gAddLayer == false ) { // open new map
-        showMap(jsonFile, 'json');
+        ShowMap(jsonFile, 'json');
       } else {
       }
     }
@@ -538,7 +581,7 @@ $(document).ready(function() {
       var suffix = getSuffix(fileLink);
       var params = {'csrfmiddlewaretoken':  csrftoken};
       if ( suffix === 'geojson' || suffix === 'json') {
-        viz.ShowMainMap(fileLink, 'json', BeforeMapShown, OnMapShown, L, lmap, prj);
+        gViz.ShowMainMap(fileLink, 'json', BeforeMapShown, OnMapShown, L, lmap, prj);
         params['json'] = fileLink;
         ready = true;
       } else if ($.inArray( suffix, ['shp', 'dbf','shx','prj']) >= 0) {
@@ -565,10 +608,10 @@ $(document).ready(function() {
             $.get(prjUrl, function(data) {
               var ip = data;
               prj = proj4(ip, proj4.defs('WGS84'));
-              viz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, prj);
+              gViz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, prj);
             });
           } else {
-            viz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, prj);
+            gViz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, prj);
           } 
           ready = true;
         } else {
@@ -625,22 +668,22 @@ $(document).ready(function() {
   };
   
   $('#btn-cartodb-get-all-tables').click(function(){
-    if (viz) {
+    if (gViz) {
       $('#progress_bar_cartodb').show();
       var uid = $('#txt-carto-setup-id').val();
       var key = $('#txt-carto-setup-key').val();
-      viz.CartoGetAllTables(uid, key, function(msg) {
+      gViz.CartoGetAllTables(uid, key, function(msg) {
         $('#progress_bar_cartodb').hide();
         fill_carto_tables(msg['tables']);
       });
     }   
   });
   $('#btn-file-cartodb-get-all-tables').click(function(){
-    if (viz) {
+    if (gViz) {
       $('#progress_bar_openfile').show();
       var uid = $('#txt-carto-id').val();
       var key = $('#txt-carto-key').val();
-      viz.CartoGetAllTables(uid, key, function(msg) {
+      gViz.CartoGetAllTables(uid, key, function(msg) {
         $('#progress_bar_openfile').hide();
         fill_carto_tables(msg['tables']);
       });
@@ -664,7 +707,7 @@ $(document).ready(function() {
           $('#progress_bar_cartodb').show();
           if (sel_id == 0) {
             // setup
-            viz.CartoGetAllTables(uid, key, function(msg) {
+            gViz.CartoGetAllTables(uid, key, function(msg) {
               $('#progress_bar_cartodb').hide();
               fill_carto_tables(msg['tables']);
             });
@@ -672,7 +715,7 @@ $(document).ready(function() {
           } else if (sel_id == 1) {
             // download to local disk
             var table_name = $('#sel-carto-table-download').find(':selected').text();
-            viz.CartoDownloadTable(uid, key, table_name, function(msg){
+            gViz.CartoDownloadTable(uid, key, table_name, function(msg){
               $('#progress_bar_cartodb').hide();
               var name = msg.name;  
               // create a url and download
@@ -681,7 +724,7 @@ $(document).ready(function() {
           } else if (sel_id == 2) {
             // upload: using uuid send command to call cartodb_upload()
             var upload_uuid = $('#sel-carto-table-upload').find(':selected').val();
-            viz.CartoUploadTable(uid, key, upload_uuid, function(msg){
+            gViz.CartoUploadTable(uid, key, upload_uuid, function(msg){
               $('#progress_bar_cartodb').hide();
               var new_table_name = msg["new_table_name"];
               if (new_table_name == undefined || new_table_name == "") {
@@ -699,7 +742,7 @@ $(document).ready(function() {
                 second_layer = $('#sel-carto-table-count2').find(':selected').text(),
                 col_name = $('#txt-carto-col-name').val(),
                 method = "contain";
-            viz.CartoSpatialCount(uid, key, first_layer, second_layer, col_name, function(msg) {
+            gViz.CartoSpatialCount(uid, key, first_layer, second_layer, col_name, function(msg) {
               $('#progress_bar_cartodb').hide();
               if (msg["result"] != true) {
                 ShowMsgBox("[Error]","CartoDB spatial counts faield. Please try again or contact our administators.");
@@ -745,7 +788,7 @@ $(document).ready(function() {
             var road_uuid = $('#sel-road-seg').find(':selected').text();
             var seg_length = $('#txt-seg-road-length').val();
             var output_filename = $('#txt-seg-road-name').val();
-            viz.RoadSegment(uid, key, road_uuid, seg_length, output_filename, function(msg){
+            gViz.RoadSegment(uid, key, road_uuid, seg_length, output_filename, function(msg){
               $('#progress_bar_road').hide();
               if (output_filename.indexOf(".shp") >=0 ){
                 output_filename = output_filename.substring(0,output_filename.indexOf('.shp'));
@@ -758,7 +801,7 @@ $(document).ready(function() {
             // snapping point to road
             var point_uuid = $('#sel-road-snap-point-layer').find(':selected').text(),
                 road_uuid = $('#sel-road-snap-road-layer').find(':selected').text();
-            viz.RoadSnapPoint(uid, key, point_uuid, road_uuid, function(msg) {
+            gViz.RoadSnapPoint(uid, key, point_uuid, road_uuid, function(msg) {
               $('#progress_bar_road').hide();
               var name = msg.name;
               $.download('./cgi-bin/download.py','name='+name,'get');
@@ -841,7 +884,7 @@ $(document).ready(function() {
         text: "Create",
         id: "btn-create-w",
         click: function() {
-          if ( viz == undefined ) return;
+          if ( gViz == undefined ) return;
           var w_name = $('#txt-w-name').val(),
           w_id = $('#sel-w-id').find(":selected").val(),
           active = $('#tabs-dlg-weights').tabs("option","active");
@@ -890,7 +933,7 @@ $(document).ready(function() {
           
           var msg = {"uuid": uuid, "wid": winID, "command":"create_w", 
           "parameters": post_param};
-          viz.CreateWeights( msg, OnWeightsCreated);
+          gViz.CreateWeights( msg, OnWeightsCreated);
         }
       },
       {
@@ -1229,7 +1272,7 @@ $(document).ready(function() {
   });
  $( "#btn_run" ).button({icons: {primary: "ui-icon-circle-triangle-e",}})
   .click(function() {
-    if (  viz == undefined ) return;
+    if (  gViz == undefined ) return;
     var w_list = $.GetValsFromObjs($('#sel-model-w-files :selected'));
     var wk_list = $.GetValsFromObjs($('#sel-kernel-w-files :selected'));
     var model_type = $('input:radio[name=model_type]:checked').val();
@@ -1270,7 +1313,7 @@ $(document).ready(function() {
       'x': x, 'y': y, 'ye': ye, "h": h, "r": r, "t": t,
     };
     
-    viz.RunSpreg(params, OnSpregDone);
+    gViz.RunSpreg(params, OnSpregDone);
     $('#btn_result').hide();
   });
   
@@ -1320,7 +1363,7 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        if (!viz) return;
+        if (!gViz) return;
         $('#progress_bar_lisa').show();
         var sel_var = $('#sel-lisa-var').val();
         var sel_w = $('#sel-lisa-w').text();
@@ -1330,7 +1373,7 @@ $(document).ready(function() {
         }
         var msg = {"command":"new_lisa_map","wid": winID,"uuid":uuid,
         "var": sel_var, "w_name": sel_w};
-        viz.NewLISAMap(msg, function(msg){
+        gViz.NewLISAMap(msg, function(msg){
           $('#progress_bar_lisa').hide();
         });
       }, 
@@ -1349,7 +1392,7 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        if (!viz) return;
+        if (!gViz) return;
         var sel_var = $('#sel-moran-var').val();
         var sel_w = $('#sel-moran-w').text();
         if (!sel_w || sel_w.length == 0) {
@@ -1358,7 +1401,7 @@ $(document).ready(function() {
         }
         var msg = {"command":"new_moran_scatter_plot","wid": winID,"uuid":uuid,
         "var": sel_var, "w_name": sel_w};
-        viz.NewMoranScatterPlot(msg);
+        gViz.NewMoranScatterPlot(msg);
         $(this).dialog("close");
       }, 
       Cancel: function() {$( this ).dialog( "close" );},
@@ -1377,12 +1420,12 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        if (!viz) return;
+        if (!gViz) return;
         var sel_x = $('#sel-scatter-x').val();
         var sel_y = $('#sel-scatter-y').val();
         var msg = {"command":"new_scatter_plot","wid": winID,"uuid":uuid,
         "var_x": sel_x, "var_y": sel_y};
-        viz.NewScatterPlot(msg);
+        gViz.NewScatterPlot(msg);
         $(this).dialog("close");
       }, 
       Cancel: function() {$( this ).dialog( "close" );},
@@ -1401,13 +1444,13 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        if (!viz) return;
+        if (!gViz) return;
         var sel_method = $('#sel-quan-method').val();
         var sel_var = $('#sel-var').val();
         var sel_cat = $('#quan-cate').val();
         var msg = {"command":"new_choropleth_map","wid": winID,"uuid":uuid,
         "method": sel_method, "var": sel_var, "category": sel_cat};
-        viz.NewChoroplethMap(msg);
+        gViz.NewChoroplethMap(msg);
         $(this).dialog("close");
       }, 
       Cancel: function() {$( this ).dialog( "close" );},

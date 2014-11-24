@@ -139,6 +139,18 @@
     <div id="tabs-4">
       <div id="dropbox_div"></div>
     </div>
+    <div id="tabs-5">
+        <table>
+        {% if geodata %}
+          {% for i,layer in geodata.iteritems %}
+          <tr>
+            <td></td>
+            <td><a href='#' onclick="ShowExistMap('{{layer.uuid}}','{{jsonprefix}}{{layer.jsonpath}}')">{{layer.name}}</a></td>
+          </tr>
+          {% endfor %}
+        {% endif %}
+        </table>
+    </div>
   </div>
   <br/><br/>
   <div id="progress_bar_openfile"><img src="{{url_prefix}}/media/img/progress-bar.gif"></div>
