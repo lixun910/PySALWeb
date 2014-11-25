@@ -106,6 +106,16 @@ $(document).ready(function() {
   
     
   viz.RequestParameters(winID, function(params) {
+ var msg = window.opener.tempMsg,
+      uuid = msg.uuid, //getParameterByName("uuid"),
+      id_array = msg.data,
+      title = msg.title,
+      bins = msg.bins,
+      k = id_array.length,
+      colors = colorbrewer.YlGn[k],
+      type = getParameterByName("type"),
+      data = window.opener.dataDict[uuid];
+  //window.opener.tempMsg = undefined;
 
     ip = params["projection"];
     type = params["type"];

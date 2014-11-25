@@ -18,6 +18,7 @@ from hashlib import md5
 from myproject.myapp.models import Document, Geodata, Weights, SpregModel
 from views_utils import get_file_url, RSP_FAIL, RSP_OK, get_valid_path, get_abs_path, gen_rnd_str, get_docfile_path, get_rel_path
 
+from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks
 import GeoDB
 
 logger = logging.getLogger(__name__)
@@ -208,6 +209,50 @@ def get_minmaxdist(request):
                 bbox = eval(geodata.bbox)
                 max_val = ((bbox[1] - bbox[0])**2 + (bbox[3] - bbox[2])**2)**0.5
                 return HttpResponse('{"min":%f, "max":%f}'%(min_val,max_val), content_type="application/json")
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+    
+@login_required
+def thematic_map(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        col_name = request.GET.get("var","")
+        method = request.GET.get("method","")
+        k = request.GET.get("k",0)
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        if geodata and len(col_name) > 0:
+            data = GeoDB.GetTableData(str(layer_uuid), [col_name])
+            y = data[col_name]
+            k = int(k)
+            pysalFunc = None
+            if method == "quantile":
+                pysalFunc = Quantiles
+            elif method == "equal interval":
+                pysalFunc = Equal_Interval
+            elif method == "natural breaks":
+                pysalFunc = Natural_Breaks
+            elif method == "fisher jenks":
+                pysalFunc = Fisher_Jenks
+            if pysalFunc: 
+                q = pysalFunc(np.array(y), k=k)    
+                bins = q.bins
+                id_array = []
+                for i, upper in enumerate(bins):
+                    if i == 0: 
+                        id_array.append([j for j,v in enumerate(y) if v <= upper])
+                    else:
+                        id_array.append([j for j,v in enumerate(y) \
+                                         if bins[i-1] < v <= upper])
+                results = {
+                    "bins": bins if isinstance(bins, list) else bins.tolist(),
+                    "id_array": id_array,
+                }
+                return HttpResponse(
+                    json.dumps(results), 
+                    content_type="application/json"
+                )
     return HttpResponse(RSP_FAIL, content_type="application/json")
     
 """

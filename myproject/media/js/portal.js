@@ -1709,7 +1709,7 @@ $(document).ready(function() {
           "layer_uuid": gViz.uuid,
           "method": sel_method, 
           "var": sel_var, 
-          "category": sel_cat
+          "k": sel_cat
         };
         $.get('../thematic_map/', params, function(){
         }).done(function(result){
