@@ -5,7 +5,8 @@ var cartolx, carto_uid, carto_key, carto_layer,
     prj, gProjSwitchOn = true,
     gHasProj     =false, 
     gShowLeaflet =false, 
-    gAddLayer    =false;
+    gAddLayer    =false,
+    gProjectOpen = false;
 
 var fields_combobox= {
   '#sel-var' : ['Integer','Real'], 
@@ -37,6 +38,11 @@ var local_map_names_sel = [
   
 var ShowExistMap = function(uuid, json_path) {
   gViz.ShowMainMap(json_path, 'json', BeforeMapShown, OnMapShown, L, lmap, prj);
+  var params = {'csrfmiddlewaretoken':  csrftoken};
+  params['layer_uuid'] = uuid;
+  $.get('../get_metadata/', params).done(function(data){
+    InitDialogs(data);
+  });
 };
   
 var ShowMap = function(o, type, noForeground) {
@@ -85,6 +91,12 @@ var OnMapShown = function(map) {
   } else {
     $('#map').hide();
   }
+  
+  if (gAddLayer==true){
+  } else {
+    $('#btnOpenData').css('background-image','url(../../media/img/close-project.png)');
+    gProjectOpen = true;
+  }
 };
 
 var InitDialogs = function(data) {
@@ -125,6 +137,46 @@ var InitDialogs = function(data) {
     new List('vars', {valueNames:['name']});
   } 
 };
+// get all map names/uuid from server
+var UpdateLocalMapSel = function(){
+  if (gViz) {
+    $.each(local_map_names_sel, function(i,sel){
+      $(sel).find('option').remove().end();
+      for( var uuid in gViz.nameDict) {
+        var name = gViz.nameDict[uuid];
+        $(sel).append($('<option>', {value: uuid}).text(name));
+      }
+    });
+  }
+};
+
+var SaveMapThumbnail = function(layer_uuid, containerID) {
+  var canvas = $('#' + containerID + ' canvas');
+  if ( layer_uuid != undefined && canvas[0] != undefined &&
+       layer_uuid == localStorage.getItem('current_layer')) {
+    if (canvas.attr("id") == undefined ) {
+      console.log("upload thumbnail");
+      canvas.attr("id", layer_uuid);
+      $("<div class='remove_map' id='"+layer_uuid+"'></div>").insertBefore(canvas.parent());
+      $("<div class='download_map' id='"+layer_uuid+"'></div>").insertBefore(canvas.parent());
+      InitRemoveButtons();
+      var dataURL = canvas[0].toDataURL();
+      $.ajax({
+        type: "POST",
+        url: "../upload_canvas/",
+        data: { 
+          imageData: dataURL,
+          layer_uuid: layer_uuid,
+          csrfmiddlewaretoken: '{{ csrf_token }}',
+        }
+      }).done(function(data) {
+        console.log('save canvas:', data); 
+      });
+    }
+  } else {
+    setTimeout( function(){ SaveMapThumbnail(layer_uuid, containerID); }, 500); 
+  }
+};
 
 $(document).ready(function() {
   //////////////////////////////////////////////////////////////
@@ -148,47 +200,6 @@ $(document).ready(function() {
   gViz.canvas = $('#foreground');
   gViz.SetupBrushLink();
   //gViz.SetupWebSocket();
-  
-  // get all map names/uuid from server
-  var UpdateLocalMapSel = function(){
-    if (gViz) {
-      $.each(local_map_names_sel, function(i,sel){
-        $(sel).find('option').remove().end();
-        for( var uuid in gViz.nameDict) {
-          var name = gViz.nameDict[uuid];
-          $(sel).append($('<option>', {value: uuid}).text(name));
-        }
-      });
-    }
-  };
-  
-  var SaveMapThumbnail = function(layer_uuid, containerID) {
-    var canvas = $('#' + containerID + ' canvas');
-    if ( layer_uuid != undefined && canvas[0] != undefined &&
-         layer_uuid == localStorage.getItem('current_layer')) {
-      if (canvas.attr("id") == undefined ) {
-        console.log("upload thumbnail");
-        canvas.attr("id", layer_uuid);
-        $("<div class='remove_map' id='"+layer_uuid+"'></div>").insertBefore(canvas.parent());
-        $("<div class='download_map' id='"+layer_uuid+"'></div>").insertBefore(canvas.parent());
-        InitRemoveButtons();
-        var dataURL = canvas[0].toDataURL();
-        $.ajax({
-          type: "POST",
-          url: "../upload_canvas/",
-          data: { 
-            imageData: dataURL,
-            layer_uuid: layer_uuid,
-            csrfmiddlewaretoken: '{{ csrf_token }}',
-          }
-        }).done(function(data) {
-          console.log('save canvas:', data); 
-        });
-      }
-    } else {
-      setTimeout( function(){ SaveMapThumbnail(layer_uuid, containerID); }, 500); 
-    }
-  };
 
   //////////////////////////////////////////////////////////////
   //  Init UI
@@ -219,13 +230,23 @@ $(document).ready(function() {
   }).hide();
   
   $('#btnOpenData').click(function(){
-    gAddLayer = false;
-    $('#dialog-open-file').dialog('option','title','Open Map Dialog');
-    $('#dialog-open-file').dialog('open');
+    if (gProjectOpen == false) {
+      gAddLayer = false;
+      $('#img-open-dlg').attr('src',url_prefix+"/media/img/add-file.png");
+      $('#dialog-open-file').dialog('option','title',"Let's get started");
+      $('#dialog-open-file').dialog('open');
+    } else {
+      // close current project 
+      $('#btnOpenData').css('background-image','url(../../media/img/add-file.png)');
+      gProjectOpen = false;
+      $('#dialog-open-file').dialog('option','title',"Let's get started");
+      $('#dialog-open-file').dialog('open');
+    }
   });
   $('#btnAddLayer').click(function(){
     gAddLayer = true;
-    $('#dialog-open-file').dialog('option','title','Add Layer Dialog');
+    $('#img-open-dlg').attr('src',url_prefix+"/media/img/addlayer_large.png");
+    $('#dialog-open-file').dialog('option','title','Add a layer to current map');
     $('#dialog-open-file').dialog('open');
   });
   $('#btnCartoDB').click(function(){
@@ -259,10 +280,17 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Open File 
   //////////////////////////////////////////////////////////////
+  $( "#dialog-pre-open-file" ).dialog({
+    height: 400,
+    width: 800,
+    autoOpen: false,
+    modal: true,
+    dialogClass: "dialogWithDropShadow",
+  });
   $('#tabs-dlg-open-file').tabs();
   $( "#dialog-open-file" ).dialog({
-    height: 400,
-    width: 480,
+    height: 450,
+    width: 500,
     autoOpen: true,
     modal: false,
     dialogClass: "dialogWithDropShadow",
@@ -637,7 +665,7 @@ $(document).ready(function() {
         $.get("../upload/", params).done( function(data) {
           $('#divDownload').hide();
           var layer_uuid = data.layer_uuid;
-          InitDialogs(data.fields);
+          InitDialogs(data);
           //SaveMapThumbnail(layer_uuid, containerID);
         });
       }
@@ -1435,7 +1463,6 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Thematic Map
   //////////////////////////////////////////////////////////////
-  
   $( "#dlg-quantile-map" ).dialog({
     dialogClass: "dialogWithDropShadow",
     width: 400,

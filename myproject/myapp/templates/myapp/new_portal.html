@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>XGeo.app</title>
+<title>PySAL Web Beta</title>
 <link rel="stylesheet" href="{{url_prefix}}/media/css/portal.css" />
 <link rel="stylesheet" href="{{url_prefix}}/media/css/leaflet.css" />
 <link rel="stylesheet" href="{{url_prefix}}/media/css/jquery.switchButton.css" />
@@ -26,6 +26,7 @@
 <script src="{{url_prefix}}/media/js/portal.js"></script>
 <script>
     var csrftoken = '{{ csrf_token }}';
+    var url_prefix = '{{url_prefix}}';
 </script>
 </head>
 
@@ -78,8 +79,35 @@
 // Open Files
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dialog-open-file"  title="Add Map Dialog">
-  <span> <br/><br/>You can load ESRI Shapefile files from local disk, or accessing from your Dropbox files.<br/><br/><br/></span>
+<div id="dialog-pre-open-file"  title="Let's get started">
+  <div style='text-align:center;'> 
+    <br/><br/>
+    <table width=100%>
+      <tr>
+        <td style="text-align:center;">
+          <img src="{{url_prefix}}/media/img/add-file.png">
+        </td>
+        <td style="text-align:center;">
+          <img src="{{url_prefix}}/media/img/addlayer_large.png">
+        </td>
+      </tr>
+      <tr>
+        <td style="text-align:center;">Open a base map</td>
+        <td style="text-align:center;">Add a new map laye</td>
+      </tr>
+    </table>
+  </div>
+</div>
+<div id="dialog-open-file"  title="Let's get started">
+  <span> <br/><br/>
+    <table>
+      <tr><td>
+      <img id="img-open-dlg" src="{{url_prefix}}/media/img/add-file.png">
+      </td>
+      <td>
+    You can load ESRI Shapefile files from local disk, your Dropbox or public open data.
+      </td></tr>
+    </table><br/><br/><br/></span>
   <div id="tabs-dlg-open-file">
     <ul>
       <li><a href="#tabs-1">Local Disk</a></li>

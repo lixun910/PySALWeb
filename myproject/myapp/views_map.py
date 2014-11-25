@@ -176,6 +176,25 @@ def get_fields(request):
     return HttpResponse(RSP_FAIL, content_type="application/json")
 
 @login_required
+def get_metadata(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        if geodata:
+            fields = str(geodata.fields)
+            fields = fields.replace("'","\"")
+            name = str(geodata.name)
+            results = {}
+            results['layer_uuid'] = layer_uuid
+            results['name'] = name
+            results['fields'] = json.loads(fields)
+            return HttpResponse(json.dumps(results), content_type="application/json")
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+    
+@login_required
 def get_minmaxdist(request):
     userid = request.user.username
     if not userid:
