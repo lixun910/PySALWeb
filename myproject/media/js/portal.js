@@ -18,9 +18,9 @@ var fields_combobox= {
   '#sel-st-lisa-var':['Integer','Real'],
   };
   
-var html_load_img = "<img src=img/loading_small.gif>",
-    html_check_img = "<img src=img/checkmark.png>",
-    html_uncheck_img = "<img src=img/uncheckmark.png>";
+var html_load_img = "<img src=../../media/img/loading_small.gif>",
+    html_check_img = "<img src=../../media/img/checkmark.png>",
+    html_uncheck_img = "<img src=../../media/img/uncheckmark.png>";
 
 var ShowMsgBox = function(title, content) {
   $("#msg-title").text(title);
@@ -41,7 +41,8 @@ var ShowExistMap = function(uuid, json_path) {
   var params = {'csrfmiddlewaretoken':  csrftoken};
   params['layer_uuid'] = uuid;
   $.get('../get_metadata/', params).done(function(data){
-    InitDialogs(data);
+    var is_new_map = false;
+    InitDialogs(data, is_new_map);
   });
 };
   
@@ -99,7 +100,7 @@ var OnMapShown = function(map) {
   }
 };
 
-var InitDialogs = function(data) {
+var InitDialogs = function(data, is_new) {
   var layer_uuid = data.layer_uuid,
       layer_name = data.name,
       fields = data.fields,
@@ -116,6 +117,7 @@ var InitDialogs = function(data) {
     for (var var_cmb in fields_combobox) {
       var var_types = fields_combobox[var_cmb];
       $(var_cmb).find('option').remove().end();
+      $(var_cmb).append($('<option>', {value: ''}).text(''));
       for (var field in fields) {
         var type = fields[field];
         if (var_types.indexOf(type) >= 0) {
@@ -135,8 +137,18 @@ var InitDialogs = function(data) {
     });
     $( "#vars ul li" ).draggable({ helper: "clone" });
     new List('vars', {valueNames:['name']});
+    // in weights box
+    LoadWnames();
+    setTimeout(LoadSpregP, 100);
+    setTimeout(LoadModelNames, 100);
+    if (is_new==true) {
+      setTimeout(LoadMinPairDist, 3000);
+    } else {
+      LoadMinPairDist();
+    }
   } 
 };
+
 // get all map names/uuid from server
 var UpdateLocalMapSel = function(){
   if (gViz) {
@@ -149,7 +161,92 @@ var UpdateLocalMapSel = function(){
     });
   }
 };
+var LoadMinPairDist = function() {
+  if (gViz && gViz.uuid) {
+    var layer_uuid = gViz.uuid;
+    $.get("../get_minmaxdist/", {"layer_uuid": layer_uuid})
+    .done( function(data) {
+      if ( data["success"] != 0 ) {
+        $('#dist-slider').slider('option', {min: data['min'], max: data['max']});
+        $('#txt-dist-thr').val(data['min']);
+      }
+    });
+  }
+};
+var LoadSpregP = function() {
+  $.get("../get_spreg_p/", {},function() {})
+  .done(function(data) {
+    if ( data["success"] != 1 ) {
+      console.log("get spreg preference failed.");
+    } else {
+      var txt_items = ['gmm_epsilon', 'gmm_max_iter', 'instruments_w_lags', 'other_missingValue', 'ml_epsilon'];
+      var sel_items = ['gmm_inv_method', 'ml_method'];
+      for ( var k in data ) {
+        var v = data[k];
+        if ( $.inArray(k, txt_items) >= 0 ) {
+          $('input[name='+k+']').val(v[0]);
+        } else if ( $.inArray(k, sel_items) >=0 ) {
+          $('select[name='+k+']').val(v[0]);
+        } else if ( k.match("^sig2n_k") ) {
+          v = v ? 1 : 0;
+          $('input[name='+k+'][value='+v+']').prop('checked', true);
+        } else { 
+          $('input[name='+k+']').prop('checked', v);
+        }
+      }
+    }
+  });
+};
+var LoadWnames = function() {
+  if (gViz && gViz.uuid){
+    var layer_uuid = gViz.uuid;
+    // get weights name:uuid
+    $.get("../get_weights_names/", {"layer_uuid": layer_uuid},function() {
+    }).done(function(data) {
+      if ( "success" in data ) {
+        console.log("get weights names failed.");
+        return;
+      }
+      var w_names = [];
+      for ( var key in data ) {
+        w_names.push(key); 
+      }
+      w_names.sort();
+      w_combobox= ['#sel-model-w-files', '#sel-kernel-w-files', '#sel-w-files'];
+      $.each( w_combobox, function(i, w_cmb ) {
+        $(w_cmb).find('option').remove().end();
+        $.each(w_names, function(j, w_name) {
+          wtype = data[w_name]["type"];
+          if ( (wtype <= 1 && w_cmb == w_combobox[0]) 
+                || (wtype == 2 && w_cmb == w_combobox[1]) 
+                || w_cmb == w_combobox[2] ) {
+            wuuid = data[w_name]["uuid"];
+            $(w_cmb).append($('<option>', {value: wuuid}).text(w_name));
+          }
+        });
+      });
+      $('#sel-w-files').prop("selectedIndex", -1);
+    });
+  }
+};
 
+var LoadModelNames = function() {
+  if (gViz && gViz.uuid){
+    var layer_uuid = gViz.uuid;
+    $.get("../get_spreg_models/", {"layer_uuid": layer_uuid})
+    .done(function(data){
+      console.log(data);
+      if ( data["success"] == 0 ) {
+        console.log("ERROR: get_spreg_models()", layer_uuid); 
+        return;
+      }
+      $('#open_spreg_model').find('option').remove().end();
+      $.each(data, function(i, model) {
+        $('#open_spreg_model').append($('<option>',{value: model}).text(model));
+      });
+    });
+  }
+};
 var SaveMapThumbnail = function(layer_uuid, containerID) {
   var canvas = $('#' + containerID + ' canvas');
   if ( layer_uuid != undefined && canvas[0] != undefined &&
@@ -179,6 +276,13 @@ var SaveMapThumbnail = function(layer_uuid, containerID) {
 };
 
 $(document).ready(function() {
+
+  $('#btn_logout').click(function(){
+    $.post("../logout/", {'csrfmiddlewaretoken' : csrftoken})
+    .done(function(data) {
+      location.reload();
+    });
+  });
   //////////////////////////////////////////////////////////////
   //  Map
   //////////////////////////////////////////////////////////////
@@ -201,6 +305,30 @@ $(document).ready(function() {
   gViz.SetupBrushLink();
   //gViz.SetupWebSocket();
 
+  $("#switch").switchButton({
+    checked: true,
+    on_label: 'ON',
+    off_label: 'Leaflet Background? OFF',
+    on_callback: function() {
+      gShowLeaflet = true;
+      //ShowMap(uuid);
+    },
+    off_callback: function() {
+      gShowLeaflet = false;
+      //ShowMap(uuid);
+    },
+  });
+  
+  $("#switch-cartodb-brushlink").switchButton({
+    checked: false,
+    on_label: 'ON',
+    off_label: 'Brush&Link CartoDB Maps? OFF',
+    on_callback: function() {
+    },
+    off_callback: function() {
+    },
+  });
+  
   //////////////////////////////////////////////////////////////
   //  Init UI
   //////////////////////////////////////////////////////////////
@@ -294,105 +422,77 @@ $(document).ready(function() {
     autoOpen: true,
     modal: false,
     dialogClass: "dialogWithDropShadow",
-    buttons: [
-      {
-        text: "OK",
-        click: function() {
-          var sel_id = $("#tabs-dlg-open-file").tabs('option','active');
-          if (sel_id == 1) {
-            carto_uid = $('#txt-carto-id').val();
-            carto_key = $('#txt-carto-key').val();
-            table_name = $('#sel-file-carto-tables').find(':selected').text(),
-            geo_type = $('#sel-file-carto-tables').find(':selected').val();
-            var css = "";
-            if (geo_type == "Point") {
-              css = '#layer {marker-fill: #FF6600; marker-opacity: 1; marker-width: 6; marker-line-color: white; marker-line-width: 1; marker-line-opacity: 0.9; marker-placement: point; marker-type: ellipse; marker-allow-overlap: true;}';
-            } else if (geo_type == "Line") {
-              css = '#layer {line-width: 2; line-opacity: 0.9; line-color: #006400; }';
-            } else if (geo_type == "Polygon") {
-              css = "#layer {polygon-fill: #006400; polygon-opacity: 0.9; line-color: #CCCCCC; }";
-            }
-            //show cartodb layer and downloading iconp
-            lmap.setView(new L.LatLng(43, -98), 1);
-            if (carto_layer) lmap.removeLayer(carto_layer);
-            carto_layer = cartodb.createLayer(lmap, {
-              user_name: carto_uid, 
-              type: 'cartodb',
-              sublayers:[{
-                sql:"SELECT * FROM " + table_name,
-                cartocss: css
-              }]
-            })
-            .addTo(lmap)
-            .on('done', function(layer_) {
-              var sql = new cartodb.SQL({user: carto_uid});
-              sql.getBounds("SELECT * FROM " + table_name).done(function(bounds){
-                lmap.fitBounds(bounds);
-              });
+    buttons: [{
+      text: "OK",
+      click: function() {
+        var sel_id = $("#tabs-dlg-open-file").tabs('option','active');
+        if (sel_id == 1) {
+          carto_uid = $('#txt-carto-id').val();
+          carto_key = $('#txt-carto-key').val();
+          table_name = $('#sel-file-carto-tables').find(':selected').text(),
+          geo_type = $('#sel-file-carto-tables').find(':selected').val();
+          var css = "";
+          if (geo_type == "Point") {
+            css = '#layer {marker-fill: #FF6600; marker-opacity: 1; marker-width: 6; marker-line-color: white; marker-line-width: 1; marker-line-opacity: 0.9; marker-placement: point; marker-type: ellipse; marker-allow-overlap: true;}';
+          } else if (geo_type == "Line") {
+            css = '#layer {line-width: 2; line-opacity: 0.9; line-color: #006400; }';
+          } else if (geo_type == "Polygon") {
+            css = "#layer {polygon-fill: #006400; polygon-opacity: 0.9; line-color: #CCCCCC; }";
+          }
+          //show cartodb layer and downloading iconp
+          lmap.setView(new L.LatLng(43, -98), 1);
+          if (carto_layer) lmap.removeLayer(carto_layer);
+          carto_layer = cartodb.createLayer(lmap, {
+            user_name: carto_uid, 
+            type: 'cartodb',
+            sublayers:[{
+              sql:"SELECT * FROM " + table_name,
+              cartocss: css
+            }]
+          })
+          .addTo(lmap)
+          .on('done', function(layer_) {
+            var sql = new cartodb.SQL({user: carto_uid});
+            sql.getBounds("SELECT * FROM " + table_name).done(function(bounds){
+              lmap.fitBounds(bounds);
             });
-            //lmap.addLayer(carto_layer);
-            $('#divDownload').show();
-            gViz.CartoDownloadTable(carto_uid, carto_key, table_name, function(msg){
-              gHasProj = true;
-              var ip = msg.projection; 
-              prj = proj4(ip, proj4.defs('WGS84'));
-              uuid = msg.uuid;  
-              var noForeground = true;
-              showLeafletMap(uuid, noForeground);
-              $('#divCartoBrush').show();
-              $('#divDownload').toggle();
-            });
-          } else if (sel_id == 2) {
-            var socrata_url = $('#txt-socrata-url').val();
-            $.post("./cgi-bin/download_json.py", {url:socrata_url}, function(){
-              $('#progress_bar_openfile').show();
-            })
-            .done(function( data ) {
-              var uuid = data['uuid'];
-              $('#progress_bar_openfile').hide();
-              gHasProj = true;
-              showLeafletMap(uuid);
-            });
-          } 
-          
-          $( this ).dialog( "close" );
-        },
+          });
+          //lmap.addLayer(carto_layer);
+          $('#divDownload').show();
+          gViz.CartoDownloadTable(carto_uid, carto_key, table_name, function(msg){
+            gHasProj = true;
+            var ip = msg.projection; 
+            prj = proj4(ip, proj4.defs('WGS84'));
+            uuid = msg.uuid;  
+            var noForeground = true;
+            showLeafletMap(uuid, noForeground);
+            $('#divCartoBrush').show();
+            $('#divDownload').toggle();
+          });
+        } else if (sel_id == 2) {
+          var socrata_url = $('#txt-socrata-url').val();
+          $.post("./cgi-bin/download_json.py", {url:socrata_url}, function(){
+            $('#progress_bar_openfile').show();
+          })
+          .done(function( data ) {
+            var uuid = data['uuid'];
+            $('#progress_bar_openfile').hide();
+            gHasProj = true;
+            showLeafletMap(uuid);
+          });
+        } 
+        $( this ).dialog( "close" );
       },
-      {
-        text: "Close",
-        click: function() {
-          $( this ).dialog( "close" );
-        },
-      }
-    ]
+    },
+    {
+      text: "Close",
+      click: function() {
+        $( this ).dialog( "close" );
+      },
+    }]
   });
   //$('#dialog-open-file').dialog('open');
-  
-  $("#switch").switchButton({
-    checked: true,
-    on_label: 'ON',
-    off_label: 'Leaflet Background? OFF',
-    on_callback: function() {
-      gShowLeaflet = true;
-      //ShowMap(uuid);
-    },
-    off_callback: function() {
-      gShowLeaflet = false;
-      //ShowMap(uuid);
-    },
-  });
-  
-  $("#switch-cartodb-brushlink").switchButton({
-    checked: false,
-    on_label: 'ON',
-    off_label: 'Brush&Link CartoDB Maps? OFF',
-    on_callback: function() {
-    },
-    off_callback: function() {
-    },
-  });
-  
-  //////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////
   //  Drag & Drop
   //////////////////////////////////////////////////////////////
   var dropZone = document.getElementById('drop_zone');
@@ -427,7 +527,8 @@ $(document).ready(function() {
       console.log("[Upload]", this.responseText);
       try{
         var metadata = JSON.parse(this.responseText);
-        InitDialogs(metadata);
+        var is_new_map = true;
+        InitDialogs(metadata, is_new_map);
       } catch(e){
         console.log("[Error][Upload Files]", e);
       }
@@ -665,7 +766,8 @@ $(document).ready(function() {
         $.get("../upload/", params).done( function(data) {
           $('#divDownload').hide();
           var layer_uuid = data.layer_uuid;
-          InitDialogs(data);
+          var is_new_map = true;
+          InitDialogs(data, is_new_map);
           //SaveMapThumbnail(layer_uuid, containerID);
         });
       }
@@ -881,7 +983,7 @@ $(document).ready(function() {
   //  Weights creation
   //////////////////////////////////////////////////////////////
   $('#sel-w-files').change( function() {
-    var uuid = localStorage['HL_LAYER'];
+    var uuid = gViz.uuid;
     var w_name = $('#sel-w-files').val();
     if ( w_name && uuid ) {
       var w_type = $('#sel-w-type').val();
@@ -894,6 +996,35 @@ $(document).ready(function() {
     $(this).prop("selectedIndex", -1);
   });
   
+  var timeoutRef;
+  var checkWname = function() {
+    if (!timeoutRef) return;
+    timeoutRef = null;
+    if (!gViz || !gViz.uuid) return;
+    var layer_uuid = gViz.uuid,
+        w_name = $("#txt-w-name").val();
+    $('#txt-w-name').next().remove();
+    if ( layer_uuid && w_name ) { 
+      $(html_load_img).insertAfter("#txt-w-name");
+      $.get('../check_w/', { 'w_name': w_name, 'layer_uuid':layer_uuid,}, function(){
+        $('#txt-w-name').next().remove();
+      }).done( function( data ) {
+        $('#txt-w-name').next().remove();
+        if ( data == "1" ) {
+          $('<font color=red>duplicated name</span>').insertAfter($("#txt-w-name"));
+        } else {
+          $(html_check_img).insertAfter("#txt-w-name");
+        }
+      }).always( function() {});
+    }
+  };
+  $('#txt-w-name').keypress(function() {
+    var el = this;
+    if ( timeoutRef ) clearTimeout(timeoutRef);
+    timeoutRef = setTimeout(function() {checkWname.call(el);}, 1000);
+    $('#txt-w-name').blur(function(){ checkWname.call(el); });
+  });
+  
   $("#img-id-chk, #img-id-nochk, #img-id-spin").hide();          
   $('#dist-slider').slider({
     min: 0, max: 100,
@@ -901,122 +1032,170 @@ $(document).ready(function() {
   });
   $('#spn-pow-idst, #spn-cont-order, #spn-dist-knn').spinner();
   $('#tabs-dlg-weights').tabs();
-  $('#sel-w-id').prop("selectedIndex", -1);
   
-  $( "#dialog-weights" ).dialog({
-    height: 380, width: 480,
-    autoOpen: false, modal: false,
-    dialogClass: "dialogWithDropShadow",
-    buttons: [
-      {
-        text: "Create",
-        id: "btn-create-w",
-        click: function() {
-          if ( gViz == undefined ) return;
-          var w_name = $('#txt-w-name').val(),
-          w_id = $('#sel-w-id').find(":selected").val(),
-          active = $('#tabs-dlg-weights').tabs("option","active");
-          if ( w_name.length == 0 ) {
-            ShowMsgBox("Error", "Weights name can't be empty.");
-            return;
-          }
-          if ( w_id.length == 0 || $('#img-id-nochk').is(":visible") ) {
-            ShowMsgBox("Error", "An unique ID for weights creation is required.");
-            return;
-          }
-          var post_param = {'w_id': w_id, 'w_name': w_name, };
-          if ( active == 0 ) {
-            var cont_type = $('#sel-cont-type').find(":selected").val(),
-                cont_order = $('#spn-cont-order').val(),
-                cont_ilo = $('#cbx-cont-ilo').prop("checked");
-                post_param['cont_type'] = parseInt(cont_type);
-                post_param['cont_order'] = parseInt(cont_order);
-                post_param['cont_ilo'] = cont_ilo;
-          } else if ( active == 1) {
-            var dist_value = "",
-                dist_metric = $('#sel-dist-metr').val(),
-                dist_method =$('input:radio[name=rdo-dist]:checked').attr("id");
-            if ( dist_method == 0 ) {
-              dist_value = $('#spn-dist-knn').val();
-            } else if ( dist_method == 1 ) {
-              dist_value = $('#txt-dist-thr').val();
-            } else if ( dist_method == 2 ) {
-              dist_value = $('#txt-dist-thr').val() + "," + $('#spn-pow-idst').val();
-            } else {
-              ShowMsgBox("","Please select a distance method.");
-              return;
-            }
-            post_param['dist_metric'] = dist_metric;
-            post_param['dist_method'] = dist_method;
-            post_param['dist_value'] = parseFloat(dist_value);
-          } else if ( active == 2) {
-            post_param['kernel_type'] = $("#sel-kel-type").val(); 
-            post_param['kernel_nn'] = parseInt($("#txt-kel-nn").val());
-          }
-    
-          // submit request
-          $("#btn-create-w").attr("disabled",true).fadeTo(0, 0.5);
-          $(html_load_img).insertBefore("#btn-create-w");
-          post_param['w_type'] = active;
-          
-          var msg = {"uuid": uuid, "wid": winID, "command":"create_w", 
-          "parameters": post_param};
-          gViz.CreateWeights( msg, OnWeightsCreated);
-        }
-      },
-      {
-        text: "Close",
-        click: function() {
-          $( this ).dialog( "close" );
-        },
-      }
-    ]
-  });
-  var OnWeightsCreated = function(data) {
-    var w_names = [];
-    for ( var key in data ) {
-      w_names.push(key); 
-    }
-    w_names.sort();
-    w_combobox= ['#sel-model-w-files', '#sel-kernel-w-files', '#sel-w-files','#sel-moran-w','#sel-lisa-w','#sel-st-lisa-w'];
-    $.each( w_combobox, function(i, w_cmb ) {
-      //$(w_cmb).find('option').remove().end();
-      $.each(w_names, function(j, w_name) {
-        wtype = data[w_name]["type"];
-        if ( (wtype <= 1 && w_cmb == w_combobox[0]) 
-              || (wtype == 2 && w_cmb == w_combobox[1]) 
-              || w_cmb == w_combobox[2] ) {
-          $(w_cmb).append($('<option>', {value: w_name}).text(w_name));
+  $('#sel-w-id').prop("selectedIndex", -1);
+  $('#sel-w-id').change(function() {
+    var layer_uuid = gViz.uuid;
+        id_name = $('#sel-w-id').val();
+    $("#img-id-chk, #img-id-nochk, #img-id-spin").hide();          
+    if (id_name == "") {
+      return;
+    } else if (id_name == "0") {
+      $('#dlg-add-uniqid').dialog('open');
+      return;
+    } else if (id_name && layer_uuid) {
+      $("#img-id-spin").show();          
+      $.get('../check_ID/',{'layer_uuid':layer_uuid, 'id_name':id_name},function(){ 
+        $("#img-id-spin").show(); 
+      }).done(function(data) {
+        if ( data == "1" ) {
+          $("#img-id-chk").show();          
+          $("#img-id-nochk, #img-id-spin").hide();          
         } else {
-          $(w_cmb).append($('<option>', {value: w_name}).text(w_name));
+          $("#img-id-nochk").show();          
+          $("#img-id-chk, #img-id-spin").hide();          
         }
       });
-    });
-    $('#sel-w-files').prop("selectedIndex", -1);
-    $("#btn-create-w").attr("disabled",false).fadeTo(0, 1.0).prev().remove();
-    ShowMsgBox("","Create weights done.");
-  };
+    }
+  });
+  $( "#dialog-weights" ).dialog({
+    height: 380, 
+    width: 480,
+    autoOpen: false, 
+    modal: false,
+    dialogClass: "dialogWithDropShadow",
+    buttons: [{
+      text: "Create",
+      id: "btn-create-w",
+      click: function() {
+        if ( !gViz || !gViz.uuid) return;
+        var w_name = $('#txt-w-name').val(),
+        w_id = $('#sel-w-id').find(":selected").val(),
+        active = $('#tabs-dlg-weights').tabs("option","active");
+        if ( w_name.length == 0 ) {
+          ShowMsgBox("Error", "Weights name can't be empty.");
+          return;
+        }
+        if ( w_id.length == 0 || $('#img-id-nochk').is(":visible") ) {
+          ShowMsgBox("Error", "An unique ID for weights creation is required.");
+          return;
+        }
+        var post_param = {
+          'layer_uuid': gViz.uuid, 
+          'w_id': w_id, 
+          'w_name': w_name, 
+          'csrfmiddlewaretoken': csrftoken,
+        };
+        if ( active == 0 ) {
+          var cont_type = $('#sel-cont-type').find(":selected").val(),
+              cont_order = $('#spn-cont-order').val(),
+              cont_ilo = $('#cbx-cont-ilo').prop("checked");
+              post_param['cont_type'] = parseInt(cont_type);
+              post_param['cont_order'] = parseInt(cont_order);
+              post_param['cont_ilo'] = cont_ilo;
+        } else if ( active == 1) {
+          var dist_value = "",
+              dist_metric = $('#sel-dist-metr').val(),
+              dist_method =$('input:radio[name=rdo-dist]:checked').attr("id");
+          if ( dist_method == 0 ) {
+            dist_value = $('#spn-dist-knn').val();
+          } else if ( dist_method == 1 ) {
+            dist_value = $('#txt-dist-thr').val();
+          } else if ( dist_method == 2 ) {
+            dist_value = $('#txt-dist-thr').val() + "," + $('#spn-pow-idst').val();
+          } else {
+            ShowMsgBox("","Please select a distance method.");
+            return;
+          }
+          post_param['dist_metric'] = dist_metric;
+          post_param['dist_method'] = dist_method;
+          post_param['dist_value'] = parseFloat(dist_value);
+        } else if ( active == 2) {
+          post_param['kernel_type'] = $("#sel-kel-type").val(); 
+          post_param['kernel_nn'] = parseInt($("#txt-kel-nn").val());
+        }
+  
+        // submit request
+        $("#btn-create-w").attr("disabled",true).fadeTo(0, 0.5);
+        $(html_load_img).insertBefore("#btn-create-w");
+        post_param['w_type'] = active;
+        
+        $.post("../create_weights/", post_param, function(){})
+        .done(function( data ) {
+          console.log("create_weights", data);
+          if ( data["success"] == 1 ) {
+            $('#txt-w-name').val("").next().remove();
+            $('#sel-w-id').next().remove();
+            LoadWnames();
+            $('#sel-w-id').prop("selectedIndex", -1);
+            ShowMsgBox("","Create weights done.");
+            return;
+          }
+          ShowMsgBox("Error", "Create weights failed.");
+        })
+        .fail(function() { ShowMsgBox("Error", "Create weights failed."); })
+        .always(function(){
+          $("#btn-create-w").attr("disabled",false)
+            .fadeTo(0, 1)
+            .prev().remove();
+        });
+      }
+    },
+    {
+      text: "Close",
+      click: function() {
+        $( this ).dialog( "close" );
+      },
+    }]
+  });
   //////////////////////////////////////////////////////////////
   //  Spatial Regression 
   //////////////////////////////////////////////////////////////
   var prev_obj;
+  $( "#tabs" ).tabs();
+  $( "#spreg-result-tabs" ).tabs();
+  
+  $( "#btn_open_model" ).button({icons: {primary: "ui-icon-folder-open"}})
+  .click(function() {
+    $('#dlg-open-model').dialog('open');
+  });
+  $( "#btn_save_model" ).button({icons: {primary: "ui-icon-disk"}})
+  .click(function() {
+    $('#dlg-save-model').dialog('open');
+  });
+  
+  $( "#btn_reset_model" ).button({icons: {primary: "ui-icon-)circle-close"}})
+  .click(function() { restSpreg(); });
+  
+  $( "#btn_preference" ).button({icons:{primary: "ui-icon-gear",}})
+  .click(function(){ $('#dialog-preference').dialog('open');});
+  
+  $( "#btn_result" ).button({icons: {primary: "ui-icon-document",}})
+  .click(function(){
+    $('#dialog-spreg-result').dialog('open').draggable('disable');
+  }).hide();
+    
+  $( "#btn_create_w" ).button({icons: {primary: "ui-icon-plus",}})
+  .click(function(){
+    $('#dialog-weights').dialog('open');
+  });
   // save spreg result to datasource
   $('#btn-save-predy').click(function() {
-    var count=0, param;
+    var count=0,
+        param;
     $('#txt-spreg-predy').children("table").each(function(i,tbl) {
       var content = $(tbl).html().replace(/\<th\>|\<\/th\>|\<tbody\>|\<\/tbody\>|\<tr\>|\<\/tr\>|\<\/td\>/g,"").replace(/\<td\>/g,",");
       if (param == undefined) param = {};
       param["predy" + i] = content;
       count = i;
     });
-    var uuid = localStorage['HL_LAYER'];
-    if (param && uuid) {
+    var layer_uuid = gViz.uuid;
+    if (param && layer_uuid) {
       param["n"] = count+1;
-      param["uuid"] = uuid;
-  
+      param["layer_uuid"] = layer_uuid;
+      param["csrfmiddlewaretoken"] = csrftoken;
       $(this).attr("disabled", "disabled");
       $(html_load_img).insertAfter("#btn-save-predy");
-    
       $.post("../save_spreg_result/", param, function() {
       }).done( function(result) {
         console.log(result);
@@ -1045,16 +1224,14 @@ $(document).ready(function() {
   $( "#x_catalog" ).accordion();
   $( "#w_catalog_model" ).accordion();
   $( "#w_catalog_kernel" ).accordion();
-  $( "#vars ul li" ).draggable({
-    helper: "clone"
-  });
+  $( "#vars ul li" ).draggable({ helper: "clone"});
   $( ".drop_box ol li" ).dblclick(function() {});
   $( ".drop_box ol" ).droppable({
     activeClass: "ui-state-default",
     hoverClass: "ui-state-hover",
     accept: ":not(div)",
-    drop: function( event, ui ) {
-      $( this ).find( ".placeholder" ).remove();
+    drop: function(event, ui) {
+      $(this).find(".placeholder").remove();
       // customized behavior for different dropbox
       var box_id = $(this).closest("div").attr("id");
       var n_items = $(this).children().length;
@@ -1063,7 +1240,8 @@ $(document).ready(function() {
           return; 
       }
       // drop gragged item
-      $( "<li></li>" ).text( ui.draggable.text() ).appendTo( this ).dblclick(function(){
+      $("<li></li>").text( ui.draggable.text() ).appendTo( this )
+      .dblclick(function(){
         $(this).remove();
         ui.draggable.show();
       });
@@ -1144,6 +1322,24 @@ $(document).ready(function() {
     modal: true,
     dialogClass: "dialogWithDropShadow",
     buttons: {
+      "Save to pdf": function() {
+        //$( this ).dialog( "close" );
+        if (gViz && gViz.uuid) {
+          var layer_uuid = gViz.uuid,
+              txt = $('#txt-spreg-summary').text();
+          txt = txt.replace(/"/g, '');
+          txt = txt.replace(/<br>/g, '\n');
+          txt = txt.replace(/<\/tr>/g, '\n');
+          txt = txt.replace(/<\/td>/g, '    ');
+          console.log(txt);
+          var inputs = '';
+          inputs += '<input type="hidden" name="layer_uuid" value="' + layer_uuid + '" />';
+          inputs += '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrftoken+'" />';
+          inputs += '<input type="hidden" name="text" value="' + txt + '" />';
+          jQuery('<form action="../save_pdf/" method="post">' + inputs + '</form>')
+          .appendTo('body').submit().remove();
+        }
+      },
       Cancel: function() {$( this ).dialog( "close" );},
     }
   });
@@ -1168,9 +1364,9 @@ $(document).ready(function() {
     buttons: {
       "Add": function() {
         var that = $(this);
-        var uuid = localStorage.getItem('HL_LAYER');
-        if ( uuid ) {
-          var name = $('#uniqid_name').val(),
+        if (gViz && gViz.uuid) {
+          var layer_uuid = gViz.uuid,
+              name = $('#uniqid_name').val(),
               conti = true;
           $.each($('#sel-w-id').children(), function(i,j) { 
             if( name == $(j).text()) {
@@ -1179,24 +1375,27 @@ $(document).ready(function() {
               return;
             }
           })
-          if ( conti == true ) {
-            params = { 'uuid': uuid, 'name': name};
+          if (conti == true) {
+            params = {
+              'layer_uuid': layer_uuid, 
+              'name': name,
+              'csrfmiddlewaretoken' : crsftoken,
+            };
             $.post("../add_UID/", params, function() {
             }).done(function(data) { 
               console.log("add_uid", data); 
               if (data["success"] == 1) {
-                loadFieldNames(function(){
+                loadFieldNames(function() {
                   $('#sel-w-id').val(name).change()
                 });
                 that.dialog( "close" );
                 ShowMsgBox("", "Add uniue ID successful.");
-                ;
               }
             });
           }
         }
       },
-      Cancel: function() {$( this ).dialog( "close" );},
+      Cancel: function() {$(this).dialog("close");},
     }
   });
   $( "#dlg-save-model" ).dialog({
@@ -1207,27 +1406,37 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Save": function() {
-        var uuid = localStorage.getItem('HL_LAYER');
-        if ( uuid ) {
-          var w_list = $.GetValsFromObjs($('#sel-model-w-files :selected'));
-          var wk_list = $.GetValsFromObjs($('#sel-kernel-w-files :selected'));
-          var model_type = $('input:radio[name=model_type]:checked').val();
-          var method = $('input:radio[name=method]:checked').val();
-          var name = $('#model_name').val();
-          var x = $.GetTextsFromObjs($('#x_box li'));
-          var y = $.GetTextsFromObjs($('#y_box li'));
-          var ye = $.GetTextsFromObjs($('#ye_box li'));
-          var h = $.GetTextsFromObjs($('#inst_box li'));
-          var r = $.GetTextsFromObjs($('#r_box li'));
+        if (gViz && gViz.uuid) {
+          var layer_uuid = gViz.uuid,
+              w_list = $.GetValsFromObjs($('#sel-model-w-files :selected')),
+              wk_list = $.GetValsFromObjs($('#sel-kernel-w-files :selected')),
+              model_type = $('input:radio[name=model_type]:checked').val(),
+              method = $('input:radio[name=method]:checked').val(),
+              name = $('#model_name').val(),
+              x = $.GetTextsFromObjs($('#x_box li')),
+              y = $.GetTextsFromObjs($('#y_box li')),
+              ye = $.GetTextsFromObjs($('#ye_box li')),
+              h = $.GetTextsFromObjs($('#inst_box li')),
+              r = $.GetTextsFromObjs($('#r_box li'));
           //var t = $.GetTextsFromObjs($('#t_box li'));
-          var t = [];
-          var error = [0,0,0];
+          var t = [],
+              error = [0,0,0];
           $('input:checkbox[name=stderror]').each(function(i,obj){
-            if (obj.checked) error[i] = 1;
+            if (obj.checked) {
+              error[i] = 1;
+            }
           });
-          params = { 'uuid': uuid, 'name': name, 'w': w_list, 'wk': wk_list, 'type': model_type, 'method': method, 'error': error, 'x': x, 'y': y, 'ye': ye, "h": h, "r": r, "t": t};
+          params = {
+            'uuid': uuid,
+            'name': name,
+            'w': w_list,
+            'wk': wk_list,
+            'type': model_type,
+            'method': method,
+            'error': error,
+            'x': x, 'y': y, 'ye': ye, "h": h, "r": r, "t": t
+          };
           console.log(params);
-          
           $.post("../save_spreg_model/", params, function() {
           }).done(function(data) { 
             console.log(data); 
@@ -1240,8 +1449,7 @@ $(document).ready(function() {
       Cancel: function() {$( this ).dialog( "close" );},
     }
   });
-    
-  $( "#dlg-open-model" ).dialog({
+  $("#dlg-open-model").dialog({
     dialogClass: "dialogWithDropShadow",
     width: 400,
     height: 200,
@@ -1249,47 +1457,57 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        var uuid = localStorage.getItem('HL_LAYER');
-        if ( uuid ) {
+        var layer_uuid = gViz.uuid;
+        if (layer_uuid) {
           var model_name = $('#open_spreg_model').val();
-          if (model_name ) {
-            $.get("../load_spreg_model/", {'uuid':uuid,'name':model_name}, function(){})
+          if (model_name) {
+            $.get("../load_spreg_model/", {
+              'uuid':uuid,'name':model_name
+            }, function(){})
             .done(function(data) {
               console.log(data);
-              if ( data["success"] != 1 ) {
+              if (data["success"] != 1) {
                 console.log("load spreg model failed.");
-              } else {
-                resetSpreg();
-                $('input[name="model_type"][value='+data['type']+']').prop('checked', true);
-                $('input[name="method"][value='+data['method']+']').prop('checked', true);
-                var error = data['stderror'];
-                $('input:checkbox[name=stderror]').each(function(i,obj){
-                  if (error[i] == 1) $(obj).prop('checked', true);
-                });
-                $.each( data['w'], function(i, w) {$('#sel-model-w-files').val(w);});
-                $.each( data['kw'], function(i, w) {$('#sel-kernel-w-files').val(w);});
-                var load_vars = function( vars, box ) {
-                  $.each( vars, function(i, v) {
-                    if ( v && v.length > 0 ) {
-                      if (i == 0) box.find( ".placeholder" ).remove();
-                      var item = $('#ul-x-variables p').filter(function(i, p){ 
-                        return $(p).text() == v;
-                      }).parent().hide();
-                      var ctn = box.closest("div").children().first();
-                      $( "<li></li>" ).text(v).appendTo(ctn).dblclick(function(){
-                        $(this).remove();
-                        item.show();
-                      });
+                return;
+              }
+              resetSpreg();
+              $('input[name="model_type"][value='+data['type']+']').prop('checked', true);
+              $('input[name="method"][value='+data['method']+']').prop('checked', true);
+              var error = data['stderror'];
+              $('input:checkbox[name=stderror]').each(function(i,obj){
+                if (error[i] == 1) {
+                  $(obj).prop('checked', true);
+                }
+              });
+              $.each( data['w'], function(i, w) {
+                $('#sel-model-w-files').val(w);
+              });
+              $.each( data['kw'], function(i, w) {
+                $('#sel-kernel-w-files').val(w);
+              });
+              var load_vars = function( vars, box ) {
+                $.each( vars, function(i, v) {
+                  if ( v && v.length > 0 ) {
+                    if (i == 0) {
+                      box.find( ".placeholder" ).remove();
                     }
-                  });
-                };
-                load_vars( data['y'], $('#y_box') );
-                load_vars( data['x'], $('#x_box') );
-                load_vars( data['ye'], $('#ye_box') );
-                load_vars( data['h'], $('#inst_box') );
-                load_vars( data['r'], $('#r_box') );
-                //load_vars( data['t'], $('#t_box') );
-              } 
+                    var item = $('#ul-x-variables p').filter(function(i, p){ 
+                      return $(p).text() == v;
+                    }).parent().hide();
+                    var ctn = box.closest("div").children().first();
+                    $( "<li></li>" ).text(v).appendTo(ctn).dblclick(function(){
+                      $(this).remove();
+                      item.show();
+                    });
+                  }
+                });
+              };
+              load_vars( data['y'], $('#y_box') );
+              load_vars( data['x'], $('#x_box') );
+              load_vars( data['ye'], $('#ye_box') );
+              load_vars( data['h'], $('#inst_box') );
+              load_vars( data['r'], $('#r_box') );
+              //load_vars( data['t'], $('#t_box') );
             });
           }
         }
@@ -1300,7 +1518,8 @@ $(document).ready(function() {
   });
  $( "#btn_run" ).button({icons: {primary: "ui-icon-circle-triangle-e",}})
   .click(function() {
-    if (  gViz == undefined ) return;
+    if (!gViz|| !gViz.uuid) return;
+    var layer_uuid = gViz.uuid;
     var w_list = $.GetValsFromObjs($('#sel-model-w-files :selected'));
     var wk_list = $.GetValsFromObjs($('#sel-kernel-w-files :selected'));
     var model_type = $('input:radio[name=model_type]:checked').val();
@@ -1318,72 +1537,78 @@ $(document).ready(function() {
     var conti = true;
     $('input:checkbox[name=stderror]').each(function(i,obj){
       if (obj.checked){ 
-      error[i] = 1;
-        if ( i==1 && w_list.length == 0 ) {
+        error[i] = 1;
+        if (i==1 && w_list.length==0) {
           ShowMsgBox("","Please select weights file for model.");
           conti = false;
           return;
         }
-        if ( i==1 && wk_list.length == 0 ) {
+        if (i==1 && wk_list.length==0) {
           ShowMsgBox("","Please select kernel weights file for model.");
           conti = false;
           return;
         }
       }
     });
-    if ( conti == false) return;
+    if (conti==false) return;
     // run model
     $('#dlg-run').dialog("open").html('<img src="img/loading.gif"/><br/>Loading ...');
     $('#dlg-run').siblings('.ui-dialog-titlebar').hide();
-    params = {'command': 'spatial_regression', 'wid': winID,
-      'uuid': uuid, 'w': w_list, 'wk': wk_list, 
-      'type': parseInt(model_type), 'method': parseInt(method), 'error': error, 
+    params = {
+      'command': 'spatial_regression', 'wid': winID,
+      'layer_uuid': layer_uuid, 'w': w_list, 'wk': wk_list, 
+      'type': model_type, 'method': method, 'error': error, 
       'x': x, 'y': y, 'ye': ye, "h": h, "r": r, "t": t,
+      'csrfmiddlewaretoken': csrftoken,
     };
-    
-    gViz.RunSpreg(params, OnSpregDone);
-    $('#btn_result').hide();
-  });
-  
-  var OnSpregDone = function(msg) {
-    if ( msg["success"] == 1) {
+    $.post("../spatial_regression/", params, function() {
+      $('#btn_result').hide();
+    }).done(function(data) {
       $('#dlg-run').dialog("close");
-      if ( msg['report'] ) {
-        $('#btn_result').show();
-        var predy = "", summary = "", cnt= 0;
-        $.each(msg['report'], function(id, result) { 
-          cnt+=1;
-        });
-        cnt = cnt.toString();
-        $.each(msg['report'], function(id, result) {
-          var idx = parseInt(id) + 1
-          summary += "Report " + idx + "/" + cnt + 
-            "\n\n"+result['summary'] + "\n\n";
-          predy += "<b>Report " + idx + "/" + cnt +"</b><br/><br/>";
-          predy += "<table border=1 width=100% id='predy" + id + 
-            "'><tr><th>Predicted Values</th><th>Residuals</th></tr>";
-          var n = result['predy'][0].length;
-          for ( var i=0; i< n; i++ ) {
-            predy += "<tr><td>" + result['predy'][0][i] + "</td><td>" + 
-              result['residuals'][0][i] + "</td></tr>";
+      try {
+        data = JSON.parse(data);
+        if (data['success']==1) {
+          $('#btn_result').show();
+          if (data['report']) {
+            var predy = "", 
+                summary = "", 
+                cnt= 0;
+            $.each(data['report'], function(id, result) { 
+              cnt+=1;
+            });
+            cnt = cnt.toString();
+            $.each(data['report'], function(id, result) {
+              var idx = parseInt(id) + 1;
+              summary += "Report " + idx + "/" + cnt + 
+                "\n\n"+result['summary'] + "\n\n";
+              predy += "<b>Report " + idx + "/" + cnt +"</b><br/><br/>";
+              predy += "<table border=1 width=100% id='predy" + id + 
+                "'><tr><th>Predicted Values</th><th>Residuals</th></tr>";
+              var n = result['predy'][0].length;
+              for ( var i=0; i< n; i++ ) {
+                predy += "<tr><td>" + result['predy'][0][i] + "</td><td>" + 
+                  result['residuals'][0][i] + "</td></tr>";
+              }
+              predy += "</table><br/><br/>";
+            });
+            $('#txt-spreg-predy').html(predy);
+            $('#txt-spreg-summary').text(summary);
           }
-          predy += "</table><br/><br/>";
-        });
-        $('#txt-spreg-predy').html(predy);
-        $('#txt-spreg-summary').text(summary);
+          $('#btn_result').popupDiv('#divPop','Click this button to see result.');
+        }
+      } catch (e) {
+        console.log(e);
       }
-      $('#btn_result').popupDiv('#divPop','Click this button to see result.');
-    } else {
+    })
+    .fail(function(data){ 
       $('#dlg-run').dialog("close");
       ShowMsgBox("Erro","Spatial regression failed.");
-    }
-  };
-  
+    });
+  });
   //////////////////////////////////////////////////////////////
   //   LISA Map
   //////////////////////////////////////////////////////////////
-  
-  $( "#dlg-lisa-map" ).dialog({
+  $("#dlg-lisa-map").dialog({
     dialogClass: "dialogWithDropShadow",
     width: 400,
     height: 200,
@@ -1411,7 +1636,6 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Moran Scatter Plot
   //////////////////////////////////////////////////////////////
-  
   $( "#dlg-moran-scatter-plot" ).dialog({
     dialogClass: "dialogWithDropShadow",
     width: 400,
@@ -1435,11 +1659,9 @@ $(document).ready(function() {
       Cancel: function() {$( this ).dialog( "close" );},
     },
   });
-  
   //////////////////////////////////////////////////////////////
   //  Scatter Plot
   //////////////////////////////////////////////////////////////
-  
   $( "#dlg-scatter-plot" ).dialog({
     dialogClass: "dialogWithDropShadow",
     width: 400,
@@ -1468,50 +1690,36 @@ $(document).ready(function() {
     width: 400,
     height: 200,
     autoOpen: false,
-    modal: true,
+    modal: false,
     buttons: {
       "Open": function() {
-        if (!gViz) return;
-        var sel_method = $('#sel-quan-method').val();
-        var sel_var = $('#sel-var').val();
-        var sel_cat = $('#quan-cate').val();
-        var msg = {"command":"new_choropleth_map","wid": winID,"uuid":uuid,
-        "method": sel_method, "var": sel_var, "category": sel_cat};
-        gViz.NewChoroplethMap(msg);
+        if (!gViz && !gViz.uuid) return;
+        var sel_method = $('#sel-quan-method').val(),
+            sel_var = $('#sel-var').val(),
+            sel_cat = $('#quan-cate').val();
+        if (sel_var == '') {
+          ShowMsgBox("Info", "Please select a variable for choropleth map.")
+          return;
+        }
+        if (sel_cat == '') {
+          ShowMsgBox("Info", "Please select a category number for choropleth map.")
+          return;
+        }
+        var params = {
+          "layer_uuid": gViz.uuid,
+          "method": sel_method, 
+          "var": sel_var, 
+          "category": sel_cat
+        };
+        $.get('../thematic_map/', params, function(){
+        }).done(function(result){
+          
+        });
         $(this).dialog("close");
       }, 
       Cancel: function() {$( this ).dialog( "close" );},
     },
   });
-  
-  $( "#tabs" ).tabs();
-  $( "#spreg-result-tabs" ).tabs();
-  
-  $( "#btn_open_model" ).button({icons: {primary: "ui-icon-folder-open"}})
-  .click(function() {
-    $('#dlg-open-model').dialog('open');
-  });
-  $( "#btn_save_model" ).button({icons: {primary: "ui-icon-disk"}})
-  .click(function() {
-    $('#dlg-save-model').dialog('open');
-  });
-  
-  $( "#btn_reset_model" ).button({icons: {primary: "ui-icon-)circle-close"}})
-  .click(function() { restSpreg(); });
-  
-  $( "#btn_preference" ).button({icons:{primary: "ui-icon-gear",}})
-  .click(function(){ $('#dialog-preference').dialog('open');});
-  
-  $( "#btn_result" ).button({icons: {primary: "ui-icon-document",}})
-  .click(function(){
-    $('#dialog-spreg-result').dialog('open').draggable('disable');
-  }).hide();
-    
-  $( "#btn_create_w" ).button({icons: {primary: "ui-icon-plus",}})
-  .click(function(){
-    $('#dialog-weights').dialog('open');
-  });
-    
    
 });
 

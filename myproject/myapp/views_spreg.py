@@ -193,8 +193,12 @@ def spatial_regression(request):
     # These options are not available yet....
     s = None
     name_s = None
-    mtypes = {0: 'Standard', 1: 'Spatial Lag', 2: 'Spatial Error', \
-              3: 'Spatial Lag+Error'}    
+    mtypes = {
+        0: 'Standard', 
+        1: 'Spatial Lag', 
+        2: 'Spatial Error', 
+        3: 'Spatial Lag+Error'
+    }    
     model_type = mtypes[model_type]
     method_types = {0: 'ols', 1: 'gm', 2: 'ml'}
     method = method_types[model_method]

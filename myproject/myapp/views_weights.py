@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 
 import numpy as np
-import json, time, os, logging
+import json, time, os, logging,shutil
 from hashlib import md5
 
 from pysal import W, w_union, higher_order
@@ -75,12 +75,11 @@ def create_weights(request):
         kernel_type = request.POST.get("kernel_type", None)
         kernel_nn = request.POST.get("kernel_nn", None)
         #print request.POST
-        file_url, shpfilename = get_file_url(userid, layer_uuid)
-        file_url = settings.PROJECT_ROOT + file_url
-        if file_url.endswith("json"):
-            file_url = file_url[0:file_url.rindex(".")] + ".shp"
-        shp_path = file_url
-        print "create_weights", file_url
+        file_path, shpfilename = get_file_url(userid, layer_uuid)
+        if file_path.endswith("json"):
+            file_path = file_path[0:file_path.rindex(".")] + ".shp"
+        shp_path = file_path
+        print "create_weights", file_path
         # detect w_id is unique ID
         if w_id == "ogc_fid":
             w_id = "ogc_fid4"
@@ -98,19 +97,23 @@ def create_weights(request):
                     row.append(i+1)
                     newDB.write(row) 
                 newDB.close()
-                import shutil
                 shutil.copyfile(tmp_dbf_path, dbf_path)
             f.close()
 
-        w = CreateWeights(shp_path, w_name, w_id, w_type,\
-                          cont_type = cont_type,
-                          cont_order = cont_order,
-                          cont_ilo = cont_ilo,
-                          dist_metric = dist_metric, 
-                          dist_method = dist_method,
-                          dist_value = dist_value,
-                          kernel_type = kernel_type,
-                          kernel_nn = kernel_nn)
+        w = CreateWeights(
+            shp_path, 
+            w_name, 
+            w_id, 
+            w_type,
+            cont_type = cont_type,
+            cont_order = cont_order,
+            cont_ilo = cont_ilo,
+            dist_metric = dist_metric, 
+            dist_method = dist_method,
+            dist_value = dist_value,
+            kernel_type = kernel_type,
+            kernel_nn = kernel_nn
+        )
         # save meta data and W object to database
         meta_data = {}
         meta_data['cont_type'] = cont_type
@@ -137,11 +140,19 @@ def create_weights(request):
         for k,v in w.weights.iteritems():
             weights[str(k)] = list(v)
         
-        new_w_item = Weights(uuid=wuuid, userid=userid, \
-                             shpfilename=shpfilename, name=w_name, n=w.n,\
-                             wid=w_id, wtype=w_type, wtypemeta=wtypemeta, \
-                             histogram=histogram, neighbors=neighbors, \
-                             weights=weights)
+        new_w_item = Weights(
+            uuid=wuuid, 
+            userid=userid,
+            shpfilename=shpfilename, 
+            name = w_name, 
+            n = w.n,
+            wid = w_id, 
+            wtype = w_type, 
+            wtypemeta = wtypemeta,
+            histogram = histogram, 
+            neighbors = neighbors, 
+            weights = weights
+        )
         new_w_item.save()
         return HttpResponse(RSP_OK, content_type="application/json")
     

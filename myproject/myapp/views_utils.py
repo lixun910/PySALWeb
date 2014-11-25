@@ -23,9 +23,9 @@ def get_file_url(userid, layer_uuid):
     from myproject.myapp.models import Document, Geodata
     try:
         geodata = Geodata.objects.get(uuid=layer_uuid)
-        file_uuid = md5(geodata.userid + geodata.filepath).hexdigest()
-        document = Document.objects.get(uuid=file_uuid)
-        return document.docfile.url, document.filename
+        file_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
+        file_name = geodata.name
+        return file_path, file_name
     except:
         return None
 
