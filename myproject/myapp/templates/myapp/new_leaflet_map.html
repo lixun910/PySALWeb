@@ -33,10 +33,12 @@ var viz, lmap, map, uuid, prj;
 var ip, type, bins, id_array, title,k,colors, colorTheme={};  
 
 $(document).ready(function() {
-  var winID = getParameterByName("wid"),
-      json_url = getParameterByName("uuid"),
-      uuid = getParameterByName("uuid"),
-      param = getParameterByName("param");
+  uuid = getParameterByName("uuid");
+  type = getParameterByName("type");
+  title = getParameterByName("title");
+  k = getParameterByName("k");
+  ip = window.opener.gViz.ip;
+  map = window.opener.gViz.map;
       
   lmap = L.map('map');
   
@@ -54,7 +56,7 @@ $(document).ready(function() {
   
   viz = new d3viz(winID, $('#map-container'), foreground);
    
-  viz.SetupWebSocket();
+  //viz.SetupWebSocket();
   viz.SetupBrushLink();
   
   var showInfo = function(){
@@ -84,103 +86,76 @@ $(document).ready(function() {
       return div;
     };
     selector.addTo(lmap);
-    
-    
     // fill content of legend
-    
     var info = L.control();
     info.onAdd = function (map) {
-	    this._div = L.DomUtil.create('div', 'info');
-	    this.update();
-	    return this._div;
+      this._div = L.DomUtil.create('div', 'info');
+      this.update();
+      return this._div;
     };
     info.update = function (props) {
-	    this._div.innerHTML = '<h4>'+title+'</h4>';
+      this._div.innerHTML = '<h4>'+title+'</h4>';
     };
     info.addTo(lmap);
-    
     if (type == "lisa") {
       $('#selector').empty();
     }
   };
   
     
-  viz.RequestParameters(winID, function(params) {
- var msg = window.opener.tempMsg,
-      uuid = msg.uuid, //getParameterByName("uuid"),
-      id_array = msg.data,
-      title = msg.title,
+  var msg = window.opener.gMsg,
+      id_array = msg.id_array,
       bins = msg.bins,
+      colors = colorbrewer.YlGn[k];
       k = id_array.length,
-      colors = colorbrewer.YlGn[k],
-      type = getParameterByName("type"),
-      data = window.opener.dataDict[uuid];
-  //window.opener.tempMsg = undefined;
+    
+  if (type == "lisa") {
+    colors = colorbrewer.Lisa[k];
+  }
+    
+  colorTheme = {};
+  for ( var i=0, n=id_array.length; i<n; i++ ) {
+    colorTheme[colors[i]] = id_array[i];
+  }
 
-    ip = params["projection"];
-    type = params["type"];
-    bins = params["bins"];
-    id_array = params["id_array"];
-    title = params["title"];
-    k = id_array.length;
-    colors = colorbrewer.YlGn[k];
+  var checkSwitch = false;
+  if (ip) {
+    checkSwitch = true; 
+  }
+  $("#switch").switchButton({
+    checked: checkSwitch,
+    on_label: 'ON',
+    off_label: 'Leaflet Background? OFF',
+    on_callback: function() {
+      viz.ShowMainMapInPopup(map, function(){}, function() {
+	$('#loading').remove();
     
-    if (type == "lisa") {
-      colors = colorbrewer.Lisa[k];
-    }
-    
-    colorTheme = {};
-    for ( var i=0, n=id_array.length; i<n; i++ ) {
-      colorTheme[colors[i]] = id_array[i];
-    }
- 
-    var checkSwitch = false;
-    if (ip != undefined && ip.length > 0) {
-      prj = proj4(ip, proj4.defs('WGS84'));
-      checkSwitch = true; 
-	}
-    $("#switch").switchButton({
-      checked: checkSwitch,
-      on_label: 'ON',
-      off_label: 'Leaflet Background? OFF',
-      on_callback: function() {
-	//prj = proj4(proj4.defs('WGS84'), proj4.defs('WGS84'));
-	
-	viz.ShowLeafletMap(uuid, L, lmap, prj, {
-	  "color_theme": colorTheme, 
-	  "hratio": 1,
-	  "vratio": 1,
-	  "alpha": 0.9,
-	}, function() {
-	  $('#loading').remove();
-      
-	  map = viz.map;
-	  lmap.on('zoomstart', function() {
-	    map.clean();
-	  });
-	  lmap.on('zoomend', function() {
-	    map.update();
-	  });
-	  lmap.on('movestart', function(e) {
-	    map.clean();
-	  });
-	  lmap.on('moveend', function(e) {
-	    var op = e.target.getPixelOrigin();
-	    var np = e.target._getTopLeftPoint();
-	    var offsetX = -np.x + op.x;
-	    var offsetY = -np.y + op.y;
-	    map.update({"offsetX":offsetX, "offsetY":offsetY});
-	  });
+	map = viz.map;
+	lmap.on('zoomstart', function() {
+	  map.clean();
 	});
-        $('#map').show();
-      },
-      off_callback: function() {
-		viz.ShowThematicMap(uuid, colorTheme, function(){
-		  map = viz.map;
-		});
-        $('#map').hide();
-      },
-    });
+	lmap.on('zoomend', function() {
+	  map.update();
+	});
+	lmap.on('movestart', function(e) {
+	  map.clean();
+	});
+	lmap.on('moveend', function(e) {
+	  var op = e.target.getPixelOrigin();
+	  var np = e.target._getTopLeftPoint();
+	  var offsetX = -np.x + op.x;
+	  var offsetY = -np.y + op.y;
+	  map.update({"offsetX":offsetX, "offsetY":offsetY});
+	});
+      }, L, lmap, colorTheme);
+      $('#map').show();
+    },
+    off_callback: function() {
+      viz.ShowThematicMap(map, colorTheme, function(){	
+      });
+      $('#map').hide();
+    },
+  });
     
     // fill content of color-selector
     $.each(colorbrewer, function(k,v){
@@ -193,7 +168,6 @@ $(document).ready(function() {
     create_legend($('#legend'), bins, colors); 
     
     $('#title').empty().text(title);
-  });
   
 	$('#color-selector').change(function(){
 	  var clr_name = $('#color-selector option:selected').text();

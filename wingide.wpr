@@ -11,5 +11,8 @@ proj.directory-list = [{'dirloc': loc('.'),
                         'recursive': True,
                         'watch_for_changes': True}]
 proj.file-type = 'shared'
+proj.launch-config = {loc('manage.py'): ('project',
+        (u'runserver --noreload 8000',
+         ''))}
 proj.main-file = loc('manage.py')
 testing.test-framework = {loc('manage.py'): ':internal djangotest'}

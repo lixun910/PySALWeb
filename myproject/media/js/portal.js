@@ -1,7 +1,7 @@
 
 var cartolx, carto_uid, carto_key, carto_layer,
     foreground, lmap, uuid, winID, 
-    gViz, gVizMap, gMap,
+    gViz, gVizMap, gMap,gMsg,
     prj, gProjSwitchOn = true,
     gHasProj     =false, 
     gShowLeaflet =false, 
@@ -1713,7 +1713,7 @@ $(document).ready(function() {
         };
         $.get('../thematic_map/', params, function(){
         }).done(function(result){
-          
+          gMsg = result;
         });
         $(this).dialog("close");
       }, 

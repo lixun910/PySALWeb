@@ -446,6 +446,7 @@ def upload(request):
             json_path = shp_path[:-3] + "json"
         else:
             json_path = shp_path[:-3] + "simp.json"
+        json_path= json_path.replace('\\','/')
         abs_shp_path = os.path.join(settings.MEDIA_ROOT, shp_path)
         meta_data = GeoDB.GetMetaData(abs_shp_path, table_name, driver)
         

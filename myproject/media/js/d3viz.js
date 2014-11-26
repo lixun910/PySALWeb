@@ -18,6 +18,7 @@
     this.nameDict = {}; // uuid:name
     
     this.prj = undefined;
+    this.map = undefined;
     this.canvas = canvas;
     this.container = container;
     
@@ -119,6 +120,18 @@
     return json_url; 
   };
   
+  d3viz.prototype.ShowMainMapInPopup = function(map, precall, callback, L, lmap, colorTheme) {
+    if (typeof precall === "function") {
+      precall();
+    }
+    self.mapCanvas = new GeoVizMap(map, self.canvas,{
+        "color_theme" : colorTheme
+      });
+    if (typeof callback === "function") {
+      callback(map);
+    }
+    this.map = map;
+  };
   /**
    * ShowMainMap() could be:
    * 1. Drag&Drop local ESRI Shape file
@@ -188,6 +201,7 @@
         callback(map);
       }
     } 
+    this.map = map;
   };
   
   /**
@@ -214,25 +228,13 @@
   /**
    * Create a new thematic map
    */
-  d3viz.prototype.ShowThematicMap = function(uuid, colorTheme, callback) {
-    var json_url = this.GetJsonUrl(uuid);
-    if (this.canvas == undefined) {
-      this.canvas = $('<canvas id="' + uuid + '"></canvas>').appendTo(this.container);
-    }
-    this.GetJSON( json_url, function(data) {
-      if ( typeof data == "string") {
-        data = JSON.parse(data);
-      }
-      var map = new JsonMap(data);
-      self.mapCanvas = new GeoVizMap(map, self.canvas, {
-        "color_theme" : colorTheme
-      });
-      self.mapDict[uuid] = map;
-      self.dataDict[uuid] = data;
-      if (typeof callback === "function") {
-        callback();
-      }
+  d3viz.prototype.ShowThematicMap = function(map, colorTheme, callback) {
+    self.mapCanvas = new GeoVizMap(map, self.canvas, {
+      "color_theme" : colorTheme
     });
+    if (typeof callback === "function") {
+      callback();
+    }
   };
   
   d3viz.prototype.UpdateThematicMap = function(uuid, newColorTheme, callback) {
@@ -243,6 +245,16 @@
     }
   };
  
+  /**
+   * Create a new Leaftlet map
+   */
+  d3viz.prototype.PopupLeafletMap = function(k,var,method,layer_uuid) {
+    var w = window.open(
+      this.RandUrl('thematicmap.html?k='+k+'&var='+var+'&method='+method+'&layer_uuid='+layer_uuid), // quantile, lisa,
+      "_blank",
+      "width=900, height=700, scrollbars=yes"
+    );
+  };
   /**
    * Create a new Leaftlet map
    */
