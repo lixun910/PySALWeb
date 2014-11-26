@@ -248,9 +248,9 @@
   /**
    * Create a new Leaftlet map
    */
-  d3viz.prototype.PopupLeafletMap = function(k,var,method,layer_uuid) {
+  d3viz.prototype.PopupLeafletMap = function() {
     var w = window.open(
-      this.RandUrl('thematicmap.html?k='+k+'&var='+var+'&method='+method+'&layer_uuid='+layer_uuid), // quantile, lisa,
+      this.RandUrl('thematicmap.html'), // quantile, lisa,
       "_blank",
       "width=900, height=700, scrollbars=yes"
     );

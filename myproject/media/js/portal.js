@@ -1714,6 +1714,7 @@ $(document).ready(function() {
         $.get('../thematic_map/', params, function(){
         }).done(function(result){
           gMsg = result;
+          gViz.PopupLeafletMap();
         });
         $(this).dialog("close");
       }, 
