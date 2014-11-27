@@ -73,6 +73,10 @@
     }
   };
 
+  ShpMap.prototype.getData= function() {
+    return this.shpReader;
+  };
+  
   ShpMap.prototype.fitScreen = function(screenWidth, screenHeight, marginLeft, marginTop, moveX, moveY) {
     if (moveX) this.moveX = moveX;
     if (moveY) this.moveY = moveY;
@@ -206,6 +210,10 @@
     if ( this.Lmap) {
       this.Lmap.fitBounds([[this.mapBottom,this.mapLeft],[this.mapTop,this.mapRight]]);
     }
+  };
+  
+  JsonMap.prototype.getData= function() {
+    return this.geojson;
   };
   
   JsonMap.prototype.updateExtent = function(basemap) {

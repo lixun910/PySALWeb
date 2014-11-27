@@ -246,6 +246,10 @@ def thematic_map(request):
                         id_array.append([j for j,v in enumerate(y) \
                                          if bins[i-1] < v <= upper])
                 results = {
+                    "k": len(bins),
+                    "layer_uuid":layer_uuid,
+                    "col_name" : col_name,
+                    "method" : method,
                     "bins": bins if isinstance(bins, list) else bins.tolist(),
                     "id_array": id_array,
                 }

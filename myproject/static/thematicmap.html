@@ -27,38 +27,13 @@
 <script src="../media/js/proj4-src.js"></script>
 <script src="../media/js/jquery-ui-1.10.4.custom.min.js"></script>
 <script src="../media/js/jquery.switchButton.js"></script>
+<script src="../media/js/shapefile.js"></script>
 <script>
-
-var viz, lmap, map, uuid, prj; 
-var ip, type, bins, id_array, title,k,colors, colorTheme={};  
+var viz, lmap, map, data, mapType, layer_uuid, prj; 
+var prj, type, bins, id_array, title,k,colors, colorTheme={};  
 
 $(document).ready(function() {
-  uuid = getParameterByName("uuid");
-  type = getParameterByName("type");
-  title = getParameterByName("title");
-  k = getParameterByName("k");
-  ip = window.opener.gViz.ip;
-  map = window.opener.gViz.map;
-      
-  lmap = L.map('map');
-  
-  L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' + 
-    '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-    'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-    id: 'examples.map-20v6611k'
-  }).addTo(lmap);
 
-  localStorage.clear();
-  
-  var foreground = $('#foreground').attr("id", uuid); 
-  
-  viz = new d3viz(winID, $('#map-container'), foreground);
-   
-  //viz.SetupWebSocket();
-  viz.SetupBrushLink();
-  
   var showInfo = function(){
     var selector = L.control({position: 'bottomleft'});
     selector.onAdd = function (map) {
@@ -66,22 +41,19 @@ $(document).ready(function() {
       var legend = L.DomUtil.create('div', 'legend');
       var sel = L.DomUtil.create('select', 'color-selector');
       var info = L.DomUtil.create('h4', '');
-
       create_legend($(legend), bins, colors); 
-      
       // fill content of color-selector
       $.each(colorbrewer, function(k,v){
-	$(sel)
-	  .append($("<option></option>")
-	    .attr("value", k)
-	    .text(k));
+		$(sel)
+		  .append($("<option></option>")
+			.attr("value", k)
+			.text(k));
       });
-     
       $(div).append($(legend)); 
       $(div).append($(info)); 
       if ( type != "lisa") {
-	$(div).append("Select to change color scheme:"); 
-	$(div).append($(sel)); 
+		$(div).append("Select to change color scheme:"); 
+		$(div).append($(sel)); 
       }
       return div;
     };
@@ -102,84 +74,103 @@ $(document).ready(function() {
     }
   };
   
-    
-  var msg = window.opener.gMsg,
-      id_array = msg.id_array,
-      bins = msg.bins,
-      colors = colorbrewer.YlGn[k];
-      k = id_array.length,
-    
-  if (type == "lisa") {
+  var msg = window.opener.gMsg;
+  k = msg.k;
+  layer_uuid = msg.layer_uuid;
+  col_name = msg.col_name;
+  method = msg.method;
+  bins = msg.bins;
+  id_array = msg.id_array;
+  colors = colorbrewer['YlGn'][k];
+  prj = window.opener.gPrj;
+  data = window.opener.gMap.getData();
+  mapType = window.opener.gViz.mapType;
+  title = method + " map for variable (" + col_name +")";
+      
+  lmap = L.map('map');
+  L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' + 
+    '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+    'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+    id: 'examples.map-20v6611k'
+  }).addTo(lmap);
+
+  var foreground = $('#foreground').attr("id", layer_uuid); 
+  viz = new d3viz($('#map-container'), foreground);
+  viz.SetupBrushLink();
+  
+    if (type == "lisa") {
     colors = colorbrewer.Lisa[k];
   }
-    
   colorTheme = {};
   for ( var i=0, n=id_array.length; i<n; i++ ) {
     colorTheme[colors[i]] = id_array[i];
   }
 
   var checkSwitch = false;
-  if (ip) {
+  if (prj) {
     checkSwitch = true; 
   }
-  $("#switch").switchButton({
-    checked: checkSwitch,
-    on_label: 'ON',
-    off_label: 'Leaflet Background? OFF',
-    on_callback: function() {
-      viz.ShowMainMapInPopup(map, function(){}, function() {
+  var PreMapShown = function() {
+  };
+  var OnMapShown = function(_map) {
+	map = _map;
 	$('#loading').remove();
-    
-	map = viz.map;
 	lmap.on('zoomstart', function() {
-	  map.clean();
+	  viz.mapCanvas.clean();
 	});
 	lmap.on('zoomend', function() {
-	  map.update();
+	  viz.mapCanvas.update();
 	});
 	lmap.on('movestart', function(e) {
-	  map.clean();
+	  viz.mapCanvas.clean();
 	});
 	lmap.on('moveend', function(e) {
 	  var op = e.target.getPixelOrigin();
 	  var np = e.target._getTopLeftPoint();
 	  var offsetX = -np.x + op.x;
 	  var offsetY = -np.y + op.y;
-	  map.update({"offsetX":offsetX, "offsetY":offsetY});
+	  viz.mapCanvas.update({"offsetX":offsetX, "offsetY":offsetY});
 	});
-      }, L, lmap, colorTheme);
-      $('#map').show();
-    },
-    off_callback: function() {
-      viz.ShowThematicMap(map, colorTheme, function(){	
-      });
-      $('#map').hide();
-    },
+  };
+  $("#switch").switchButton({
+    checked: checkSwitch,
+    on_label: 'ON',
+    off_label: 'Leaflet Background? OFF',
+    on_callback: function() {
+	  $('#map').show();
+      viz.ShowMainMap(data, mapType, PreMapShown, OnMapShown, L, lmap, prj, colorTheme);
+	},
+	off_callback: function() {
+	  $('#map').hide();
+	  viz.ShowThematicMap(map, colorTheme);
+	},
+  }, L, lmap, prj);
+    
+  // fill content of color-selector
+  $.each(colorbrewer, function(k,v){
+	$('#color-selector')
+  .append($("<option></option>")
+	.attr("value", k)
+	.text(k));
   });
+  // fill content of legend
+  create_legend($('#legend'), bins, colors); 
     
-    // fill content of color-selector
-    $.each(colorbrewer, function(k,v){
-      $('#color-selector')
-	.append($("<option></option>")
-	  .attr("value", k)
-	  .text(k));
-    });
-    // fill content of legend
-    create_legend($('#legend'), bins, colors); 
-    
-    $('#title').empty().text(title);
+  $('#title').empty().text(title);
   
-	$('#color-selector').change(function(){
-	  var clr_name = $('#color-selector option:selected').text();
-	  colors = colorbrewer[clr_name][k];
-	  colorTheme = {};
-	  for ( var i=0, n=id_array.length; i<n; i++ ) {
-	    colorTheme[colors[i]] = id_array[i];
-	  }
-	  map.updateColor(colorTheme);
-	  $('#legend').empty();
-	  create_legend($('#legend'), bins, colors); 
-	});
+  $('#color-selector').change(function(){
+	var clr_name = $('#color-selector option:selected').text();
+	colors = colorbrewer[clr_name][k];
+	colorTheme = {};
+	for ( var i=0, n=id_array.length; i<n; i++ ) {
+	  colorTheme[colors[i]] = id_array[i];
+	}
+	viz.mapCanvas.updateColor(colorTheme);
+	$('#legend').empty();
+	create_legend($('#legend'), bins, colors); 
+  });
 });
 </script>
 <body>

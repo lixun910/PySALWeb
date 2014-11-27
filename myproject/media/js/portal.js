@@ -1,8 +1,7 @@
 
 var cartolx, carto_uid, carto_key, carto_layer,
-    foreground, lmap, uuid, winID, 
-    gViz, gVizMap, gMap,gMsg,
-    prj, gProjSwitchOn = true,
+    foreground, lmap, uuid,  
+    gProjSwitchOn = true,
     gHasProj     =false, 
     gShowLeaflet =false, 
     gAddLayer    =false,
@@ -37,11 +36,12 @@ var local_map_names_sel = [
   '#sel-spacetime-space'];
   
 var ShowExistMap = function(uuid, json_path) {
-  gViz.ShowMainMap(json_path, 'json', BeforeMapShown, OnMapShown, L, lmap, prj);
+  gViz.ShowMainMap(json_path, 'json', BeforeMapShown, OnMapShown, L, lmap, gPrj);
   var params = {'csrfmiddlewaretoken':  csrftoken};
   params['layer_uuid'] = uuid;
   $.get('../get_metadata/', params).done(function(data){
     var is_new_map = false;
+    gPrj = proj4(proj4.defs('WGS84'), proj4.defs('WGS84'));
     InitDialogs(data, is_new_map);
   });
 };
@@ -49,14 +49,14 @@ var ShowExistMap = function(uuid, json_path) {
 var ShowMap = function(o, type, noForeground) {
   if (gViz) {
     gShowLeaflet = true;
-    if ( gHasProj && prj == undefined) {
+    if ( gHasProj && gPrj == undefined) {
       // wait for reading *.prj file 
       setTimeout(function(){ShowMap(o, type, noForeground);}, 10);  
     } else {
       $('#map').show();
       if (noForeground==undefined) noForeground = false;
       if (gShowLeaflet) {
-        gViz.ShowMainMap(o, type, BeforeMapShown, OnMapShown, L, lmap, prj);
+        gViz.ShowMainMap(o, type, BeforeMapShown, OnMapShown, L, lmap, gPrj);
       } else {
         gViz.ShowMainMap(o, type, BeforeMapShown, OnMapShown);
       }
@@ -286,7 +286,6 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Map
   //////////////////////////////////////////////////////////////
-  winID = getParameterByName("wid");
   
   lmap = new L.Map('map');
 
@@ -300,7 +299,7 @@ $(document).ready(function() {
 
   // Local Storage Brushing/Linking
   localStorage.clear();  
-  gViz = new d3viz(winID, $('#map-container')); 
+  gViz = new d3viz($('#map-container')); 
   gViz.canvas = $('#foreground');
   gViz.SetupBrushLink();
   //gViz.SetupWebSocket();
@@ -462,7 +461,7 @@ $(document).ready(function() {
           gViz.CartoDownloadTable(carto_uid, carto_key, table_name, function(msg){
             gHasProj = true;
             var ip = msg.projection; 
-            prj = proj4(ip, proj4.defs('WGS84'));
+            gPrj = proj4(ip, proj4.defs('WGS84'));
             uuid = msg.uuid;  
             var noForeground = true;
             showLeafletMap(uuid, noForeground);
@@ -570,7 +569,7 @@ $(document).ready(function() {
               bShp += 1;
             } else if (suffix === "prj") {
               gHasProj = true;
-              prj = proj4(o, proj4.defs('WGS84'));
+              gPrj = proj4(o, proj4.defs('WGS84'));
             }
             if (bShp >= 3) {
               ShowMap(shpFile, 'shapefile');
@@ -603,7 +602,7 @@ $(document).ready(function() {
       console.log(reader.result);
       // read *.prj file
       var ip = reader.result;
-      prj = proj4(ip, proj4.defs('WGS84'));
+      gPrj = proj4(ip, proj4.defs('WGS84'));
     };
     gHasProj = false;
     var files = evt.dataTransfer.files, // FileList object.
@@ -704,13 +703,12 @@ $(document).ready(function() {
       if ( files.length == 0 ) { 
         return;
       }
-      var prj;
       var ready = false;
       var fileLink = files[0].link;
       var suffix = getSuffix(fileLink);
       var params = {'csrfmiddlewaretoken':  csrftoken};
       if ( suffix === 'geojson' || suffix === 'json') {
-        gViz.ShowMainMap(fileLink, 'json', BeforeMapShown, OnMapShown, L, lmap, prj);
+        gViz.ShowMainMap(fileLink, 'json', BeforeMapShown, OnMapShown, L, lmap, gPrj);
         params['json'] = fileLink;
         ready = true;
       } else if ($.inArray( suffix, ['shp', 'dbf','shx','prj']) >= 0) {
@@ -736,11 +734,11 @@ $(document).ready(function() {
             params['prj'] = prjUrl;
             $.get(prjUrl, function(data) {
               var ip = data;
-              prj = proj4(ip, proj4.defs('WGS84'));
-              gViz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, prj);
+              gPrj = proj4(ip, proj4.defs('WGS84'));
+              gViz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, gPrj);
             });
           } else {
-            gViz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, prj);
+            gViz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, gPrj);
           } 
           ready = true;
         } else {
@@ -1555,7 +1553,7 @@ $(document).ready(function() {
     $('#dlg-run').dialog("open").html('<img src="img/loading.gif"/><br/>Loading ...');
     $('#dlg-run').siblings('.ui-dialog-titlebar').hide();
     params = {
-      'command': 'spatial_regression', 'wid': winID,
+      'command': 'spatial_regression', 
       'layer_uuid': layer_uuid, 'w': w_list, 'wk': wk_list, 
       'type': model_type, 'method': method, 'error': error, 
       'x': x, 'y': y, 'ye': ye, "h": h, "r": r, "t": t,
@@ -1624,7 +1622,7 @@ $(document).ready(function() {
           ShowMsgBox("Info", "Please select a weights first. Note: You can create a weights by click the weights creation button");
           return;
         }
-        var msg = {"command":"new_lisa_map","wid": winID,"uuid":uuid,
+        var msg = {"command":"new_lisa_map","uuid":uuid,
         "var": sel_var, "w_name": sel_w};
         gViz.NewLISAMap(msg, function(msg){
           $('#progress_bar_lisa').hide();
@@ -1651,7 +1649,7 @@ $(document).ready(function() {
           ShowMsgBox("Info", "Please select a weights first. Note: You can create a weights by click the weights creation button");
           return;
         }
-        var msg = {"command":"new_moran_scatter_plot","wid": winID,"uuid":uuid,
+        var msg = {"command":"new_moran_scatter_plot","uuid":uuid,
         "var": sel_var, "w_name": sel_w};
         gViz.NewMoranScatterPlot(msg);
         $(this).dialog("close");
@@ -1670,12 +1668,23 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        if (!gViz) return;
+        if (!gViz && !gViz.uuid) return;
         var sel_x = $('#sel-scatter-x').val();
         var sel_y = $('#sel-scatter-y').val();
-        var msg = {"command":"new_scatter_plot","wid": winID,"uuid":uuid,
-        "var_x": sel_x, "var_y": sel_y};
-        gViz.NewScatterPlot(msg);
+        if (sel_x == '' || sel_y == '') {
+          ShowMsgBox("Info", "Please select variables for scatter plot.")
+          return;
+        }
+        var msg = {
+          "layer_uuid": gViz.uuid,
+          "var_x": sel_x, 
+          "var_y": sel_y
+        };
+        $.get('../scatter_plot/', params, function(){
+        }).done(function(result){
+          gMsg = result;
+          gViz.PopupScatterPlot();
+        });
         $(this).dialog("close");
       }, 
       Cancel: function() {$( this ).dialog( "close" );},
@@ -1714,7 +1723,7 @@ $(document).ready(function() {
         $.get('../thematic_map/', params, function(){
         }).done(function(result){
           gMsg = result;
-          gViz.PopupLeafletMap();
+          gViz.PopupThematicMap();
         });
         $(this).dialog("close");
       }, 

@@ -4,21 +4,21 @@
   /***
    * One web page <---> one d3viz
    */
-  var d3viz = function(wid, container, canvas) {
+  var d3viz = function(container, canvas) {
   
     this.version = "0.1";
-    this.id = wid;
     this.socket = undefined;
     this.name = undefined;
     this.uuid = undefined;
     this.mapCanvas = undefined; // GeoVizMap
+    this.canvasDict = {}; // uuid:map
     this.mapDict = {}; // uuid:map
-    
-    this.dataDict = {};  // not used
     this.nameDict = {}; // uuid:name
+    this.dataDict = {};  // not used
     
     this.prj = undefined;
     this.map = undefined;
+    this.mapType = undefined; //shapefile or json
     this.canvas = canvas;
     this.container = container;
     
@@ -76,8 +76,8 @@
       var hl_ids = JSON.parse(localStorage.getItem('HL_IDS')),
           hl_ext = JSON.parse(localStorage.getItem('HL_MAP'));
       for ( var uuid in hl_ids ) {
-        if ( mapDict && uuid in mapDict ) {
-          var map = mapDict[uuid];
+        //if ( mapDict && uuid in mapDict ) {
+          var map = self.mapCanvas;//mapDict[uuid];
           var ids = hl_ids[uuid];
           if ( hl_ext && uuid in hl_ext ) {
             map.highlightExt(ids, hl_ext[uuid]);
@@ -86,7 +86,7 @@
             var nolinking = true;
             map.highlight(hl_ids[uuid], context, nolinking);
           }
-        }
+        //}
       }
     }, false);
   };
@@ -102,24 +102,6 @@
     return url + "&" + rnd;
   };
  
-  d3viz.prototype.NewPopUp = function(url, msg) {
-    if ( url.indexOf('?')  === -1 ) {
-      url = url + "?msgid=" + msg.id;
-    } else {
-      url = url + "&msgid=" + msg.id;
-    }
-    var win = window.open(
-      this.RandUrl(url),
-      "_blank",
-      "width=600, height=500, scrollbars=yes"
-    );
-  };
- 
-  d3viz.prototype.GetJsonUrl = function(uuid) {
-    var json_url = "./tmp/" + uuid + ".json";
-    return json_url; 
-  };
-  
   d3viz.prototype.ShowMainMapInPopup = function(map, precall, callback, L, lmap, colorTheme) {
     if (typeof precall === "function") {
       precall();
@@ -139,7 +121,7 @@
    * 3. Dropbox file url of ESRI Shape file
    * 4. Dropbox file url of GeoJson file
    */
-  d3viz.prototype.ShowMainMap = function(o, type, precall, callback, L, lmap, prj) {
+  d3viz.prototype.ShowMainMap = function(o, type, precall, callback, L, lmap, prj, colorTheme) {
     if (typeof precall === "function") {
       precall();
     }
@@ -155,7 +137,9 @@
         xhr.responseType = 'arraybuffer';
         xhr.onload = function(evt) {
           map = new ShpMap(new ShpReader(xhr.response), L, lmap, prj);
-          self.mapCanvas = new GeoVizMap(map, self.canvas);
+          self.mapCanvas = new GeoVizMap(map, self.canvas, {
+            "color_theme" : colorTheme
+          });
           if (typeof callback === "function") {
             callback(map);
           }
@@ -165,7 +149,9 @@
         var json_url = o;
         this.GetJSON( json_url, function(json) {
           map = new JsonMap(json, L, lmap, prj); 
-          self.mapCanvas = new GeoVizMap(map, self.canvas);
+          self.mapCanvas = new GeoVizMap(map, self.canvas, {
+            "color_theme" : colorTheme
+          });
           if (typeof callback === "function") {
             callback(map);
           }
@@ -182,7 +168,9 @@
           var json = JSON.parse(reader.result);
           map = new JsonMap(json, L, lmap, prj);
         }
-        self.mapCanvas = new GeoVizMap(map, self.canvas);
+        self.mapCanvas = new GeoVizMap(map, self.canvas, {
+          "color_theme" : colorTheme
+        });
         if (typeof callback === "function") {
           callback(map);
         }
@@ -194,14 +182,25 @@
       }
       
     } else if (typeof o == 'object'){
-      // JSON object 
-      map = new JsonMap(o, L, lmap, prj); 
-      self.mapCanvas = new GeoVizMap(map, self.canvas);
+      if (o instanceof ShpReader) {
+        // ShpReader object 
+        map = new ShpMap(o, L, lmap, prj); 
+        self.mapCanvas = new GeoVizMap(map, self.canvas, {
+          "color_theme" : colorTheme
+        });
+      } else {
+        // JSON object 
+        map = new JsonMap(o, L, lmap, prj); 
+        self.mapCanvas = new GeoVizMap(map, self.canvas, {
+          "color_theme" : colorTheme
+        });
+      }
       if (typeof callback === "function") {
         callback(map);
       }
     } 
     this.map = map;
+    this.mapType = type;
   };
   
   /**
@@ -248,11 +247,11 @@
   /**
    * Create a new Leaftlet map
    */
-  d3viz.prototype.PopupLeafletMap = function() {
+  d3viz.prototype.PopupThematicMap = function() {
     var w = window.open(
-      this.RandUrl('thematicmap.html'), // quantile, lisa,
+      this.RandUrl('../../static/thematicmap.html'), // quantile, lisa,
       "_blank",
-      "width=900, height=700, scrollbars=yes"
+      "titlebar=no,toolbar=no,location=no,width=900, height=700, scrollbars=yes"
     );
   };
   /**
@@ -392,20 +391,9 @@
     }
   };
   
-  d3viz.prototype.RequestParameters = function( winID, callback) {
-    var msg = {'command':'request_params', 'wid' : winID};
-    if (this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-      this.RequestParam_callback = callback;
-    } else {
-      setTimeout(function(){self.RequestParameters( winID, callback)}, 10);
-    }
-  };
-  
   
   d3viz.prototype.CartoGetAllTables = function(uid, key, successHandler) {
     var msg = {"command":"cartodb_get_all_tables"};
-    msg["wid"] = this.id;
     if (uid) msg["uid"] = uid;
     if (key) msg["key"] = key;
     if (this.socket && this.socket.readyState == 1) {
@@ -417,7 +405,7 @@
   };
   
   d3viz.prototype.CartoDownloadTable = function(uid, key, table_name, successHandler) {
-    var msg = {"command":"cartodb_download_table", "wid":this.id};
+    var msg = {"command":"cartodb_download_table"};
     if (uid) msg["uid"] = uid;
     if (key) msg["key"] = key;
     if (table_name) msg["table_name"] = table_name;
@@ -430,7 +418,7 @@
   };
   
   d3viz.prototype.CartoUploadTable = function(uid, key, uuid, successHandler) {
-    var msg = {"command":"cartodb_upload_table", "wid":this.id};
+    var msg = {"command":"cartodb_upload_table"};
     if (uid) msg["uid"] = uid;
     if (key) msg["key"] = key;
     if (uuid) msg["uuid"] = uuid;
@@ -443,7 +431,7 @@
   };  
   
   d3viz.prototype.CartoSpatialCount = function(uid, key, first_layer, second_layer, count_col_name, successHandler) {
-    var msg = {"command":"cartodb_spatial_count", "wid":this.id};
+    var msg = {"command":"cartodb_spatial_count"};
     if (uid) msg["uid"] = uid;
     if (key) msg["key"] = key;
     msg["firstlayer"] = first_layer;
@@ -458,7 +446,7 @@
   };  
   
   d3viz.prototype.RoadSegment = function(uid, key, uuid, length, ofn, successHandler) {
-    var msg = {"command":"road_segment", "wid":this.id};
+    var msg = {"command":"road_segment"};
     if (uid) msg["uid"] = uid;
     if (key) msg["key"] = key;
     msg["uuid"] = uuid;
@@ -473,7 +461,7 @@
   };  
   
   d3viz.prototype.RoadSnapPoint = function(uid, key, point_uuid, road_uuid, successHandler) {
-    var msg = {"command":"road_snap_point", "wid":this.id};
+    var msg = {"command":"road_snap_point"};
     if (uid) msg["uid"] = uid;
     if (key) msg["key"] = key;
     msg["pointuuid"] = point_uuid;
