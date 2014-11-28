@@ -257,11 +257,11 @@
   /**
    * Create a new Leaftlet map
    */
-  d3viz.prototype.ShowScatterPlot = function(msg) {
+  d3viz.prototype.PopupScatterPlot = function() {
     var w = window.open(
-      this.RandUrl('scatterplot_loess.html'), // quantile, lisa,
+      this.RandUrl('../../static/scatterplot.html'), // quantile, lisa,
       "_blank",
-      "width=900, height=700, scrollbars=yes"
+      "titlebar=no,toolbar=no,location=no,width=900, height=700, scrollbars=yes"
     );
   };
   

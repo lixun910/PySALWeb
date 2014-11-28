@@ -1675,7 +1675,7 @@ $(document).ready(function() {
           ShowMsgBox("Info", "Please select variables for scatter plot.")
           return;
         }
-        var msg = {
+        var params = {
           "layer_uuid": gViz.uuid,
           "var_x": sel_x, 
           "var_y": sel_y

@@ -33,21 +33,21 @@ svg, canvas {
   shape-rendering: crispEdges;
 }
 </style>
-<link rel="stylesheet" href="css/jquery-ui.css">
-<link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.10.4.custom.css">
+<link rel="stylesheet" href="../media/css/jquery-ui.css">
+<link rel="stylesheet" href="../media/css/ui-lightness/jquery-ui-1.10.4.custom.css">
 
-<script src="js/jquery.min.js"></script>
-<script src="js/jquery-ui-1.10.4.custom.min.js"></script>
-<script src="js/simple_statistics.js"></script>
-<script src="js/d3.v3.min.js" charset="utf-8"></script>
-<script src="js/utils.js"></script>
-<script src="js/d3viz.js"></script>
+<script src="../media/js/jquery.min.js"></script>
+<script src="../media/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script src="../media/js/simple_statistics.js"></script>
+<script src="../media/js/d3.v3.min.js" charset="utf-8"></script>
+<script src="../media/js/utils.js"></script>
+<script src="../media/js/d3viz.js"></script>
 
 <script>
 var science = { stats: {} };
 </script>
 
-<script src="js/loess.js" charset="utf-8"></script>
+<script src="../media/js/loess.js" charset="utf-8"></script>
 
 <script>
 var svg, viz, uuid, quadtree;
@@ -56,13 +56,12 @@ var background, hbuffer, buffer;
 $(document).ready(function() {
 
   // Local Storage Brushing/Linking
-  localStorage.clear();
+  //localStorage.clear();
 
-  var winID = getParameterByName("wid"),
-      json_url = getParameterByName("uuid"),
-      uuid = getParameterByName("uuid"),
-      fieldX = getParameterByName("fieldx"),
-      fieldY = getParameterByName("fieldy");
+  var msg = window.opener.gMsg;
+  layer_uuid = msg.layer_uuid;
+  fieldX = msg.x_name;
+  fieldY = msg.y_name;
       
   $(window).bind('storage', function(e) {
     console.log("ls");
@@ -73,9 +72,7 @@ $(document).ready(function() {
     }
   });
   
-  viz = new d3viz(winID, $('#map-container'));
-  viz.SetupWebSocket();
-  
+  viz = new d3viz($('#map-container'));
     
   background = document.getElementById('background');
   
@@ -194,18 +191,73 @@ $(document).ready(function() {
       ctx.drawImage(buffer, 0,0);
     }
   }
- 
-  var json_url = "./tmp/" + uuid + ".json";
-  GetJSON( json_url, function(json) {
+   // Render the fitted line
+  var draw_linear_regression = function() {
+    svg.select(".reg").remove();
+    svg.append('path')
+      .datum(function() {
+        var xValues = [], yValues = [];
+        var lin = ss.linear_regression()
+          .data(data_copy.map(function(d){ return d;}))
+          .line();
+        var lin_data = xScale.domain().map(function(x) {
+          return [xScale(x), yScale(lin(x))];
+        });
+        return lin_data; })
+      .attr('class', 'reg')
+      .style("stroke-dasharray", ("3, 3"))
+      .attr('d', d3.svg.line()
+        .interpolate('basis')
+        .x(function(d) { return d[0]; })
+        .y(function(d) { return d[1]; })
+      );
+  }
   
-    for (var i=0, n=json.features.length; i<n; i++) { 
-      var feat = json.features[i];
-      var x = feat.properties[fieldX],
-          y = feat.properties[fieldY];
-      data_copy.push([x,y]);
-      data.push([x,y]);
-      data_dict[[x,y]] = i;
-    }
+  
+  // Find the nodes within the specified rectangle.
+  function search(quadtree, x0, y0, x3, y3) {
+    quadtree.visit(function(node, x1, y1, x2, y2) {
+      var p = node.point;
+      if (p) {
+        if (p[0] >= x0 && p[0] < x3 && p[1] >= y0 && p[1] < y3) {
+          selected.push(data_dict[p]);
+        }
+      }
+      return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
+    });
+  } 
+  // Render the fitted line
+  var draw_loess = function(bandwidth) {
+    svg.select(".line").remove();
+    svg.append('path')
+      .datum(function() {
+        var xValues = [], yValues = [];
+        var loess = science.stats.loess();
+        loess.bandwidth(bandwidth);
+        for (var i in data_copy) {
+          xValues.push(data_copy[i][0]);
+          yValues.push(data_copy[i][1]);
+        }
+        var yValuesSmoothed = loess(xValues, yValues);
+        xValues = xValues.map(xScale);
+        yValuesSmoothed = yValuesSmoothed.map(yScale);
+        return d3.zip(xValues, yValuesSmoothed);
+      })
+      .attr('class', 'line')
+      .attr('d', d3.svg.line()
+        .interpolate('basis')
+        .x(function(d) { return d[0]; })
+        .y(function(d) { return d[1]; })
+      );
+  }
+
+  for (var i=0, n=msg.x.length; i<n; i++ ) {
+    var x = msg.x[i];
+    var y = msg.y[i];
+    data_copy.push([x,y]);
+    data.push([x,y]);
+    data_dict[[x,y]] = i;
+  }
     data_copy.sort(function(a,b) { return a[0] - b[0]; });
    
     var xMin = d3.min(data, xValue), xMax = d3.max(data, xValue),
@@ -279,54 +331,7 @@ $(document).ready(function() {
     
     draw_loess(0.4);
     draw_linear_regression();
-  }); 
   
-  // Render the fitted line
-  var draw_linear_regression = function() {
-    svg.select(".reg").remove();
-    svg.append('path')
-      .datum(function() {
-        var xValues = [], yValues = [];
-        var lin = ss.linear_regression()
-          .data(data_copy.map(function(d){ return d;}))
-          .line();
-        var lin_data = xScale.domain().map(function(x) {
-          return [xScale(x), yScale(lin(x))];
-        });
-        return lin_data; })
-      .attr('class', 'reg')
-      .style("stroke-dasharray", ("3, 3"))
-      .attr('d', d3.svg.line()
-        .interpolate('basis')
-        .x(function(d) { return d[0]; })
-        .y(function(d) { return d[1]; })
-      );
-  }
-  
-  // Render the fitted line
-  var draw_loess = function(bandwidth) {
-    svg.select(".line").remove();
-    svg.append('path')
-      .datum(function() {
-        var xValues = [], yValues = [];
-        var loess = science.stats.loess();
-        loess.bandwidth(bandwidth);
-        for (var i in data_copy) {
-          xValues.push(data_copy[i][0]);
-          yValues.push(data_copy[i][1]);
-        }
-        var yValuesSmoothed = loess(xValues, yValues);
-        xValues = xValues.map(xScale);
-        yValuesSmoothed = yValuesSmoothed.map(yScale);
-        return d3.zip(xValues, yValuesSmoothed);
-      })
-      .attr('class', 'line')
-      .attr('d', d3.svg.line()
-        .interpolate('basis')
-        .x(function(d) { return d[0]; })
-        .y(function(d) { return d[1]; })
-      );
-  }
   
   $( "#slider" ).slider({
     value: 0.40,
@@ -340,19 +345,6 @@ $(document).ready(function() {
   });
   $( "#bandwidth" ).val( $( "#slider" ).slider( "value" ) );
   
-  
-  // Find the nodes within the specified rectangle.
-  function search(quadtree, x0, y0, x3, y3) {
-    quadtree.visit(function(node, x1, y1, x2, y2) {
-      var p = node.point;
-      if (p) {
-        if (p[0] >= x0 && p[0] < x3 && p[1] >= y0 && p[1] < y3) {
-          selected.push(data_dict[p]);
-        }
-      }
-      return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
-    });
-  } 
  
 });
 </script>

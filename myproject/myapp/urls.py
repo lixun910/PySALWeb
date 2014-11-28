@@ -20,8 +20,14 @@ urlpatterns += patterns('myproject.myapp.views',
     url(r'^main/$','main', name='main'), 
 ) 
 
+urlpatterns += patterns('myproject.myapp.views_plots',
+    url(r'^scatter_plot/$', 'scatter_plot', name='scatter plot'),
+    url(r'^moran_scatter_plot/$', 'moran_scatter_plot', name='moran scatter plot'),
+)
+
 urlpatterns += patterns('myproject.myapp.views_map',
     url(r'^get_dropbox_data/$', 'get_dropbox_data', name='get map data dropbox'),
+    url(r'^lisa_map/$', 'lisa_map', name='lisa map'),
     url(r'^thematic_map/$', 'thematic_map', name='thematic_map'),
     url(r'^map_count/$', 'get_n_maps', name='get number of maps'),
     url(r'^new_map/$', 'new_map', name='get new map'),

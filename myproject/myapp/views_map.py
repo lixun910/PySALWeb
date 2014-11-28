@@ -18,7 +18,7 @@ from hashlib import md5
 from myproject.myapp.models import Document, Geodata, Weights, SpregModel
 from views_utils import get_file_url, RSP_FAIL, RSP_OK, get_valid_path, get_abs_path, gen_rnd_str, get_docfile_path, get_rel_path
 
-from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks
+from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks, Moran_Local
 import GeoDB
 
 logger = logging.getLogger(__name__)
@@ -259,6 +259,41 @@ def thematic_map(request):
                 )
     return HttpResponse(RSP_FAIL, content_type="application/json")
     
+@login_required
+def lisa_map(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        var_x = request.GET.get("var_x", None)
+        wuuid = request.GET.get("wuuid", None)
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        if geodata and var_x and wuuid:
+            data = GeoDB.GetTableData(str(layer_uuid), [var_x])
+            x = data[var_x]
+            w = helper_get_W(wuuid)
+            y = np.array(x)
+            
+            lm = Moran_Local(y, w)
+            bins = ["Not Significant","High-High","Low-High","Low-Low","Hight-Low"]
+            id_array = []
+            id_array.append([i for i,v in enumerate(lm.p_sim) \
+                             if lm.p_sim[i] >= 0.05])
+            for j in range(1,5): 
+                id_array.append([i for i,v in enumerate(lm.q) \
+                                 if v == j and lm.p_sim[i] < 0.05])
+            results = {
+                "var": var_x,
+                "bins": bins,
+                "id_array" : id_array,
+            }
+            return HttpResponse(
+                json.dumps(results), 
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+
 """
 Upload shape files to server. Write meta data to meta database.
 In background, export files to spatial database. 
