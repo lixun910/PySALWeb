@@ -42,6 +42,7 @@ body{
 </style>
 <script src="{{url_prefix}}/media/js/jquery.min.js"></script>
 <script src="{{url_prefix}}/media/js/utils.js"></script>
+<script src="{{url_prefix}}/media/js/login.js"></script>
 <link rel="stylesheet" href="{{url_prefix}}/media/css/{{theme_jquery}}/jquery-ui-1.10.4.custom.min.css">
 </head>
 <body>
@@ -51,11 +52,12 @@ body{
     <tr>
     <td style="vertical-align:top"> 
       <p>
-        <img src="{{url_prefix}}/media/img/cloud.png"/>
         <font style="color: #666;" size=16 face="Century Gothic">{</font>
-        <font style="color: #666; font-size: 30px">'Spatial Data Analysis':</font>
+        <font style="color: #666; font-size: 30px">PySAL:</font>
         <font style="color: #666; font-size: 30px" face="Copperplate">WEB</font>
-        </font><font style="color: #666;" size=16 face="Century Gothic">}</font>
+        </font>
+        <img src="{{url_prefix}}/media/img/world.png"/>
+        <font style="color: #666;" size=16 face="Century Gothic">}</font>
       </p>
       <p style="text-align:right;">
       <form id="form-login" method="post">{% csrf_token %}
@@ -79,6 +81,10 @@ body{
         </tr>
       </table>
       &nbsp;&nbsp;&nbsp;<font color="red" style="font-size:10px" face="Century Gothic">{{error_msg}}</font>
+      
+      {% if error_msg != "" %}<br>
+      &nbsp;&nbsp;&nbsp;<font color="blue" style="font-size:10px" face="Century Gothic">Forget my password</font>
+      {% endif %}
       </form>
       </p>
     </td>

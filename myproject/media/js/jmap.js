@@ -593,7 +593,8 @@
     this.map = map;
     this.shpType = this.map.shpType; 
     // multi-layer support 
-    this.layers = {}; // uuid: JsonMap/LeafletMap
+    this.layerDict = {}; // uuid: JsonMap/LeafletMap
+    this.layers = []; 
     this.layerColors = ['#FFCC33','#CC6699','#95CAE4','#993333','#279B61'];
     _self = this;
     
@@ -639,9 +640,10 @@
   
   // member functions
   GeoVizMap.prototype = {
-    addLayer : function(uuid, submap) {
-      this.layers[uuid] = submap;
-      submap.updateExtent(this.map);
+  
+    addLayer : function(subMap) {
+      this.layers.push(subMap);
+      subMap.updateExtent(this.map);
       this.update(); 
     },
     
@@ -1031,8 +1033,8 @@
         _self.drawLines( context, _self.map.screenObjects, colors) ;
       }
       var i=0;
-      for ( var uuid in _self.layers ) {
-        var subMap = _self.layers[uuid];
+      for ( var j in _self.layers ) {
+        var subMap = _self.layers[j];
         if (subMap.shpType == "LineString" || subMap.shpType == "Line") {
           context.strokeStyle = _self.layerColors[i];
           context.lineWidth = lineWidth ? lineWidth: _self.LINE_WIDTH;
@@ -1114,8 +1116,9 @@
       _self.margin_left = marginLeft;
       _self.margin_top = marginTop;
       _self.map.fitScreen(newWidth, newHeight,marginLeft, marginTop, this.offsetX, this.offsetY);
-      for (var uuid in _self.layers) {
-        _self.layers[uuid].fitScreen(newWidth, newHeight,marginLeft,marginTop);
+      for (var i in _self.layers) {
+        var subMap = _self.layers[i];
+        subMap.fitScreen(newWidth, newHeight,marginLeft,marginTop, this.offsetX, this.offsetY);
       }
       _self.buffer = _self.createBuffer();
       _self.draw(_self.buffer.getContext("2d"), _self.color_theme);

@@ -406,79 +406,62 @@
 -->
 <div id="dialog-spacetime"  title="Space Time Aggregation">
   <table><tr><td><img src="{{url_prefix}}/media/img/st.png"></td>
-  <td>Aggregate points in time and space and apply spatial analysis.</td>
+  <td>&nbsp;&nbsp;Aggregate points in time and space and apply spatial analysis.</td>
   </tr>
   </table>
   <br>
-  <h1 class="ui-widget-header">Time</h1>
-  <table>
-    <tr><td height="30">Field:</td>
-      <td><select><option>Date</option></select>&nbsp;&nbsp;
-      <select><option>Time</option></select></td></tr>
-    <tr><td height="30">Time of Day&nbsp;&nbsp;&nbsp;</td>
-      <td><select><option>00:00-23:59</option></select></td>
-      <td><button>+</button> <button>-</button></td></tr>
-    </tr>
-    <tr><td height="30">Step By</td>
-      <td><input type="text" value=1 size=4><select><option>Day</option><option>Week</option></select></td>
-    </tr>
-    <tr><td height="30">Interval</td>
-      <td>Start&nbsp;<input type="text" id="datepicker-start"><td>
-    </tr>
-    <tr><td height="30"></td><td>End&nbsp;&nbsp;&nbsp;<input type="text" id="datepicker-end"></td>
-    </tr>
-  </table>
-  <h1 class="ui-widget-header">Space</h1>
-  <p style="text-align: left">
-  Select a layer that used as space for aggregate querying:
-            <select id="sel-spacetime-space">
-              <option value="" selected></option>
-              <option value=""></option>
-            </select>
-  </p>
-  <br/>
-  <br/>
-  <h1 class="ui-widget-header">Operations</h1>
-  <p style="text-align: left">
-  Select a operation that will apply on aggregated data
-  </p>
-  
-  <div id="tabs-dlg-spacetime">
-    <ul>
-      <li><a href="#tabs-1">Thematic Map</a></li>
-      <li><a href="#tabs-2">LISA</a></li>
-      <li><a href="#tabs-3">Density Map</a></li>
-    </ul>
-    <div id="tabs-1">
-    
-      <table>
-      <tr>
-        <td><label for="name">Select quantification method:</label></td>
-        <td><select id="sel-quan-method">
-          <option value="quantile">Quantile</option>
-          <option value="natural breaks">Natural Breaks</option>
-          <option value="equal interval">Equal Interval</option>
-          <option value="fisher jenks">Fisher Jenks</option>
-        </td>
-      </tr>
-      </table>
+  <div id="spacetime_catalog">
+    <h2><a href='#'>Space</a></h2>
+    <div style="height:400px;">
+      <p style="text-align: left">Example of Space Aggregation (e.g. counting how many points in each polygon.)</p>
+      <br><img src="{{url_prefix}}/media/img/pnp.png"><br><br>
+      
+      <form id="spacetime-count-pform">
+        <table>
+          <tr>
+            <td>1.Select the polygon layer:</td>
+            <td>
+              <select id="sel-spacetime-table-poly"></select>
+            </td>
+          </tr>
+          <tr>
+            <td>2.Select the point layer:</td>
+            <td>
+              <select id="sel-spacetime-table-point"></select>
+            </td>
+          </tr>
+          <tr>
+            <td>3.Input the name of couting field in polygon layer:</td>
+            <td valign="top">
+              <input type="text" id="txt-spacetime-col-name" size=30 value="">
+            </td>
+          </tr>
+        </table>
+      </form>
+
     </div>
-    <div id="tabs-2">
-      <table>
-      <tr>
-        <td width="200"><label for="name">Select a variable:</label></td>
-        <td><select id="sel-st-lisa-var"></td>
+    <h2><a href='#'> Time</a></h2>
+    <div>
+    <table>
+      <tr><td height="30">Field:</td>
+        <td><select><option>Date</option></select>&nbsp;&nbsp;
+        <select><option>Time</option></select></td>
       </tr>
-      <tr>
-        <td width="200"><label for="name">Select weights:</label></td>
-        <td><select id="sel-st-lisa-w"></td>
+      <tr><td height="30">Time of Day&nbsp;&nbsp;&nbsp;</td>
+        <td><select><option>00:00-23:59</option></select></td>
+        <td><button>&nbsp;+&nbsp;</button> <button>&nbsp;-&nbsp;</button></td>
       </tr>
-     </table> 
-    </div>
-    <div id="tabs-3">
+      <tr><td height="30">Step By</td>
+        <td><input type="text" value=1 size=4><select><option>Day</option><option>Week</option></select></td>
+      </tr>
+      <tr><td height="30">Interval</td>
+        <td>Start&nbsp;<input type="text" id="datepicker-start"><td>
+      </tr>
+      <tr><td height="30"></td><td>End&nbsp;&nbsp;&nbsp;<input type="text" id="datepicker-end"></td>
+      </tr>
+    </table>
     </div>
   </div>
-  <br/>  <br/>
   <div id="progress_bar_spacetime"><img src="{{url_prefix}}/media/img/progress-bar.gif"></div>
 </div>
 <!--
@@ -708,7 +691,6 @@
 // Spatial Regression
 ///////////////////////////////////////////////////////////////////////////////
 -->
-
 <div id="dialog-regression" title="Spatial Regression Dialog"> 
   <p style="text-align: left">
   <button id="btn_open_model">Open Model</button>

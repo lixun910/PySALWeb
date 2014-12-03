@@ -26,29 +26,16 @@
     this.userid = undefined;
     this.key = undefined;
     
-    this.RequestParam_callback = undefined;
-    this.CreateWeights_callback = undefined;
-    this.LISA_callback = undefined;
-    this.RunSpreg_callback = undefined;
-    this.callback_GetAllTables = undefined;
-    this.callback_DownloadTable = undefined;
-    this.callback_UploadTable = undefined;
-    this.callback_SpatialCount = undefined;
-    
-    this.callback_RoadSegment = undefined;
-    this.callback_RoadSnapPoint = undefined;
     self = this;
   };
  
-  d3viz.prototype.SetupMainMap = function(map, uuid, name) {
-    this.uuid = uuid;
-    this.name = name;
-    this.nameDict[name] = uuid;
-    this.mapDict[uuid] = map; // add base map to dict for brushing
-  };
-  
-  d3viz.prototype.AddMapLayer = function(map, uuid, name) {
-    this.nameDict[name] = uuid;
+  d3viz.prototype.SetupMap = function(map, uuid, name, isAddLayer) {
+    if (!isAddLayer) {
+      // main map
+      this.uuid = uuid;
+      this.name = name;
+    }
+    this.nameDict[uuid] = name;
     this.mapDict[uuid] = map; // add base map to dict for brushing
   };
   
@@ -102,29 +89,30 @@
     return url + "&" + rnd;
   };
  
-  d3viz.prototype.ShowMainMapInPopup = function(map, precall, callback, L, lmap, colorTheme) {
-    if (typeof precall === "function") {
-      precall();
-    }
-    self.mapCanvas = new GeoVizMap(map, self.canvas,{
-        "color_theme" : colorTheme
-      });
-    if (typeof callback === "function") {
-      callback(map);
-    }
-    this.map = map;
-  };
   /**
-   * ShowMainMap() could be:
+   * ShowMap() could be:
    * 1. Drag&Drop local ESRI Shape file
    * 2. Drag&Drop local GeoJson file
    * 3. Dropbox file url of ESRI Shape file
    * 4. Dropbox file url of GeoJson file
    */
-  d3viz.prototype.ShowMainMap = function(o, type, precall, callback, L, lmap, prj, colorTheme) {
-    if (typeof precall === "function") {
-      precall();
+  d3viz.prototype._setupGeoVizMap = function(isMainMap, map, type, colorTheme, callback) {
+    if (isMainMap == true) {
+      self.mapCanvas = new GeoVizMap(map, self.canvas, {
+        "color_theme" : colorTheme
+      });
+      self.map = map;
+      self.mapType = type;
+    } else {
+      self.mapCanvas.addLayer(map);
     }
+    if (typeof callback === "function") {
+      callback(map);
+    }
+  };
+  
+  d3viz.prototype.ShowMap = function(o, type, isMainMap, precall, callback,L, lmap, prj, colorTheme) {
+    if (typeof precall === "function") { precall();}
     
     var map;
     var options = {"hratio": 1, "vratio": 1, "alpha": 0.8, "noforeground": false};
@@ -137,24 +125,14 @@
         xhr.responseType = 'arraybuffer';
         xhr.onload = function(evt) {
           map = new ShpMap(new ShpReader(xhr.response), L, lmap, prj);
-          self.mapCanvas = new GeoVizMap(map, self.canvas, {
-            "color_theme" : colorTheme
-          });
-          if (typeof callback === "function") {
-            callback(map);
-          }
+          self._setupGeoVizMap(isMainMap, map, type, colorTheme, callback);
         };
         xhr.send(null);
       } else if (type == 'geojson' || type == 'json') {
         var json_url = o;
         this.GetJSON( json_url, function(json) {
           map = new JsonMap(json, L, lmap, prj); 
-          self.mapCanvas = new GeoVizMap(map, self.canvas, {
-            "color_theme" : colorTheme
-          });
-          if (typeof callback === "function") {
-            callback(map);
-          }
+          self._setupGeoVizMap(isMainMap, map, type, colorTheme, callback);
         });
       }
       
@@ -168,12 +146,7 @@
           var json = JSON.parse(reader.result);
           map = new JsonMap(json, L, lmap, prj);
         }
-        self.mapCanvas = new GeoVizMap(map, self.canvas, {
-          "color_theme" : colorTheme
-        });
-        if (typeof callback === "function") {
-          callback(map);
-        }
+        self._setupGeoVizMap(isMainMap, map, type, colorTheme, callback);
       };
       if (type == 'shapefile') {
         reader.readAsArrayBuffer(o);
@@ -185,43 +158,12 @@
       if (o instanceof ShpReader) {
         // ShpReader object 
         map = new ShpMap(o, L, lmap, prj); 
-        self.mapCanvas = new GeoVizMap(map, self.canvas, {
-          "color_theme" : colorTheme
-        });
       } else {
         // JSON object 
         map = new JsonMap(o, L, lmap, prj); 
-        self.mapCanvas = new GeoVizMap(map, self.canvas, {
-          "color_theme" : colorTheme
-        });
       }
-      if (typeof callback === "function") {
-        callback(map);
-      }
+      self._setupGeoVizMap(isMainMap, map, type, colorTheme, callback);
     } 
-    this.map = map;
-    this.mapType = type;
-  };
-  
-  /**
-   * add layer in an existing map
-   * parameters: canvas -- $() jquery object
-   * parameters: container -- $() jquery object
-   */
-  d3viz.prototype.AddLayer = function(msg) {
-    if ( "uuid" in msg && this.canvas && this.canvas.length > 0 ){
-      var uuid = msg.uuid,
-          json_path = this.RandUrl("./tmp/" + uuid + ".json");
-      
-      this.GetJSON( json_path, function(data) {
-        if ( typeof data == "string") {
-          data = JSON.parse(data);
-        }
-        self.mapCanvas.addLayer(uuid, new JsonMap(data)); 
-        //self.mapDict[uuid] = self.map;
-        self.dataDict[uuid] = data;
-      });
-    }
   };
   
   /**
@@ -473,37 +415,6 @@
       setTimeout(function(){self.RoadSnapPoint(uid, key, point_uuid, road_uuid, successHandler)}, 10);
     }
   };  
-  /**
-   * Setup WebSocket Server Communications
-  PySal can send a command "add_layer:{uri:abc.shp}" to ws server.
-  Ws serverthen notifies all app web pages.--- ? Let's make it simple:
-  There is only one main web page that communicate with WS server.
-  This main web page can popup many child/sub pages for different maps/plots, 
-  and they will communicate with each other using LocalStorage.
-  
-  If the user send "add_layer" command again with different data. This main page
-  should stack the new layer as multi-layer scenario.
-  */
-  d3viz.prototype.SetupWebSocket = function(server_addr) {
-    /*
-    if (! ("WebSocket" in window)) WebSocket = MozWebSocket; // firefox
-    this.socket = new WebSocket("ws://127.0.0.1:9000");
-    var socket = this.socket;
-    socket.onopen = function(event) {
-      //socket.send('{connected:'+ pageid + '}');
-      var msg, command, winID, addMsg, rspMsg;
-      socket.onmessage = function(e) {
-        try {
-          msg = JSON.parse(e.data);
-          command = msg.command;  
-          winID = msg.wid;
-        } catch (err) {
-          console.error("Parsing server msg error:", msg, err);            
-        }
-      };
-    };
-    */
-  };
  
   // End and expose d3viz to 'window'
   window["d3viz"] = d3viz;

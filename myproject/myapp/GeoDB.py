@@ -156,6 +156,25 @@ def IsFieldUnique(layer_uuid, field_name):
         return True
     else: 
         return False
+    
+def CountPtsInPolys(poly_uuid, point_uuid, count_col_name):
+    DS = GetDS()
+    poly_tbl = TBL_PREFIX + poly_uuid
+    pt_tbl = TBL_PREFIX + point_uuid
+    try:
+        sql = 'ALTER TABLE %s ADD COLUMN %s integer' % \
+        (poly_tbl, count_col_name)
+        DS.ExecuteSQL(str(sql))
+        sql = 'UPDATE %s SET %s = (SELECT count(*) FROM %s WHERE ST_Intersects(%s.wkb_geometry, %s.wkb_geometry))' % \
+        (poly_tbl, count_col_name, pt_tbl, pt_tbl, poly_tbl) 
+        DS.ExecuteSQL(str(sql))
+        CloseDS(DS)
+        return True
+    except Exception, e:
+        print "CountPtsInPolys() error"
+        print str(e)
+        CloseDS(DS)
+        return False
 
 def AddUniqueIDField(layer_uuid, field_name):
     DS = GetDS()

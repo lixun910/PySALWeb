@@ -33,32 +33,33 @@ var local_map_names_sel = [
   '#sel-road-snap-point-layer',
   '#sel-road-snap-road-layer',
   '#sel-road-w-layer',
-  '#sel-spacetime-space'];
+  '#sel-spacetime-table-poly',
+  '#sel-spacetime-table-point',
+  ];
   
 var ShowExistMap = function(uuid, json_path) {
-  gViz.ShowMainMap(json_path, 'json', BeforeMapShown, OnMapShown, L, lmap, gPrj);
+  gViz.ShowMap(json_path, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
   var params = {'csrfmiddlewaretoken':  csrftoken};
   params['layer_uuid'] = uuid;
   $.get('../get_metadata/', params).done(function(data){
-    var is_new_map = false;
     gPrj = proj4(proj4.defs('WGS84'), proj4.defs('WGS84'));
-    InitDialogs(data, is_new_map);
+    InitDialogs(data);
   });
 };
   
-var ShowMap = function(o, type, noForeground) {
+var ShowNewMap = function(o, type, noForeground) {
   if (gViz) {
     gShowLeaflet = true;
     if ( gHasProj && gPrj == undefined) {
       // wait for reading *.prj file 
-      setTimeout(function(){ShowMap(o, type, noForeground);}, 10);  
+      setTimeout(function(){ShowNewMap(o, type, noForeground);}, 10);  
     } else {
       $('#map').show();
       if (noForeground==undefined) noForeground = false;
       if (gShowLeaflet) {
-        gViz.ShowMainMap(o, type, BeforeMapShown, OnMapShown, L, lmap, gPrj);
+        gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown,L, lmap, gPrj);
       } else {
-        gViz.ShowMainMap(o, type, BeforeMapShown, OnMapShown);
+        gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown);
       }
     }
   }
@@ -68,48 +69,45 @@ var BeforeMapShown = function() {
 };
 
 var OnMapShown = function(map) {
-  gMap = map;
   $('#loading').remove();
   $('#dialog-open-file').dialog('close');
-  
-  if (gShowLeaflet == true) {
-    lmap.on('zoomstart', function() {
-      gViz.mapCanvas.clean();
-    });
-    lmap.on('zoomend', function() {
-      gViz.mapCanvas.update();
-    });
-    lmap.on('movestart', function(e) {
-      gViz.mapCanvas.clean();
-    });
-    lmap.on('moveend', function(e) {
-      var op = e.target.getPixelOrigin();
-      var np = e.target._getTopLeftPoint();
-      var offsetX = -np.x + op.x;
-      var offsetY = -np.y + op.y;
-      gViz.mapCanvas.update({"offsetX":offsetX, "offsetY":offsetY});
-    });
-  } else {
-    $('#map').hide();
-  }
-  
-  if (gAddLayer==true){
-  } else {
+  gMap = map;
+  if (gAddLayer==false) {
+    if (gShowLeaflet == true) {
+      lmap.on('zoomstart', function() {
+        gViz.mapCanvas.clean();
+      });
+      lmap.on('zoomend', function() {
+        gViz.mapCanvas.update();
+      });
+      lmap.on('movestart', function(e) {
+        gViz.mapCanvas.clean();
+      });
+      lmap.on('moveend', function(e) {
+        var op = e.target.getPixelOrigin();
+        var np = e.target._getTopLeftPoint();
+        var offsetX = -np.x + op.x;
+        var offsetY = -np.y + op.y;
+        gViz.mapCanvas.update({"offsetX":offsetX, "offsetY":offsetY});
+      });
+    } else {
+      $('#map').hide();
+    }
     $('#btnOpenData').css('background-image','url(../../media/img/close-project.png)');
     gProjectOpen = true;
   }
 };
 
-var InitDialogs = function(data, is_new) {
+var InitDialogs = function(data) {
   var layer_uuid = data.layer_uuid,
       layer_name = data.name,
       fields = data.fields,
       field_names = [];
-      
-  if (gAddLayer) {
-    gViz.AddMapLayer(gMap, layer_uuid, layer_name);
-  } else {
-    gViz.SetupMainMap(gMap, layer_uuid, layer_name); 
+  // setup uuid in GeoVizMap
+  gViz.SetupMap(gMap, layer_uuid, layer_name, gAddLayer); 
+  UpdateLocalMapSel();
+  
+  if (!gAddLayer) {
     for (var field in fields) {
       field_names.push(field);
     }
@@ -141,12 +139,8 @@ var InitDialogs = function(data, is_new) {
     LoadWnames();
     setTimeout(LoadSpregP, 100);
     setTimeout(LoadModelNames, 100);
-    if (is_new==true) {
-      setTimeout(LoadMinPairDist, 3000);
-    } else {
-      LoadMinPairDist();
-    }
-  } 
+    setTimeout(LoadMinPairDist, 3000);
+  }
 };
 
 // get all map names/uuid from server
@@ -161,6 +155,7 @@ var UpdateLocalMapSel = function(){
     });
   }
 };
+
 var LoadMinPairDist = function() {
   if (gViz && gViz.uuid) {
     var layer_uuid = gViz.uuid;
@@ -173,6 +168,7 @@ var LoadMinPairDist = function() {
     });
   }
 };
+
 var LoadSpregP = function() {
   $.get("../get_spreg_p/", {},function() {})
   .done(function(data) {
@@ -212,14 +208,14 @@ var LoadWnames = function() {
         w_names.push(key); 
       }
       w_names.sort();
-      w_combobox= ['#sel-model-w-files', '#sel-kernel-w-files', '#sel-w-files'];
+      w_combobox= ['#sel-model-w-files', '#sel-kernel-w-files', '#sel-w-files','#sel-lisa-w'];
       $.each( w_combobox, function(i, w_cmb ) {
         $(w_cmb).find('option').remove().end();
         $.each(w_names, function(j, w_name) {
           wtype = data[w_name]["type"];
           if ( (wtype <= 1 && w_cmb == w_combobox[0]) 
                 || (wtype == 2 && w_cmb == w_combobox[1]) 
-                || w_cmb == w_combobox[2] ) {
+                || (w_cmb == w_combobox[2] || w_cmb == w_combobox[3]) ) {
             wuuid = data[w_name]["uuid"];
             $(w_cmb).append($('<option>', {value: wuuid}).text(w_name));
           }
@@ -310,11 +306,11 @@ $(document).ready(function() {
     off_label: 'Leaflet Background? OFF',
     on_callback: function() {
       gShowLeaflet = true;
-      //ShowMap(uuid);
+      //ShowNewMap(uuid);
     },
     off_callback: function() {
       gShowLeaflet = false;
-      //ShowMap(uuid);
+      //ShowNewMap(uuid);
     },
   });
   
@@ -526,8 +522,7 @@ $(document).ready(function() {
       console.log("[Upload]", this.responseText);
       try{
         var metadata = JSON.parse(this.responseText);
-        var is_new_map = true;
-        InitDialogs(metadata, is_new_map);
+        InitDialogs(metadata);
       } catch(e){
         console.log("[Error][Upload Files]", e);
       }
@@ -557,7 +552,7 @@ $(document).ready(function() {
               return;
             if (suffix === 'geojson' || suffix === 'json') {
               o = JSON.parse(o);
-              ShowMap(o, 'geojson');
+              ShowNewMap(o, 'geojson');
               $('#progress_bar_openfile').hide();
               return;
             } else if (suffix === "shp") {
@@ -572,7 +567,7 @@ $(document).ready(function() {
               gPrj = proj4(o, proj4.defs('WGS84'));
             }
             if (bShp >= 3) {
-              ShowMap(shpFile, 'shapefile');
+              ShowNewMap(shpFile, 'shapefile');
               $('#progress_bar_openfile').hide();
             }
           });
@@ -682,20 +677,13 @@ $(document).ready(function() {
     
     // display map directly
     if (shpFile) {
-      if ( gAddLayer == false ) { // open new map
-        ShowMap(shpFile, 'shapefile');
-      } else {
-      }
+      ShowNewMap(shpFile, 'shapefile');
     } else if (jsonFile) {
-      if ( gAddLayer == false ) { // open new map
-        ShowMap(jsonFile, 'json');
-      } else {
-      }
+      ShowNewMap(jsonFile, 'json');
     }
   };
   
-  
- //////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////
   //  DropBox
   //////////////////////////////////////////////////////////////
   var dropboxOptions = {
@@ -708,7 +696,7 @@ $(document).ready(function() {
       var suffix = getSuffix(fileLink);
       var params = {'csrfmiddlewaretoken':  csrftoken};
       if ( suffix === 'geojson' || suffix === 'json') {
-        gViz.ShowMainMap(fileLink, 'json', BeforeMapShown, OnMapShown, L, lmap, gPrj);
+        gViz.ShowMap(fileLink, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
         params['json'] = fileLink;
         ready = true;
       } else if ($.inArray( suffix, ['shp', 'dbf','shx','prj']) >= 0) {
@@ -735,10 +723,10 @@ $(document).ready(function() {
             $.get(prjUrl, function(data) {
               var ip = data;
               gPrj = proj4(ip, proj4.defs('WGS84'));
-              gViz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, gPrj);
+              gViz.ShowMap(shpUrl, 'shapefile', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
             });
           } else {
-            gViz.ShowMainMap(shpUrl, 'shapefile', BeforeMapShown, OnMapShown, L, lmap, gPrj);
+            gViz.ShowMap(shpUrl, 'shapefile', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
           } 
           ready = true;
         } else {
@@ -763,9 +751,7 @@ $(document).ready(function() {
         $('#divDownload').show();
         $.get("../upload/", params).done( function(data) {
           $('#divDownload').hide();
-          var layer_uuid = data.layer_uuid;
-          var is_new_map = true;
-          InitDialogs(data, is_new_map);
+          InitDialogs(data);
           //SaveMapThumbnail(layer_uuid, containerID);
         });
       }
@@ -786,13 +772,13 @@ $(document).ready(function() {
   var carto_table_sel = ['#sel-carto-table-download', '#sel-file-carto-tables', '#sel-carto-table-count1','#sel-carto-table-count2'];
   
   var fill_carto_tables = function(tables) {
-        $.each(carto_table_sel, function(i, sel) {
-          $(sel).find('option').remove().end();
-          for (var table_name in tables) {
-            var geo_type = tables[table_name];
-            $(sel).append($('<option>', {value: geo_type}).text(table_name));
-          }
-        });
+    $.each(carto_table_sel, function(i, sel) {
+      $(sel).find('option').remove().end();
+      for (var table_name in tables) {
+        var geo_type = tables[table_name];
+        $(sel).append($('<option>', {value: geo_type}).text(table_name));
+      }
+    });
   };
   
   $('#btn-cartodb-get-all-tables').click(function(){
@@ -824,71 +810,68 @@ $(document).ready(function() {
     autoOpen: false,
     modal: false,
     dialogClass: "dialogWithDropShadow",
-    buttons: [
-      {
-        text: "OK",
-        click: function() {
-          var that = $(this);
-          var sel_id = $("#tabs-dlg-cartodb").tabs('option','active'),
-              uid = $('#txt-carto-setup-id').val(),
-              key = $('#txt-carto-setup-key').val();
-          $('#progress_bar_cartodb').show();
-          if (sel_id == 0) {
-            // setup
-            gViz.CartoGetAllTables(uid, key, function(msg) {
-              $('#progress_bar_cartodb').hide();
-              fill_carto_tables(msg['tables']);
-            });
-            
-          } else if (sel_id == 1) {
-            // download to local disk
-            var table_name = $('#sel-carto-table-download').find(':selected').text();
-            gViz.CartoDownloadTable(uid, key, table_name, function(msg){
-              $('#progress_bar_cartodb').hide();
-              var name = msg.name;  
-              // create a url and download
-              $.download('./cgi-bin/download.py','name='+name,'get');
-            });
-          } else if (sel_id == 2) {
-            // upload: using uuid send command to call cartodb_upload()
-            var upload_uuid = $('#sel-carto-table-upload').find(':selected').val();
-            gViz.CartoUploadTable(uid, key, upload_uuid, function(msg){
-              $('#progress_bar_cartodb').hide();
-              var new_table_name = msg["new_table_name"];
-              if (new_table_name == undefined || new_table_name == "") {
-                ShowMsgBox("Error", "Upload table to CartoDB failed. Please try again or contact our administators.");
-              } else {
-                ShowMsgBox("", "Upload table to CartoDB done. A new table [" + new_table_name + "] has been created.");
-                $.each(carto_table_sel, function(i, sel) {
-                  $(sel).append($('<option>', {value: new_table_name}).text(new_table_name));
-                });
-              }
-            });
-          } else if (sel_id == 3) {
-            // count
-            var first_layer = $('#sel-carto-table-count1').find(':selected').text(),
-                second_layer = $('#sel-carto-table-count2').find(':selected').text(),
-                col_name = $('#txt-carto-col-name').val(),
-                method = "contain";
-            gViz.CartoSpatialCount(uid, key, first_layer, second_layer, col_name, function(msg) {
-              $('#progress_bar_cartodb').hide();
-              if (msg["result"] != true) {
-                ShowMsgBox("[Error]","CartoDB spatial counts faield. Please try again or contact our administators.");
-              } else {
-                ShowMsgBox("","CartoDB spatial counts done.");
-              }
-              that.dialog( "close" );
-            });
-          }
-        },
+    buttons: [{
+      text: "OK",
+      click: function() {
+        var that = $(this);
+        var sel_id = $("#tabs-dlg-cartodb").tabs('option','active'),
+            uid = $('#txt-carto-setup-id').val(),
+            key = $('#txt-carto-setup-key').val();
+        $('#progress_bar_cartodb').show();
+        if (sel_id == 0) {
+          // setup
+          gViz.CartoGetAllTables(uid, key, function(msg) {
+            $('#progress_bar_cartodb').hide();
+            fill_carto_tables(msg['tables']);
+          });
+          
+        } else if (sel_id == 1) {
+          // download to local disk
+          var table_name = $('#sel-carto-table-download').find(':selected').text();
+          gViz.CartoDownloadTable(uid, key, table_name, function(msg){
+            $('#progress_bar_cartodb').hide();
+            var name = msg.name;  
+            // create a url and download
+            $.download('./cgi-bin/download.py','name='+name,'get');
+          });
+        } else if (sel_id == 2) {
+          // upload: using uuid send command to call cartodb_upload()
+          var upload_uuid = $('#sel-carto-table-upload').find(':selected').val();
+          gViz.CartoUploadTable(uid, key, upload_uuid, function(msg){
+            $('#progress_bar_cartodb').hide();
+            var new_table_name = msg["new_table_name"];
+            if (new_table_name == undefined || new_table_name == "") {
+              ShowMsgBox("Error", "Upload table to CartoDB failed. Please try again or contact our administators.");
+            } else {
+              ShowMsgBox("", "Upload table to CartoDB done. A new table [" + new_table_name + "] has been created.");
+              $.each(carto_table_sel, function(i, sel) {
+                $(sel).append($('<option>', {value: new_table_name}).text(new_table_name));
+              });
+            }
+          });
+        } else if (sel_id == 3) {
+          // count
+          var first_layer = $('#sel-carto-table-count1').find(':selected').text(),
+              second_layer = $('#sel-carto-table-count2').find(':selected').text(),
+              col_name = $('#txt-carto-col-name').val(),
+              method = "contain";
+          gViz.CartoSpatialCount(uid, key, first_layer, second_layer, col_name, function(msg) {
+            $('#progress_bar_cartodb').hide();
+            if (msg["result"] != true) {
+              ShowMsgBox("[Error]","CartoDB spatial counts faield. Please try again or contact our administators.");
+            } else {
+              ShowMsgBox("","CartoDB spatial counts done.");
+            }
+            that.dialog( "close" );
+          });
+        }
       },
-      {
-        text: "Close",
-        click: function() {
-          $( this ).dialog( "close" );
-        },
-      }
-    ]
+    },{
+      text: "Close",
+      click: function() {
+        $( this ).dialog( "close" );
+      },
+    }]
   });
   
   //////////////////////////////////////////////////////////////
@@ -901,49 +884,46 @@ $(document).ready(function() {
     autoOpen: false,
     modal: false,
     dialogClass: "dialogWithDropShadow",
-    buttons: [
-      {
-        text: "OK",
-        click: function() {
-          var that = $( this );
-          var sel_id = $("#tabs-dlg-road").tabs('option','active'),
-              uid = $('#txt-carto-setup-id').val(),
-              key = $('#txt-carto-setup-key').val();
-          $('#progress_bar_road').show();
-          
-          if (sel_id == 0) {
-            // segment road
-            var road_uuid = $('#sel-road-seg').find(':selected').text();
-            var seg_length = $('#txt-seg-road-length').val();
-            var output_filename = $('#txt-seg-road-name').val();
-            gViz.RoadSegment(uid, key, road_uuid, seg_length, output_filename, function(msg){
-              $('#progress_bar_road').hide();
-              if (output_filename.indexOf(".shp") >=0 ){
-                output_filename = output_filename.substring(0,output_filename.indexOf('.shp'));
-                $.download('./cgi-bin/download.py','name='+output_filename,'get');
-              } else {
-                $.download('./cgi-bin/download.py','name='+output_filename,'get');
-              }
-            });
-          } else if (sel_id == 1) {
-            // snapping point to road
-            var point_uuid = $('#sel-road-snap-point-layer').find(':selected').text(),
-                road_uuid = $('#sel-road-snap-road-layer').find(':selected').text();
-            gViz.RoadSnapPoint(uid, key, point_uuid, road_uuid, function(msg) {
-              $('#progress_bar_road').hide();
-              var name = msg.name;
-              $.download('./cgi-bin/download.py','name='+name,'get');
-            });
-          }
-        },
+    buttons: [{
+      text: "OK",
+      click: function() {
+        var that = $( this );
+        var sel_id = $("#tabs-dlg-road").tabs('option','active'),
+            uid = $('#txt-carto-setup-id').val(),
+            key = $('#txt-carto-setup-key').val();
+        $('#progress_bar_road').show();
+        
+        if (sel_id == 0) {
+          // segment road
+          var road_uuid = $('#sel-road-seg').find(':selected').text();
+          var seg_length = $('#txt-seg-road-length').val();
+          var output_filename = $('#txt-seg-road-name').val();
+          gViz.RoadSegment(uid, key, road_uuid, seg_length, output_filename, function(msg){
+            $('#progress_bar_road').hide();
+            if (output_filename.indexOf(".shp") >=0 ){
+              output_filename = output_filename.substring(0,output_filename.indexOf('.shp'));
+              $.download('./cgi-bin/download.py','name='+output_filename,'get');
+            } else {
+              $.download('./cgi-bin/download.py','name='+output_filename,'get');
+            }
+          });
+        } else if (sel_id == 1) {
+          // snapping point to road
+          var point_uuid = $('#sel-road-snap-point-layer').find(':selected').text(),
+              road_uuid = $('#sel-road-snap-road-layer').find(':selected').text();
+          gViz.RoadSnapPoint(uid, key, point_uuid, road_uuid, function(msg) {
+            $('#progress_bar_road').hide();
+            var name = msg.name;
+            $.download('./cgi-bin/download.py','name='+name,'get');
+          });
+        }
       },
-      {
-        text: "Close",
-        click: function() {
-          $( this ).dialog( "close" );
-        },
-      }
-    ]
+    },{
+      text: "Close",
+      click: function() {
+        $( this ).dialog( "close" );
+      },
+    }]
   });
   
   //////////////////////////////////////////////////////////////
@@ -952,30 +932,39 @@ $(document).ready(function() {
   $('#datepicker-start').datepicker();
   $('#datepicker-end').datepicker();
   $('#tabs-dlg-spacetime').tabs();
+  $( "#spacetime_catalog" ).accordion({
+    autoHeight: false});
   $( "#dialog-spacetime" ).dialog({
-    height: 580,
-    width: 480,
+    height: 490,
+    width: 580,
     autoOpen: false,
     modal: false,
     dialogClass: "dialogWithDropShadow",
-    buttons: [
-      {
-        text: "OK",
-        click: function() {
-          var sel_id = $("#tabs-dlg-spacetime").tabs('option','active');
-          if (sel_id == 1) {
-            // cartodb: download map from cartodb
-          }
-          $( this ).dialog( "close" );
-        },
+    buttons: [{
+      text: "OK",
+      click: function() {
+        var poly_uuid = $('#sel-spacetime-table-poly').find(':selected').val(),
+            point_uuid = $('#sel-spacetime-table-point').find(':selected').val(),
+            count_col_name = $('#txt-spacetime-col-name').val();
+        var params = {
+          'poly_uuid' : poly_uuid,
+          'point_uuid' : point_uuid,
+          'count_col_name' : count_col_name
+        };
+        $.get('../spacetime/', params, function(){
+          $('#progress_bar_spacetime').show();
+        }).done( function( data ) {
+          $('#progress_bar_spacetime').hide();
+           
+        });
+        $( this ).dialog( "close" );
       },
-      {
-        text: "Close",
-        click: function() {
-          $( this ).dialog( "close" );
-        },
-      }
-    ]
+    },{
+      text: "Close",
+      click: function() {
+        $( this ).dialog( "close" );
+      },
+    }]
   });
   //////////////////////////////////////////////////////////////
   //  Weights creation
@@ -1138,8 +1127,7 @@ $(document).ready(function() {
             .prev().remove();
         });
       }
-    },
-    {
+    },{
       text: "Close",
       click: function() {
         $( this ).dialog( "close" );
@@ -1603,6 +1591,46 @@ $(document).ready(function() {
       ShowMsgBox("Erro","Spatial regression failed.");
     });
   });
+  
+  //////////////////////////////////////////////////////////////
+  //  Thematic Map
+  //////////////////////////////////////////////////////////////
+  $( "#dlg-quantile-map" ).dialog({
+    dialogClass: "dialogWithDropShadow",
+    width: 400,
+    height: 200,
+    autoOpen: false,
+    modal: false,
+    buttons: {
+      "Open": function() {
+        if (!gViz && !gViz.uuid) return;
+        var sel_method = $('#sel-quan-method').val(),
+            sel_var = $('#sel-var').val(),
+            sel_cat = $('#quan-cate').val();
+        if (sel_var == '') {
+          ShowMsgBox("Info", "Please select a variable for choropleth map.")
+          return;
+        }
+        if (sel_cat == '') {
+          ShowMsgBox("Info", "Please select a category number for choropleth map.")
+          return;
+        }
+        var params = {
+          "layer_uuid": gViz.uuid,
+          "method": sel_method, 
+          "var": sel_var, 
+          "k": sel_cat
+        };
+        $.get('../thematic_map/', params, function(){
+        }).done(function(result){
+          gMsg = result;
+          gViz.PopupThematicMap();
+        });
+        $(this).dialog("close");
+      }, 
+      Cancel: function() {$( this ).dialog( "close" );},
+    },
+  });
   //////////////////////////////////////////////////////////////
   //   LISA Map
   //////////////////////////////////////////////////////////////
@@ -1617,16 +1645,22 @@ $(document).ready(function() {
         if (!gViz) return;
         $('#progress_bar_lisa').show();
         var sel_var = $('#sel-lisa-var').val();
-        var sel_w = $('#sel-lisa-w').text();
+        var sel_w = $('#sel-lisa-w').val();
         if (!sel_w || sel_w.length == 0) {
           ShowMsgBox("Info", "Please select a weights first. Note: You can create a weights by click the weights creation button");
           return;
         }
-        var msg = {"command":"new_lisa_map","uuid":uuid,
-        "var": sel_var, "w_name": sel_w};
-        gViz.NewLISAMap(msg, function(msg){
-          $('#progress_bar_lisa').hide();
+        var params = {
+          "layer_uuid": gViz.uuid,
+          "var": sel_var, 
+          "w": sel_w,
+        };
+        $.get('../lisa_map/', params, function(){
+        }).done(function(result){
+          gMsg = result;
+          gViz.PopupThematicMap();
         });
+        $(this).dialog("close");
       }, 
       Cancel: function() {$( this ).dialog( "close" );},
     },
@@ -1684,46 +1718,6 @@ $(document).ready(function() {
         }).done(function(result){
           gMsg = result;
           gViz.PopupScatterPlot();
-        });
-        $(this).dialog("close");
-      }, 
-      Cancel: function() {$( this ).dialog( "close" );},
-    },
-  });
-  
-  //////////////////////////////////////////////////////////////
-  //  Thematic Map
-  //////////////////////////////////////////////////////////////
-  $( "#dlg-quantile-map" ).dialog({
-    dialogClass: "dialogWithDropShadow",
-    width: 400,
-    height: 200,
-    autoOpen: false,
-    modal: false,
-    buttons: {
-      "Open": function() {
-        if (!gViz && !gViz.uuid) return;
-        var sel_method = $('#sel-quan-method').val(),
-            sel_var = $('#sel-var').val(),
-            sel_cat = $('#quan-cate').val();
-        if (sel_var == '') {
-          ShowMsgBox("Info", "Please select a variable for choropleth map.")
-          return;
-        }
-        if (sel_cat == '') {
-          ShowMsgBox("Info", "Please select a category number for choropleth map.")
-          return;
-        }
-        var params = {
-          "layer_uuid": gViz.uuid,
-          "method": sel_method, 
-          "var": sel_var, 
-          "k": sel_cat
-        };
-        $.get('../thematic_map/', params, function(){
-        }).done(function(result){
-          gMsg = result;
-          gViz.PopupThematicMap();
         });
         $(this).dialog("close");
       }, 

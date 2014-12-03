@@ -30,7 +30,7 @@
 <script src="../media/js/shapefile.js"></script>
 <script>
 var viz, lmap, map, data, mapType, layer_uuid, prj; 
-var prj, type, bins, id_array, title,k,colors, colorTheme={};  
+var prj, method, bins, id_array, title,k,colors, colorTheme={};  
 
 $(document).ready(function() {
 
@@ -39,9 +39,12 @@ $(document).ready(function() {
     selector.onAdd = function (map) {
       var div = L.DomUtil.create('div', 'info');
       var legend = L.DomUtil.create('div', 'legend');
-      var sel = L.DomUtil.create('select', 'color-selector');
       var info = L.DomUtil.create('h4', '');
       create_legend($(legend), bins, colors); 
+      $(div).append($(legend)); 
+      $(div).append($(info)); 
+      if ( method != "lisa") {
+      var sel = L.DomUtil.create('select', 'color-selector');
       // fill content of color-selector
       $.each(colorbrewer, function(k,v){
 		$(sel)
@@ -49,9 +52,6 @@ $(document).ready(function() {
 			.attr("value", k)
 			.text(k));
       });
-      $(div).append($(legend)); 
-      $(div).append($(info)); 
-      if ( type != "lisa") {
 		$(div).append("Select to change color scheme:"); 
 		$(div).append($(sel)); 
       }
@@ -69,7 +69,7 @@ $(document).ready(function() {
       this._div.innerHTML = '<h4>'+title+'</h4>';
     };
     info.addTo(lmap);
-    if (type == "lisa") {
+    if (method== "lisa") {
       $('#selector').empty();
     }
   };
@@ -81,12 +81,19 @@ $(document).ready(function() {
   method = msg.method;
   bins = msg.bins;
   id_array = msg.id_array;
-  colors = colorbrewer['YlGn'][k];
   prj = window.opener.gPrj;
   data = window.opener.gMap.getData();
   mapType = window.opener.gViz.mapType;
   title = method + " map for variable (" + col_name +")";
       
+  if (method=="lisa") {
+	k = bins.length;
+    colors = colorbrewer.Lisa[k];
+  } else {
+    colors = colorbrewer['YlGn'][k];
+	
+  }
+  $('#map').show();
   lmap = L.map('map');
   L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -100,9 +107,6 @@ $(document).ready(function() {
   viz = new d3viz($('#map-container'), foreground);
   viz.SetupBrushLink();
   
-    if (type == "lisa") {
-    colors = colorbrewer.Lisa[k];
-  }
   colorTheme = {};
   for ( var i=0, n=id_array.length; i<n; i++ ) {
     colorTheme[colors[i]] = id_array[i];

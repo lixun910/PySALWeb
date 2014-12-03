@@ -16,7 +16,7 @@ import multiprocessing as mp
 from hashlib import md5
 
 from myproject.myapp.models import Document, Geodata, Weights, SpregModel
-from views_utils import get_file_url, RSP_FAIL, RSP_OK, get_valid_path, get_abs_path, gen_rnd_str, get_docfile_path, get_rel_path
+from views_utils import * 
 
 from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks, Moran_Local
 import GeoDB
@@ -266,8 +266,8 @@ def lisa_map(request):
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
-        var_x = request.GET.get("var_x", None)
-        wuuid = request.GET.get("wuuid", None)
+        var_x = request.GET.get("var", None)
+        wuuid = request.GET.get("w", None)
         geodata = Geodata.objects.get(uuid = layer_uuid)
         if geodata and var_x and wuuid:
             data = GeoDB.GetTableData(str(layer_uuid), [var_x])
@@ -284,6 +284,7 @@ def lisa_map(request):
                 id_array.append([i for i,v in enumerate(lm.q) \
                                  if v == j and lm.p_sim[i] < 0.05])
             results = {
+                "method" : "lisa",
                 "var": var_x,
                 "bins": bins,
                 "id_array" : id_array,
@@ -293,6 +294,24 @@ def lisa_map(request):
                 content_type="application/json"
             )
     return HttpResponse(RSP_FAIL, content_type="application/json")
+
+@login_required
+def spacetime(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        poly_uuid = request.GET.get("poly_uuid", None)
+        point_uuid = request.GET.get("point_uuid", None)
+        col_name = request.GET.get("count_col_name", None)
+       
+        if poly_uuid and point_uuid and col_name: 
+            if GeoDB.CountPtsInPolys(poly_uuid, point_uuid, col_name):
+                return HttpResponse(
+                    RSP_OK,
+                    content_type="application/json"
+                )
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
 
 """
 Upload shape files to server. Write meta data to meta database.
