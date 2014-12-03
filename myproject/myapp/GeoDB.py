@@ -103,12 +103,15 @@ def ExportToJSON(shp_path):
     rtn = subprocess.call( script, shell=True)
     
     
-def SaveDBTableToShp(geodata, table_name):
+def SaveDBTableToShp(table_name):
     from myproject.myapp.models import Geodata, Document
-    file_uuid = md5(geodata.userid + geodata.filepath).hexdigest()
-    document = Document.objects.get(uuid=file_uuid)
-    shp_path = settings.PROJECT_ROOT + document.docfile.url
-    shp_path = shp_path[0: shp_path.rindex(".")] + ".shp"
+    layer_uuid = table_name[1:]
+    geodata = Geodata.objects.get(uuid = layer_uuid)
+    if not geodata:
+        print "can't find %s in Geodata in SaveDBTableToShp"%layer_uuid
+        return False
+    shp_path = os.path.join(settings.PROJECT_ROOT, geodata.filepath)
+    shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
     tmp_path = shp_path[0: shp_path.rindex("/")+1] + table_name + ".shp"
     import subprocess
     script = 'ogr2ogr -f "ESRI Shapefile" %s PG:"host=%s dbname=%s user=%s password=%s" %s' %(tmp_path, db_host, db_name, db_uname, db_upwd, table_name)
@@ -169,6 +172,7 @@ def CountPtsInPolys(poly_uuid, point_uuid, count_col_name):
         (poly_tbl, count_col_name, pt_tbl, pt_tbl, poly_tbl) 
         DS.ExecuteSQL(str(sql))
         CloseDS(DS)
+        SaveDBTableToShp(poly_tbl)
         return True
     except Exception, e:
         print "CountPtsInPolys() error"
@@ -203,7 +207,7 @@ def AddUniqueIDField(layer_uuid, field_name):
         geodata.save()
        
         # save changes to shp file (pysal needs shp file) 
-        SaveDBTableToShp(geodata, table_name)
+        SaveDBTableToShp(table_name)
         
         CloseDS(DS)
         
@@ -240,7 +244,7 @@ def AddField(layer_uuid, field_name, field_type, values):
     geodata.save()
     
     # save changes to shp file (pysal needs shp file) 
-    SaveDBTableToShp(geodata, table_name)
+    SaveDBTableToShp(table_name)
     
 def GetDataSource(drivername, filepath):
     driver = ogr.GetDriverByName(drivername)

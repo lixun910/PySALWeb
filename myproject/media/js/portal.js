@@ -156,6 +156,9 @@ var UpdateLocalMapSel = function(){
   }
 };
 
+var LoadFieldNames = function() {
+};
+
 var LoadMinPairDist = function() {
   if (gViz && gViz.uuid) {
     var layer_uuid = gViz.uuid;
@@ -1371,7 +1374,7 @@ $(document).ready(function() {
             }).done(function(data) { 
               console.log("add_uid", data); 
               if (data["success"] == 1) {
-                loadFieldNames(function() {
+                LoadFieldNames(function() {
                   $('#sel-w-id').val(name).change()
                 });
                 that.dialog( "close" );
