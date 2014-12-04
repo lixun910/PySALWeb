@@ -87,6 +87,18 @@
     return this.shpReader;
   };
   
+  ShpMap.prototype.updateExtent = function(basemap) {
+    // when overlay this map on top of a base map, the extent of this map
+    // should be changed to the extent of the base map
+    this.extent = basemap.extent;
+    this.mapLeft = basemap.mapLeft;
+    this.mapRight = basemap.mapRight;
+    this.mapTop = basemap.mapTop;
+    this.mapBottom = basemap.mapBottom;
+    this.mapWidth = basemap.mapWidth;
+    this.mapHeight = basemap.mapHeight;
+  };
+  
   ShpMap.prototype.fitScreen = function(screenWidth, screenHeight, marginLeft, marginTop, moveX, moveY) {
     if (moveX) this.moveX = moveX;
     if (moveY) this.moveY = moveY;

@@ -113,14 +113,14 @@ def SaveDBTableToShp(table_name):
         return False
     shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
     shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
-    tmp_path = shp_path[0: shp_path.rindex("/")+1] + table_name + ".shp"
+    shp_dir, shp_name = os.path.split(shp_path)
+    tmp_path = os.path.join(shp_dir, table_name + ".shp")
     import subprocess
     script = 'ogr2ogr -f "ESRI Shapefile" %s PG:"host=%s dbname=%s user=%s password=%s" %s' %(tmp_path, db_host, db_name, db_uname, db_upwd, table_name)
     print "SaveDBTableToShp", script
     rtn = subprocess.call( script, shell=True)    
     shutil.copy(tmp_path[:-3]+"dbf", shp_path[:-3]+"dbf")
     # remove tmp files 
-    shp_dir = shp_path[0: shp_path.rindex("/")]
     filelist = [ f for f in os.listdir(shp_dir) \
                  if f.startswith(table_name) ]
     for f in filelist:
@@ -244,7 +244,7 @@ def AddUniqueIDField(layer_uuid, field_name):
         CloseDS(DS)
         return False
 
-def AddField(layer_uuid, field_name, field_type, values):
+def AddField(layer_uuid, field_name, field_type, values, updateShp=True):
     DS = GetDS()
     table_name = TBL_PREFIX + layer_uuid
     field_db_type = ['integer', 'numeric', 'varchar(255)'][field_type]
@@ -270,7 +270,8 @@ def AddField(layer_uuid, field_name, field_type, values):
     geodata.save()
     
     # save changes to shp file (pysal needs shp file) 
-    SaveDBTableToShp(table_name)
+    if updateShp:
+        SaveDBTableToShp(table_name)
     
 def GetDataSource(drivername, filepath):
     driver = ogr.GetDriverByName(drivername)

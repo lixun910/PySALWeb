@@ -8,6 +8,7 @@ from django.conf import settings
 from django.core.files import File
 from django.contrib.auth.decorators import login_required
 
+import sys
 import numpy as np
 import json, time, os, logging, StringIO, shutil, time
 import zipfile
@@ -165,11 +166,14 @@ def get_map_names(request):
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
-        geodata = Geodata.objects.get(userid=userid)
-        
-        if len(field_names) > 0:
+        maps = Geodata.objects.filter(userid=userid)
+        map_names = {}
+        for m in maps:
+            map_names[m.uuid] = m.name
+            
+        if len(map_names) > 0:
             return HttpResponse(
-                json.dumps(field_names), 
+                json.dumps(map_names), 
                 content_type="application/json"
             )
     return HttpResponse(RSP_FAIL, content_type="application/json")
@@ -359,6 +363,40 @@ def road_segment(request):
             
             driver = "ESRI shapefile"
             _save_new_shapefile(userid, driver, ofn)
+            
+            return HttpResponse(
+                RSP_OK,
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
+
+@login_required
+def road_snap_points(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        cartodb_uid = request.GET.get("cartodb_uid", None)
+        cartodb_key = request.GET.get("cartodb_key", None)
+        road_uuid = request.GET.get("road_uuid", None)
+        point_uuid = request.GET.get("point_uuid", None)
+        col_name = request.GET.get("count_col_name", None)
+        road_seg_length = request.GET.get("road_seg_length", None)
+       
+        if cartodb_key and cartodb_key and \
+           road_uuid and point_uuid and col_name: 
+            geodata = Geodata.objects.get(uuid=road_uuid)
+            shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
+            shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
+                
+            net = NetworkCluster(shp_path) 
+            net.SegmentNetwork(sys.maxint)
+            
+            geodata = Geodata.objects.get(uuid=point_uuid)
+            pt_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
+            pt_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
+            counts = net.SnapPointsToNetwork(pt_path, float(road_seg_length))
+            GeoDB.AddField(road_uuid, col_name, 0, counts)  # 0 integer
             
             return HttpResponse(
                 RSP_OK,

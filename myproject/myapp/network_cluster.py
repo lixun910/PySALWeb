@@ -174,76 +174,96 @@ class NetworkCluster:
             osm_id = cnt
             cnt += 1
             coords = shape.vertices
-            # segment 
-            if isinstance(coords[0][0], float):
-                coords_cand = [coords]
-            elif isinstance(coords[0][0][0], float):
-                coords_cand = coords
-            for c in coords_cand:
-                seg_list = []
-                sub_line = [] 
-                rest_len = SEG_LENGTH
-                sub_len = 0 
-               
-                start = 0
-                end = len(c) -1
-                
-                i = start
-                while i < end:
-                    S = c[i]
-                    E = c[i+1]
-                    if sub_len == 0:
-                        sub_len = get_len(S, E) 
-                    
-                    if sub_len <= rest_len:
-                        if len(sub_line) == 0:
-                            sub_line.append(S)
-                        sub_line.append(E)
-                        rest_len = rest_len - sub_len
-                        sub_len = 0
-                        start = start + 1
-                        i = i+1
-                        if i == end:
-                            seg_list.append(sub_line)
-                    else:
-                        # find next break point
-                        dy = E[1] - S[1]
-                        dx = E[0] - S[0]
-                        offX = rest_len * (dx / sub_len)
-                        offY = rest_len * (dy / sub_len)
-                        
-                        N = []
-                        N.append(S[0] + offX)
-                        N.append(S[1] + offY)
-                        
-                        if len(sub_line) == 0:
-                            sub_line.append(S)
-                            sub_line.append(N)
-                        else:
-                            sub_line.append(N)
-                        
-                        seg_list.append(sub_line)
-                        sub_line = []
-                        
-                        #c[start][0] = N[0]
-                        #c[start][1] = N[1]
-                        c[start] = N
-                            
-                        if rest_len < SEG_LENGTH:
-                            rest_len = SEG_LENGTH
-                        if sub_len >= SEG_LENGTH:
-                            sub_len = sub_len - rest_len
-                        else:
-                            sub_len = 0
-                                
-                #print seg_list
-                for seg in seg_list:
-                    l = tuple(tuple(i) for i in seg)
+            if SEG_LENGTH == sys.maxint:
+                # no need segmentation
+                if isinstance(coords[0][0], float):
+                    l = tuple(tuple(i) for i in coords)
                     if not osm_id in network_dict:
                         network_dict[osm_id] = [l]
                     else:
                         network_dict[osm_id].append(l)
+                    #seg_dict[l] = [osm_id, prop["oneway"], prop["bridge"],0]
                     seg_dict[l] = [osm_id, 0]
+                elif isinstance(coords[0][0][0], float):
+                    for c in coords:
+                        l = tuple(tuple(i) for i in c)
+                        if not osm_id in network_dict:
+                            network_dict[osm_id] = [l]
+                        else:
+                            network_dict[osm_id].append(l)
+                        #seg_dict[l] = [osm_id, prop["oneway"], prop["bridge"],0]
+                        seg_dict[l] = [osm_id, 0]            
+            else:
+                # segment 
+                if isinstance(coords[0][0], float):
+                    coords_cand = [coords]
+                elif isinstance(coords[0][0][0], float):
+                    coords_cand = coords
+                for c in coords_cand:
+                    seg_list = []
+                    sub_line = [] 
+                    rest_len = SEG_LENGTH
+                    sub_len = 0 
+                   
+                    start = 0
+                    end = len(c) -1
+                    
+                    i = start
+                    while i < end:
+                        S = c[i]
+                        E = c[i+1]
+                        if sub_len == 0:
+                            sub_len = get_len(S, E) 
+                        
+                        if sub_len <= rest_len:
+                            if len(sub_line) == 0:
+                                sub_line.append(S)
+                            sub_line.append(E)
+                            rest_len = rest_len - sub_len
+                            sub_len = 0
+                            start = start + 1
+                            i = i+1
+                            if i == end:
+                                seg_list.append(sub_line)
+                        else:
+                            # find next break point
+                            dy = E[1] - S[1]
+                            dx = E[0] - S[0]
+                            offX = rest_len * (dx / sub_len)
+                            offY = rest_len * (dy / sub_len)
+                            
+                            N = []
+                            N.append(S[0] + offX)
+                            N.append(S[1] + offY)
+                            
+                            if len(sub_line) == 0:
+                                sub_line.append(S)
+                                sub_line.append(N)
+                            else:
+                                sub_line.append(N)
+                            
+                            seg_list.append(sub_line)
+                            sub_line = []
+                            
+                            #c[start][0] = N[0]
+                            #c[start][1] = N[1]
+                            c[start] = N
+                                
+                            if rest_len < SEG_LENGTH:
+                                rest_len = SEG_LENGTH
+                            if sub_len >= SEG_LENGTH:
+                                sub_len = sub_len - rest_len
+                            else:
+                                sub_len = 0
+                                    
+                    #print seg_list
+                    for seg in seg_list:
+                        l = tuple(tuple(i) for i in seg)
+                        if not osm_id in network_dict:
+                            network_dict[osm_id] = [l]
+                        else:
+                            network_dict[osm_id].append(l)
+                        seg_dict[l] = [osm_id, 0]
         self.segment_dict = seg_dict
         self.segment_lines = seg_dict.keys()
         self.search_dict = self.build_dict()
@@ -261,7 +281,7 @@ class NetworkCluster:
                 search_dict[p].add(l)
         return search_dict
         
-    def SnapPointsToNetwork(self, points):
+    def SnapPointsToNetwork(self, pt_fname, SEG_LENGTH):
         seg_dict = self.segment_dict
         search_dict = self.search_dict
         line_points = self.line_points
@@ -269,45 +289,50 @@ class NetworkCluster:
         
         n_lp = len(line_points)
         # snapping points to roads
-        for p in points:
-            q = kd.query(p, k=10, distance_upper_bound=self.SEG_LENGTH)
-            dist = q[0]
-            idx = q[1]
-            if dist[0] < 1:
-                # if point is right on a line seg, pick a line and snap the point
-                i = idx[0] 
-                lp = tuple(line_points[i])
-                l = random.sample(search_dict[lp],1)[0]
-                seg_dict[l][-1] += 1
-                continue
-            # find all nearest line segs 
-            lines = set()
-            for i in idx:
-                if i < n_lp:
+        pt_shp = pysal.open(pt_fname) 
+        for shape in pt_shp: 
+            for p in shape.vertices:
+                q = kd.query(p, k=10, distance_upper_bound=SEG_LENGTH)
+                dist = q[0]
+                idx = q[1]
+                if dist[0] < 1:
+                    # if point is right on a line seg, pick a line and snap the point
+                    i = idx[0] 
                     lp = tuple(line_points[i])
-                    l = search_dict[lp]
-                    for j in l:
-                        lines.add(j)
-            # if no nearest line seg, continue
-            if len(lines) == 0:
-                continue
-            lines = list(lines)
+                    l = random.sample(search_dict[lp],1)[0]
+                    seg_dict[l][-1] += 1
+                    continue
+                # find all nearest line segs 
+                lines = set()
+                for i in idx:
+                    if i < n_lp:
+                        lp = tuple(line_points[i])
+                        l = search_dict[lp]
+                        for j in l:
+                            lines.add(j)
+                # if no nearest line seg, continue
+                if len(lines) == 0:
+                    continue
+                lines = list(lines)
+                
+                snap_dist = sys.maxint
+                snap_l = None
+                for l in lines:
+                    dist = distToSegment(l, p)
+                    if dist < 1:
+                        snap_l = l
+                        break
+                    elif dist < snap_dist:
+                        snap_l = l 
+                        snap_dist = dist
+                seg_dict[snap_l][-1] += 1
+        cnts = [] 
+        for i,l in enumerate(self.segment_lines):
+            cnts.append(seg_dict[l][-1])
+        return cnts
             
-            snap_dist = sys.maxint
-            snap_l = None
-            for l in lines:
-                dist = distToSegment(l, p)
-                if dist < 1:
-                    snap_l = l
-                    break
-                elif dist < snap_dist:
-                    snap_l = l 
-                    snap_dist = dist
-            seg_dict[snap_l][-1] += 1
-       
-    def CreateWeights(self): 
+    def CreateWeights(self, SEG_LENGTH): 
         seg_lines = self.segment_lines
-        SEG_LENGTH = self.SEG_LENGTH
         search_dict = self.search_dict
         line_points = self.line_points
         kd = self.kd_line_points

@@ -154,10 +154,9 @@ var LoadMapNames = function(){
   .done( function(nameDict) {
     $.each(local_map_names_sel, function(i,sel){
       $(sel).find('option').remove().end();
-        for(var uuid in nameDict) {
-          var name = nameDict[uuid];
-          $(sel).append($('<option>', {value: uuid}).text(name));
-        }
+      for(var uuid in nameDict) {
+        var name = nameDict[uuid];
+        $(sel).append($('<option>', {value: uuid}).text(name));
       }
     });
   });
@@ -344,6 +343,8 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Init UI
   //////////////////////////////////////////////////////////////
+  LoadMapNames();
+  
   jQuery.fn.popupDiv = function (divToPop, text) {
     var pos=$(this).offset();
     var h=$(this).height();
@@ -901,7 +902,7 @@ $(document).ready(function() {
   $('#tabs-dlg-road').tabs();
   $( "#dialog-road" ).dialog({
     height: 380,
-    width: 480,
+    width: 520,
     autoOpen: false,
     modal: false,
     dialogClass: "dialogWithDropShadow",
@@ -944,16 +945,33 @@ $(document).ready(function() {
         } else if (sel_id == 1) {
           // snapping point to road
           var point_uuid = $('#sel-road-snap-point-layer').find(':selected').val(),
-              road_uuid = $('#sel-road-snap-road-layer').find(':selected').val();
-          $.get('../road_snap_points/', params).done(function(msg) {
+              road_uuid = $('#sel-road-snap-road-layer').find(':selected').val(),
+              count_col_name = $('#txt-snap-count-col-name').val(),
+              road_seg_length = $('#txt-snap-seg-road-length').val();
+          var params = {
+            'cartodb_uid' : uid,
+            'cartodb_key' : key,
+            'point_uuid' : point_uuid,
+            'road_uuid' : road_uuid,
+            'count_col_name' : count_col_name,
+            'road_seg_length' : road_seg_length,
+          };
+          $.get('../road_snap_points/', params).done(function(data) {
             $('#progress_bar_road').hide();
-            var name = msg.name;
-            $.download('./cgi-bin/download.py','name='+name,'get');
+            if ( data["success"] == 1 ) {
+              ShowMsgBox("","Snapping points to roads done.");
+              if (gViz.uuid == road_uuid) {
+                LoadFieldNames();
+              }
+            } else {
+              ShowMsgBox("","Snapping points to roads done.");
+            }
           });
         } else if (sel_id == 2) {
           //create weights for roads
           var road_uuid = $('#sel-road-w-layer').find(':selected').val(),
               w_name = $('#txt-road-w-name').val(),
+              road_seg_length = $('#txt-snap-seg-road-length').val(),
               w_type = $('#sel-road-cont-type').find(':selected').val();
           $.get('../road_create_w', params).done(function(msg) {
             $('#progress_bar_road').hide();
