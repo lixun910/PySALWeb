@@ -56,6 +56,17 @@
     this.mapBottom = this.bounds[1];
     this.mapRight = this.bounds[2];
     this.mapTop = this.bounds[3];
+    
+    this.prj = prj;
+    if (this.prj) {
+      var pt = this.prj.forward([this.mapLeft, this.mapBottom]);
+      this.mapLeft = pt[0];
+      this.mapBottom = pt[1];
+      pt = this.prj.forward([this.mapRight, this.mapTop]);
+      this.mapRight = pt[0];
+      this.mapTop = pt[1];
+    }
+    
     this.mapHeight = this.mapTop - this.mapBottom;
     this.mapWidth = this.mapRight - this.mapLeft;
     this.extent = [this.mapLeft, this.mapRight, this.mapBottom, this.mapTop];
@@ -65,7 +76,6 @@
     this.moveX = 0;
     this.moveY = 0;
     
-    this.prj = prj;
     this.LL = LL; 
     this.Lmap = Lmap;
     if ( this.Lmap) {

@@ -27,7 +27,7 @@ def CloseDS(ds):
     ds= None
     print 'close DS:', ds
     
-def ExportToDB(shp_path, layer_uuid):
+def ExportToDB(shp_path, layer_uuid, geom_type):
     global db_host, db_port, db_uname, db_upwd, db_name
     print "export starting..", shp_path
     table_name = TBL_PREFIX + layer_uuid
@@ -53,21 +53,22 @@ def ExportToDB(shp_path, layer_uuid):
     # create a geometry only json file for visualization     
     ExportToJSON(shp_path) 
         
-    # compute meta data for weights creation
-    from pysal.weights.user import get_points_array_from_shapefile
-    # make sure using shp file in pysal
-    shp_path = shp_path[0:shp_path.rfind(".")] + ".shp"
-    points = get_points_array_from_shapefile(shp_path)
-    from scipy.spatial import cKDTree
-    kd = cKDTree(points)
-    nn = kd.query(points, k=2)
-    thres = nn[0].max(axis=0)[1]
-    
-    from myproject.myapp.models import Geodata
-    geodata = Geodata.objects.get(uuid = layer_uuid)
-    if geodata:
-        geodata.minpairdist = thres
-        geodata.save()
+    # compute meta data for weights creation, point/polygon
+    if geom_type == 1 or geom_type == 3: 
+        from pysal.weights.user import get_points_array_from_shapefile
+        # make sure using shp file in pysal
+        shp_path = shp_path[0:shp_path.rfind(".")] + ".shp"
+        points = get_points_array_from_shapefile(shp_path)
+        from scipy.spatial import cKDTree
+        kd = cKDTree(points)
+        nn = kd.query(points, k=2)
+        thres = nn[0].max(axis=0)[1]
+        
+        from myproject.myapp.models import Geodata
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        if geodata:
+            geodata.minpairdist = thres
+            geodata.save()
     
     print "export ends with ", rtn
     
@@ -104,13 +105,13 @@ def ExportToJSON(shp_path):
     
     
 def SaveDBTableToShp(table_name):
-    from myproject.myapp.models import Geodata, Document
+    from myproject.myapp.models import Geodata
     layer_uuid = table_name[1:]
     geodata = Geodata.objects.get(uuid = layer_uuid)
     if not geodata:
         print "can't find %s in Geodata in SaveDBTableToShp"%layer_uuid
         return False
-    shp_path = os.path.join(settings.PROJECT_ROOT, geodata.filepath)
+    shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
     shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
     tmp_path = shp_path[0: shp_path.rindex("/")+1] + table_name + ".shp"
     import subprocess
@@ -125,6 +126,31 @@ def SaveDBTableToShp(table_name):
     for f in filelist:
         f = shp_dir + os.sep + f
         os.remove(f)
+        
+def GetColumnNamesFromTable(layer_uuid):
+    DS = GetDS()
+    table_name = TBL_PREFIX + layer_uuid
+    sql = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name='%s'" % table_name
+    tmp_layer = DS.ExecuteSQL(str(sql))
+    tmp_layer.ResetReading()
+    feature = tmp_layer.GetNextFeature()
+    col_names = {}
+    while feature:
+        col_name = feature.GetFieldAsString(0) 
+        col_type = feature.GetFieldAsString(1) 
+        if col_name not in ['ogc_fid','wkb_geometry']:
+            if col_type == 'integer':
+                col_type = 'Integer'
+            elif col_type == 'double precision':
+                col_type = 'Real'
+            elif col_type == 'character varying':
+                col_type = 'String'
+            else:
+                col_type = 'String'
+            col_names[col_name] = col_type
+        feature = tmp_layer.GetNextFeature()
+    CloseDS(DS)
+    return col_names
     
 def IsLayerExist(layer_uuid):
     DS = GetDS()

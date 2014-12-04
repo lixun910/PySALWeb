@@ -144,7 +144,8 @@ $(document).ready(function() {
     off_label: 'Leaflet Background? OFF',
     on_callback: function() {
 	  $('#map').show();
-      viz.ShowMainMap(data, mapType, PreMapShown, OnMapShown, L, lmap, prj, colorTheme);
+	  var isMainMap = true;
+      viz.ShowMap(data, mapType, isMainMap, PreMapShown, OnMapShown, L, lmap, prj, colorTheme);
 	},
 	off_callback: function() {
 	  $('#map').hide();

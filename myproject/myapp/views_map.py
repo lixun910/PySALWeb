@@ -19,7 +19,9 @@ from myproject.myapp.models import Document, Geodata, Weights, SpregModel
 from views_utils import * 
 
 from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks, Moran_Local
+from pysal import open as pysalOpen
 import GeoDB
+from network_cluster import NetworkCluster
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +159,21 @@ def remove_map(request):
     return HttpResponse(RSP_FAIL, content_type="application/json")
         
     
+@login_required
+def get_map_names(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        geodata = Geodata.objects.get(userid=userid)
+        
+        if len(field_names) > 0:
+            return HttpResponse(
+                json.dumps(field_names), 
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+
 """
 Get field names from a map layer. 
 The layer_uuid is used to query from Geodata database.
@@ -168,12 +185,12 @@ def get_fields(request):
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
-        geodata = Geodata.objects.get(uuid = layer_uuid)
-        if geodata:
-            fields = str(geodata.fields)
-            fields = fields.replace("'","\"")
-            print "get_fields", fields
-            return HttpResponse(fields, content_type="application/json")
+        field_names = GeoDB.GetColumnNamesFromTable(layer_uuid)
+        if len(field_names) > 0:
+            return HttpResponse(
+                json.dumps(field_names), 
+                content_type="application/json"
+            )
     return HttpResponse(RSP_FAIL, content_type="application/json")
 
 @login_required
@@ -185,13 +202,11 @@ def get_metadata(request):
         layer_uuid = request.GET.get("layer_uuid","")
         geodata = Geodata.objects.get(uuid = layer_uuid)
         if geodata:
-            fields = str(geodata.fields)
-            fields = fields.replace("'","\"")
             name = str(geodata.name)
             results = {}
             results['layer_uuid'] = layer_uuid
             results['name'] = name
-            results['fields'] = json.loads(fields)
+            results['fields'] = GeoDB.GetColumnNamesFromTable(layer_uuid)
             return HttpResponse(json.dumps(results), content_type="application/json")
     return HttpResponse(RSP_FAIL, content_type="application/json")
     
@@ -311,6 +326,44 @@ def spacetime(request):
                     RSP_OK,
                     content_type="application/json"
                 )
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
+
+@login_required
+def road_segment(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        cartodb_uid = request.GET.get("cartodb_uid", None)
+        cartodb_key = request.GET.get("cartodb_key", None)
+        road_uuid = request.GET.get("road_uuid", None)
+        road_seg_length = request.GET.get("road_seg_length", None)
+        road_seg_fname = request.GET.get("road_seg_fname", None)
+       
+        if cartodb_key and cartodb_key and \
+           road_uuid and road_seg_length and road_seg_fname: 
+            geodata = Geodata.objects.get(uuid=road_uuid)
+            shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
+            json_path = os.path.join(settings.MEDIA_ROOT, geodata.jsonpath)
+            shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
+            prefix = os.path.split(shp_path)[0]
+            ofn = road_seg_fname
+            if ofn.endswith('shp'):
+                ofn = os.path.join(prefix, ofn)
+            else:
+                ofn = os.path.join(prefix, ofn + ".shp")
+                
+            net = NetworkCluster(shp_path) 
+            net.SegmentNetwork(int(road_seg_length))
+            net.ExportCountsToShp(ofn, counts=False)
+            
+            driver = "ESRI shapefile"
+            _save_new_shapefile(userid, driver, ofn)
+            
+            return HttpResponse(
+                RSP_OK,
+                content_type="application/json"
+            )
     return HttpResponse(RSP_FAIL, content_type="application/json")    
 
 """
@@ -495,46 +548,51 @@ def upload(request):
             proc = True
             
     if proc:
-        # save meta data to Geodata table
-        table_name = None
-        print "get meta data", shp_path
-        base_name, shp_name = os.path.split(shp_path)
-        shp_path = os.path.join("temp", user_uuid, shp_name)
-        if shp_path.endswith('shp'):
-            json_path = shp_path[:-3] + "json"
-        else:
-            json_path = shp_path[:-3] + "simp.json"
-        json_path= json_path.replace('\\','/')
-        abs_shp_path = os.path.join(settings.MEDIA_ROOT, shp_path)
-        meta_data = GeoDB.GetMetaData(abs_shp_path, table_name, driver)
-        
-        print "save meta data", meta_data
-        layer_uuid = md5(shp_path).hexdigest()
-        new_geodata = Geodata(
-            uuid=layer_uuid,
-            userid=userid, 
-            name=shp_name,
-            filepath=shp_path, 
-            jsonpath=json_path,
-            n=meta_data['n'], 
-            geotype=str(meta_data['geom_type']), 
-            bbox=str(meta_data['bbox']), 
-            fields=json.dumps(meta_data['fields'])
-        )
-        new_geodata.save()
-        # export to spatial database in background
-        # note: this background process also compute min_threshold
-        # and max_thresdhold
-        from django.db import connection 
-        connection.close()
-        mp.Process(target=GeoDB.ExportToDB, args=(abs_shp_path,layer_uuid)).start()
-        print "uploaded done."
-        result = meta_data
-        result['layer_uuid'] = layer_uuid
-        result['name'] = shp_name
+        result = _save_new_shapefile(userid, driver, shp_path)
         return HttpResponse(json.dumps(result), content_type="application/json")
 
     return HttpResponse(RSP_FAIL, content_type="application/json")
+
+def _save_new_shapefile(userid, driver, abs_shp_path):
+    table_name = None
+    print "get meta data", abs_shp_path
+    base_name, shp_name = os.path.split(abs_shp_path)
+    user_uuid = md5(userid).hexdigest()
+    shp_path = os.path.join('temp', user_uuid, shp_name)
+    layer_uuid = md5(shp_path).hexdigest()
+    if abs_shp_path.endswith('shp'):
+        json_path = shp_path[:-3] + "json"
+    else:
+        json_path = shp_path[:-3] + "simp.json"
+    json_path= json_path.replace('\\','/')
+    meta_data = GeoDB.GetMetaData(abs_shp_path, table_name, driver)
+    geom_type = meta_data['geom_type']
+    
+    print "save meta data", meta_data
+    new_geodata = Geodata(
+        uuid=layer_uuid,
+        userid=userid, 
+        name=shp_name,
+        filepath=shp_path, 
+        jsonpath=json_path,
+        n=meta_data['n'], 
+        geotype=str(geom_type), 
+        bbox=str(meta_data['bbox']), 
+        fields=json.dumps(meta_data['fields'])
+    )
+    new_geodata.save()
+    # export to spatial database in background
+    # note: this background process also compute min_threshold
+    # and max_thresdhold
+    from django.db import connection 
+    connection.close()
+    mp.Process(target=GeoDB.ExportToDB, args=(abs_shp_path,layer_uuid, geom_type)).start()
+    print "uploaded done."
+    result = meta_data
+    result['layer_uuid'] = layer_uuid
+    result['name'] = shp_name    
+    
+    return result
 
 """
 Check if field exists in Django DB

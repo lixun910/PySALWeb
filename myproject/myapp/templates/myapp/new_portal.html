@@ -123,13 +123,25 @@
     </table><br/><br/><br/></span>
   <div id="tabs-dlg-open-file">
     <ul>
-      <li><a href="#tabs-1">Local Disk</a></li>
-      <li><a href="#tabs-2">CartoDB</a></li>
-      <li><a href="#tabs-3">Socrata</a></li>
-      <li><a href="#tabs-4">Dropbox</a></li>
-      <li><a href="#tabs-5">Existing Maps</a></li>
+      <li><a href="#tabs-1">My Maps</a></li>
+      <li><a href="#tabs-2">Local Disk</a></li>
+      <li><a href="#tabs-3">CartoDB</a></li>
+      <li><a href="#tabs-4">Socrata</a></li>
+      <li><a href="#tabs-5">Dropbox</a></li>
     </ul>
     <div id="tabs-1">
+        {% if geodata %}
+        <table>
+          {% for i,layer in geodata.iteritems %}
+          <tr>
+            <td></td>
+            <td><a href='#' onclick="ShowExistMap('{{layer.uuid}}','{{jsonprefix}}{{layer.jsonpath}}')">{{layer.name}}</a></td>
+          </tr>
+          {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+    <div id="tabs-2">
       <div id="drop_zone">Drop files here
         <p style="font-size:12px;"><label id="lbl-drop-json">*.json</label>&nbsp;&nbsp;or &nbsp;&nbsp;
         <label  id="lbl-drop-shp">*.shp</label>&nbsp;<label id="lbl-drop-dbf">*.dbf</label>
@@ -140,7 +152,7 @@
       <table>
       </table>
     </div>
-    <div id="tabs-2">
+    <div id="tabs-3">
       <form id="cartodb-form">
         <img src="{{url_prefix}}/media/img/cartodb.png">
         <table>
@@ -166,7 +178,7 @@
         </table>
       </form>
     </div>
-    <div id="tabs-3">
+    <div id="tabs-4">
         <img src="{{url_prefix}}/media/img/socratalogo.png" style="margin:5px"><br/>
         <table>
           <tr>
@@ -177,20 +189,8 @@
           </tr>
         </table>
     </div>
-    <div id="tabs-4">
-      <div id="dropbox_div"></div>
-    </div>
     <div id="tabs-5">
-        <table>
-        {% if geodata %}
-          {% for i,layer in geodata.iteritems %}
-          <tr>
-            <td></td>
-            <td><a href='#' onclick="ShowExistMap('{{layer.uuid}}','{{jsonprefix}}{{layer.jsonpath}}')">{{layer.name}}</a></td>
-          </tr>
-          {% endfor %}
-        {% endif %}
-        </table>
+      <div id="dropbox_div"></div>
     </div>
   </div>
   <br/><br/>

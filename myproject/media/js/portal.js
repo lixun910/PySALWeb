@@ -98,6 +98,35 @@ var OnMapShown = function(map) {
   }
 };
 
+var FillFieldsToControls = function(fields) {
+  var field_names = [];
+  for (var field in fields) {
+    field_names.push(field);
+  }
+  field_names.sort();
+  for (var var_cmb in fields_combobox) {
+    var var_types = fields_combobox[var_cmb];
+    $(var_cmb).find('option').remove().end();
+    $(var_cmb).append($('<option>', {value: ''}).text(''));
+    for (var field in fields) {
+      var type = fields[field];
+      if (var_types.indexOf(type) >= 0) {
+        $(var_cmb).append($('<option>', {value: field}).text(field));
+      }
+    }
+  }
+  // in regression dialog
+  $.each(['#y_box','#y_box','#y_box','#y_box'], function(i, box) {
+    if ( !$(box).find(".placeholder")) {
+      $(box).find('li').remove().end();
+    } 
+  });
+  $('#ul-x-variables').find('li').remove().end();
+  $.each(field_names, function(i, field) {
+    var item = $('#ul-x-variables').append('<li><p class="name">'+field+'</p></li>');
+  });
+};
+
 var InitDialogs = function(data) {
   var layer_uuid = data.layer_uuid,
       layer_name = data.name,
@@ -105,34 +134,10 @@ var InitDialogs = function(data) {
       field_names = [];
   // setup uuid in GeoVizMap
   gViz.SetupMap(gMap, layer_uuid, layer_name, gAddLayer); 
-  UpdateLocalMapSel();
+  LoadMapNames();
   
   if (!gAddLayer) {
-    for (var field in fields) {
-      field_names.push(field);
-    }
-    field_names.sort();
-    for (var var_cmb in fields_combobox) {
-      var var_types = fields_combobox[var_cmb];
-      $(var_cmb).find('option').remove().end();
-      $(var_cmb).append($('<option>', {value: ''}).text(''));
-      for (var field in fields) {
-        var type = fields[field];
-        if (var_types.indexOf(type) >= 0) {
-          $(var_cmb).append($('<option>', {value: field}).text(field));
-        }
-      }
-    }
-    // in regression dialog
-    $.each(['#y_box','#y_box','#y_box','#y_box'], function(i, box) {
-      if ( !$(box).find(".placeholder")) {
-        $(box).find('li').remove().end();
-      } 
-    });
-    $('#ul-x-variables').find('li').remove().end();
-    $.each(field_names, function(i, field) {
-      var item = $('#ul-x-variables').append('<li><p class="name">'+field+'</p></li>');
-    });
+    FillFieldsToControls(fields);
     $( "#vars ul li" ).draggable({ helper: "clone" });
     new List('vars', {valueNames:['name']});
     // in weights box
@@ -144,19 +149,28 @@ var InitDialogs = function(data) {
 };
 
 // get all map names/uuid from server
-var UpdateLocalMapSel = function(){
-  if (gViz) {
+var LoadMapNames = function(){
+  $.get("../get_map_names/", {})
+  .done( function(nameDict) {
     $.each(local_map_names_sel, function(i,sel){
       $(sel).find('option').remove().end();
-      for( var uuid in gViz.nameDict) {
-        var name = gViz.nameDict[uuid];
-        $(sel).append($('<option>', {value: uuid}).text(name));
+        for(var uuid in nameDict) {
+          var name = nameDict[uuid];
+          $(sel).append($('<option>', {value: uuid}).text(name));
+        }
       }
     });
-  }
+  });
 };
 
 var LoadFieldNames = function() {
+  if (gViz && gViz.uuid) {
+    var layer_uuid = gViz.uuid;
+    $.get("../get_fields/", {"layer_uuid": layer_uuid})
+    .done( function(fields) {
+      FillFieldsToControls(fields);
+    });
+  }
 };
 
 var LoadMinPairDist = function() {
@@ -413,7 +427,11 @@ $(document).ready(function() {
     modal: true,
     dialogClass: "dialogWithDropShadow",
   });
-  $('#tabs-dlg-open-file').tabs();
+  if($('#tabs-1').text().length > 0) {
+    $('#tabs-dlg-open-file').tabs({selected : 1});
+  }  else {
+    $('#tabs-dlg-open-file').tabs();
+  }
   $( "#dialog-open-file" ).dialog({
     height: 450,
     width: 500,
@@ -898,27 +916,52 @@ $(document).ready(function() {
         
         if (sel_id == 0) {
           // segment road
-          var road_uuid = $('#sel-road-seg').find(':selected').text();
-          var seg_length = $('#txt-seg-road-length').val();
-          var output_filename = $('#txt-seg-road-name').val();
-          gViz.RoadSegment(uid, key, road_uuid, seg_length, output_filename, function(msg){
+          var road_uuid = $('#sel-road-seg').find(':selected').val(),
+              seg_length = $('#txt-seg-road-length').val(),
+              output_filename = $('#txt-seg-road-name').val();
+          var params = {
+            'cartodb_uid' : uid,
+            'cartodb_key' : key,
+            'road_uuid' : road_uuid,
+            'road_seg_length' : seg_length,
+            'road_seg_fname' : output_filename,
+          };
+          $.get('../road_segment/', params).done( function(data){
             $('#progress_bar_road').hide();
-            if (output_filename.indexOf(".shp") >=0 ){
-              output_filename = output_filename.substring(0,output_filename.indexOf('.shp'));
-              $.download('./cgi-bin/download.py','name='+output_filename,'get');
+            if ( data["success"] == 1 ) {
+              ShowMsgBox("","Road segmentation done.");
+              LoadMapNames();
             } else {
-              $.download('./cgi-bin/download.py','name='+output_filename,'get');
+              ShowMsgBox("Error","Road segmentation failed.");
             }
+            //if (output_filename.indexOf(".shp") >=0 ){
+            //  output_filename = output_filename.substring(0,output_filename.indexOf('.shp'));
+            //  $.download('./cgi-bin/download.py','name='+output_filename,'get');
+            //} else {
+            //  $.download('./cgi-bin/download.py','name='+output_filename,'get');
+            //}
           });
         } else if (sel_id == 1) {
           // snapping point to road
-          var point_uuid = $('#sel-road-snap-point-layer').find(':selected').text(),
-              road_uuid = $('#sel-road-snap-road-layer').find(':selected').text();
-          gViz.RoadSnapPoint(uid, key, point_uuid, road_uuid, function(msg) {
+          var point_uuid = $('#sel-road-snap-point-layer').find(':selected').val(),
+              road_uuid = $('#sel-road-snap-road-layer').find(':selected').val();
+          $.get('../road_snap_points/', params).done(function(msg) {
             $('#progress_bar_road').hide();
             var name = msg.name;
             $.download('./cgi-bin/download.py','name='+name,'get');
           });
+        } else if (sel_id == 2) {
+          //create weights for roads
+          var road_uuid = $('#sel-road-w-layer').find(':selected').val(),
+              w_name = $('#txt-road-w-name').val(),
+              w_type = $('#sel-road-cont-type').find(':selected').val();
+          $.get('../road_create_w', params).done(function(msg) {
+            $('#progress_bar_road').hide();
+            var name = msg.name;
+            var uuid = msg.uuid;
+            OnWeightsCreated(msg.content);
+          });
+              
         }
       },
     },{
@@ -958,7 +1001,12 @@ $(document).ready(function() {
           $('#progress_bar_spacetime').show();
         }).done( function( data ) {
           $('#progress_bar_spacetime').hide();
-           
+          if ( data["success"] == 1 ) {
+            ShowMsgBox("","Space(time) aggregation done.");
+            LoadFieldNames();
+          } else {
+            ShowMsgBox("Error","Space(time) aggregation failed.");
+          }
         });
         $( this ).dialog( "close" );
       },
