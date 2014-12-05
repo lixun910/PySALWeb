@@ -812,7 +812,7 @@ $(document).ready(function() {
       $('#progress_bar_cartodb').show();
       var uid = $('#txt-carto-setup-id').val();
       var key = $('#txt-carto-setup-key').val();
-      gViz.CartoGetAllTables(uid, key, function(msg) {
+      $.get('../carto_get_tables/', params).done(function(data){
         $('#progress_bar_cartodb').hide();
         fill_carto_tables(msg['tables']);
       });
@@ -823,7 +823,7 @@ $(document).ready(function() {
       $('#progress_bar_openfile').show();
       var uid = $('#txt-carto-id').val();
       var key = $('#txt-carto-key').val();
-      gViz.CartoGetAllTables(uid, key, function(msg) {
+      $.get('../carto_get_tables/', params).done(function(data){
         $('#progress_bar_openfile').hide();
         fill_carto_tables(msg['tables']);
       });
@@ -1333,6 +1333,12 @@ $(document).ready(function() {
     $('#ols').prop('checked', false);
     $('#ols').prop('disabled', true);
   });
+  $('#ui-accordion-y_catalog-header-1').click(function() {
+    $('#gmm').prop('disabled', false);
+    $('#gmm').prop('checked', true);
+    $('#ols').prop('checked', false);
+    $('#ols').prop('disabled', true);
+  }); 
   // model type
   $('input:radio[name=model_type]').click( function() {
     var model_type = $(this).val();

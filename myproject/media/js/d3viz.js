@@ -274,66 +274,6 @@
     localStorage['HL_IDS'] = JSON.stringify(hl_ids);
   };
   
-  d3viz.prototype.NewDataFromWeb = function(msg) {
-    if (this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-    } else {
-      setTimeout(function(){self.NewDataFromWeb(msg);}, 10);
-    }
-  };
-  
-  d3viz.prototype.NewChoroplethMap = function(msg) {
-    if (this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-    } else {
-      setTimeout(function(){self.NewChoroplethMap(msg)}, 10);
-    }
-  };
-  
-  d3viz.prototype.NewScatterPlot = function(msg) {
-    if (this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-    } else {
-      setTimeout(function(){self.NewMoranScatterPlot(msg)}, 10);
-    }
-  };
-  
-  d3viz.prototype.NewMoranScatterPlot = function(msg) {
-    if (this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-    } else {
-      setTimeout(function(){self.NewMoranScatterPlot(msg)}, 10);
-    }
-  };
-  
-  d3viz.prototype.NewLISAMap= function(msg, callback) {
-    if (this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-      this.LISA_callback = callback;
-    } else {
-      setTimeout(function(){self.NewLISAMap(msg,callback)}, 10);
-    }
-  };
-  
-  d3viz.prototype.RunSpreg = function(msg, callback) {
-    if (this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-      this.RunSpreg_callback = callback;
-    } else {
-      setTimeout(function(){self.RunSpreg(msg, callback)}, 10);
-    }
-  };
-  
-  d3viz.prototype.CreateWeights = function(msg, callback) {
-    if (this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-      this.CreateWeights_callback = callback;
-    } else {
-      setTimeout(function(){self.CreateWeights(msg, callback)}, 10);
-    }
-  };
-  
-  
   d3viz.prototype.CartoGetAllTables = function(uid, key, successHandler) {
     var msg = {"command":"cartodb_get_all_tables"};
     if (uid) msg["uid"] = uid;
@@ -387,35 +327,6 @@
     }
   };  
   
-  d3viz.prototype.RoadSegment = function(uid, key, uuid, length, ofn, successHandler) {
-    var msg = {"command":"road_segment"};
-    if (uid) msg["uid"] = uid;
-    if (key) msg["key"] = key;
-    msg["uuid"] = uuid;
-    msg["length"] = length;
-    msg["ofn"] = ofn;
-    if (this.socket && this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-      this.callback_RoadSegment = successHandler;
-    } else {
-      setTimeout(function(){self.RoadSegment(uid, key, uuid, length, ofn, successHandler)}, 10);
-    }
-  };  
-  
-  d3viz.prototype.RoadSnapPoint = function(uid, key, point_uuid, road_uuid, successHandler) {
-    var msg = {"command":"road_snap_point"};
-    if (uid) msg["uid"] = uid;
-    if (key) msg["key"] = key;
-    msg["pointuuid"] = point_uuid;
-    msg["roaduuid"] = road_uuid;
-    if (this.socket && this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-      this.callback_RoadSnapPoint = successHandler;
-    } else {
-      setTimeout(function(){self.RoadSnapPoint(uid, key, point_uuid, road_uuid, successHandler)}, 10);
-    }
-  };  
- 
   // End and expose d3viz to 'window'
   window["d3viz"] = d3viz;
 })(self);

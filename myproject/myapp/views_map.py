@@ -338,14 +338,11 @@ def road_segment(request):
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
-        cartodb_uid = request.GET.get("cartodb_uid", None)
-        cartodb_key = request.GET.get("cartodb_key", None)
         road_uuid = request.GET.get("road_uuid", None)
         road_seg_length = request.GET.get("road_seg_length", None)
         road_seg_fname = request.GET.get("road_seg_fname", None)
        
-        if cartodb_key and cartodb_key and \
-           road_uuid and road_seg_length and road_seg_fname: 
+        if road_uuid and road_seg_length and road_seg_fname: 
             geodata = Geodata.objects.get(uuid=road_uuid)
             shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
             json_path = os.path.join(settings.MEDIA_ROOT, geodata.jsonpath)
@@ -376,15 +373,12 @@ def road_snap_points(request):
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
-        cartodb_uid = request.GET.get("cartodb_uid", None)
-        cartodb_key = request.GET.get("cartodb_key", None)
         road_uuid = request.GET.get("road_uuid", None)
         point_uuid = request.GET.get("point_uuid", None)
         col_name = request.GET.get("count_col_name", None)
         road_seg_length = request.GET.get("road_seg_length", None)
        
-        if cartodb_key and cartodb_key and \
-           road_uuid and point_uuid and col_name: 
+        if road_uuid and point_uuid and col_name: 
             geodata = Geodata.objects.get(uuid=road_uuid)
             shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
             shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
@@ -410,14 +404,11 @@ def road_create_w(request):
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
-        cartodb_uid = request.GET.get("cartodb_uid", None)
-        cartodb_key = request.GET.get("cartodb_key", None)
         road_uuid = request.GET.get("road_uuid", None)
         road_seg_length = request.GET.get("road_seg_length", None)
         w_name = request.GET.get("w_name", None)
        
-        if cartodb_key and cartodb_key and \
-           road_uuid and road_seg_length and w_name: 
+        if road_uuid and road_seg_length and w_name: 
             geodata = Geodata.objects.get(uuid=road_uuid)
             shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
             shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
@@ -649,46 +640,6 @@ def upload(request):
 
     return HttpResponse(RSP_FAIL, content_type="application/json")
 
-def _save_new_shapefile(userid, driver, abs_shp_path):
-    table_name = None
-    print "get meta data", abs_shp_path
-    base_name, shp_name = os.path.split(abs_shp_path)
-    user_uuid = md5(userid).hexdigest()
-    shp_path = os.path.join('temp', user_uuid, shp_name)
-    layer_uuid = md5(shp_path).hexdigest()
-    if abs_shp_path.endswith('shp'):
-        json_path = shp_path[:-3] + "json"
-    else:
-        json_path = shp_path[:-3] + "simp.json"
-    json_path= json_path.replace('\\','/')
-    meta_data = GeoDB.GetMetaData(abs_shp_path, table_name, driver)
-    geom_type = meta_data['geom_type']
-    
-    print "save meta data", meta_data
-    new_geodata = Geodata(
-        uuid=layer_uuid,
-        userid=userid, 
-        name=shp_name,
-        filepath=shp_path, 
-        jsonpath=json_path,
-        n=meta_data['n'], 
-        geotype=str(geom_type), 
-        bbox=str(meta_data['bbox']), 
-        fields=json.dumps(meta_data['fields'])
-    )
-    new_geodata.save()
-    # export to spatial database in background
-    # note: this background process also compute min_threshold
-    # and max_thresdhold
-    from django.db import connection 
-    connection.close()
-    mp.Process(target=GeoDB.ExportToDB, args=(abs_shp_path,layer_uuid, geom_type)).start()
-    print "uploaded done."
-    result = meta_data
-    result['layer_uuid'] = layer_uuid
-    result['name'] = shp_name    
-    
-    return result
 
 """
 Check if field exists in Django DB

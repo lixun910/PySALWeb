@@ -115,6 +115,73 @@ def get_docfile_path(path):
 def gen_rnd_str(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
+def _save_new_shapefile(userid, driver, abs_shp_path):
+    table_name = None
+    print "get meta data", abs_shp_path
+    base_name, shp_name = os.path.split(abs_shp_path)
+    user_uuid = md5(userid).hexdigest()
+    shp_path = os.path.join('temp', user_uuid, shp_name)
+    layer_uuid = md5(shp_path).hexdigest()
+    if abs_shp_path.endswith('shp'):
+        json_path = shp_path[:-3] + "json"
+    else:
+        json_path = shp_path[:-3] + "simp.json"
+    json_path= json_path.replace('\\','/')
+    meta_data = GeoDB.GetMetaData(abs_shp_path, table_name, driver)
+    geom_type = meta_data['geom_type']
+    
+    print "save meta data", meta_data
+    new_geodata = Geodata(
+        uuid=layer_uuid,
+        userid=userid, 
+        name=shp_name,
+        filepath=shp_path, 
+        jsonpath=json_path,
+        n=meta_data['n'], 
+        geotype=str(geom_type), 
+        bbox=str(meta_data['bbox']), 
+        fields=json.dumps(meta_data['fields'])
+    )
+    new_geodata.save()
+    # export to spatial database in background
+    # note: this background process also compute min_threshold
+    # and max_thresdhold
+    from django.db import connection 
+    connection.close()
+    mp.Process(target=GeoDB.ExportToDB, args=(abs_shp_path,layer_uuid, geom_type)).start()
+    print "uploaded done."
+    result = meta_data
+    result['layer_uuid'] = layer_uuid
+    result['name'] = shp_name    
+    
+    return result
+
+def zipshapefiles(shpPath):
+    prefix = os.path.split(shpPath)[0]
+    dbfPath = shpPath[:-3] + "dbf"
+    shxPath = shpPath[:-3] + "shx"
+    prjPath = shpPath[:-3] + "prj"
+    orig_loc = os.getcwd()
+    os.chdir(prefix) 
+    ziploc = os.path.join(prefix, "upload.zip")
+    try:
+        os.remove(ziploc)
+    except:
+        pass
+    try:
+        import zlib
+        mode = zipfile.ZIP_DEFLATED
+    except:
+        mode = zipfile.ZIP_DEFLATED
+    myzip = zipfile.ZipFile("upload.zip",'w', mode) 
+    myzip.write(os.path.split(shpPath)[1])
+    myzip.write(os.path.split(shxPath)[1])
+    myzip.write(os.path.split(dbfPath)[1])
+    myzip.write(os.path.split(prjPath)[1])
+    myzip.close()
+    os.chdir(orig_loc)
+    return ziploc
+
 if __name__ == "__main__":
     #helper_get_W_list(["7819b820f3d4be9d99d3ea2602c11ad5"])
     print get_valid_path("/Users/xun/github/WebSDA-Django/myproject/media/temp/world_1.shp")
