@@ -126,8 +126,8 @@
       <li><a href="#tabs-1">My Maps</a></li>
       <li><a href="#tabs-2">Local Disk</a></li>
       <li><a href="#tabs-3">CartoDB</a></li>
-      <li><a href="#tabs-4">Socrata</a></li>
-      <li><a href="#tabs-5">Dropbox</a></li>
+      <li><a href="#tabs-4">Dropbox</a></li>
+      <li><a href="#tabs-5">Socrata</a></li>
     </ul>
     <div id="tabs-1">
         {% if geodata %}
@@ -171,14 +171,22 @@
           <tr>
             <td>CartoDB table name</td>
             <td>
-              <select id="sel-file-carto-tables"></select>
+              <select id="sel-file-carto-tables"></select>&nbsp;&nbsp;&nbsp;<img id='btn-file-cartodb-get-all-tables'src="{{url_prefix}}/media/img/find.png">
             </td>
-            <td>&nbsp;&nbsp;&nbsp;<img id='btn-file-cartodb-get-all-tables'src="{{url_prefix}}/media/img/find.png"></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>
+              <input type="checkbox" id="chk-carto-download" id=0>Download CartoDB table to your account?
+            </td>
           </tr>
         </table>
       </form>
     </div>
     <div id="tabs-4">
+      <div id="dropbox_div"></div>
+    </div>
+    <div id="tabs-5">
         <img src="{{url_prefix}}/media/img/socratalogo.png" style="margin:5px"><br/>
         <table>
           <tr>
@@ -188,9 +196,6 @@
             </td>
           </tr>
         </table>
-    </div>
-    <div id="tabs-5">
-      <div id="dropbox_div"></div>
     </div>
   </div>
   <br/><br/>
@@ -207,10 +212,7 @@
   <div id="tabs-dlg-cartodb">
     <ul>
       <li><a href="#tabs-1">Setup</a></li>
-      <li><a href="#tabs-2">Download </a></li>
-      <li><a href="#tabs-3">Upload </a></li>
-      <li><a href="#tabs-4">Spatial Count</a></li>
-      <li><a href="#tabs-5">Create Theme Map </a></li>
+      <li><a href="#tabs-2">Create Theme Map </a></li>
     </ul>
     <div id="tabs-1">
       <form id="cartodb-setup-form">
@@ -231,78 +233,14 @@
       </form>
     </div>
     <div id="tabs-2">
-      <br><img src="{{url_prefix}}/media/img/carto_download.png"><br><br>
-      <form id="cartodb-download-form">
-        <table>
-          <tr>
-            <td>Select a table to download&nbsp;&nbsp;&nbsp;</td>
-          </tr>
-          <tr>
-            <td>
-              <select id="sel-carto-table-download">
-              </select>
-            </td>
-            <td>&nbsp;&nbsp;&nbsp;<img id='btn-cartodb-get-all-tables'src="{{url_prefix}}/media/img/find.png"></td>
-          </tr>
-        </table>
-      </form>
-    </div>
-    <div id="tabs-3">
       <br><img src="{{url_prefix}}/media/img/carto_upload.png"><br><br>
       <form id="cartodb-upload-form">
         <table>
           <tr>
-            <td>Select a map to upload&nbsp;&nbsp;&nbsp;</td>
+            <td>Select a map to upload to CartoDB&nbsp;&nbsp;&nbsp;</td>
             <td>
               <select id="sel-carto-table-upload">
               </select>
-            </td>
-          </tr>
-        </table>
-      </form>
-    </div>
-    <div id="tabs-4">
-      <p style="text-align: left">Example of Spatial Contains:</p>
-      <br><img src="{{url_prefix}}/media/img/pnp.png"><br><br>
-      
-      <form id="cartodb-spatial-count-pform">
-        <table>
-          <tr>
-            <td>1.Select the first layer:</td>
-            <td>
-              <select id="sel-carto-table-count1"></select>
-            </td>
-          </tr>
-          <tr>
-            <td>2.Select the second layer:</td>
-            <td>
-              <select id="sel-carto-table-count2"></select>
-            </td>
-          </tr>
-          <tr>
-            <td>3.Select method:</td>
-            <td>
-              first layer
-              <select id="sel-cartodb-count-method">
-              <option value="contain" selected>contain</option>
-              <option value="intersect">intersect with</option>
-              </select>
-            second layer.</td>
-          </tr>
-          <tr>
-            <td>4.Input the new column </td>
-            <td>name for storing the counts in first layer:</td>
-          </tr>
-          <tr>
-            <td></td>
-            <td valign="top">
-              <input type="text" id="txt-carto-col-name" size=35 value="">
-            </td>
-          </tr>
-          <tr>
-            <td></td>
-            <td valign="top">
-              <input type="checkbox" id="chk-carto-update-data" checked>Update data (first layer) with new count column
             </td>
           </tr>
         </table>
@@ -595,17 +533,21 @@
     </style>
   <table>
     <tr>
-      <td><li>Please input a Weights name</li></td>
+      <td><li>Please input a Weights name:</li></td>
       <td><input type="text" id="txt-w-name"></td>
     </tr>
     <tr>
       <td><li>Select an ID variable for weights file:</li></td>
-      <td valign="center">
+      <td>
       <select id='sel-w-id'></select>
       <img id="img-id-chk" src="{{url_prefix}}/media/img/checkmark.png">
       <img id="img-id-nochk" src="{{url_prefix}}/media/img/uncheckmark.gif">
       <img id="img-id-spin" src="{{url_prefix}}/media/img/loading_small.gif">
       </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><a href='#' id="btn-w-add-uid">Add an unique ID</a></td>
     </tr>
   </table>
   <br/>
@@ -1021,7 +963,6 @@
 <div id="divPop" class="bubble">This is Popup Div.</div>
 <div id="mapInfo">
   <div class="switch-wrapper" id="divSwitchLeaflet"><input type="checkbox" id="switch" value="1" checked></div>
-  <div class="switch-wrapper" id="divCartoBrush"><input type="checkbox" id="switch-cartodb-brushlink" value="1" checked></div>
   <div id="divDownload" style="margin-top:5px;">
   <span>Downloading data ...</span><br/>
   <span><img src="{{url_prefix}}/media/img/progress-bar.gif"></span>

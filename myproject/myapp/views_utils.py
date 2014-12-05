@@ -10,6 +10,9 @@ import logging
 import json, time, os
 from hashlib import md5
 from pysal import W, w_union, higher_order
+import GeoDB
+import multiprocessing as mp
+from myproject.myapp.models import Geodata
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +155,8 @@ def _save_new_shapefile(userid, driver, abs_shp_path):
     print "uploaded done."
     result = meta_data
     result['layer_uuid'] = layer_uuid
+    # in case of download from cartodb, show downloaded data directly
+    result['shp_url'] = settings.URL_PREFIX + settings.MEDIA_URL + shp_path
     result['name'] = shp_name    
     
     return result

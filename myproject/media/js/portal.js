@@ -1,5 +1,5 @@
 
-var cartolx, carto_uid, carto_key, carto_layer,
+var carto_uid, carto_key, carto_layer,
     foreground, lmap, uuid,  
     gProjSwitchOn = true,
     gHasProj     =false, 
@@ -36,8 +36,27 @@ var local_map_names_sel = {
   '#sel-spacetime-table-poly':[3],
   '#sel-spacetime-table-point':[1],
   };
-  
+ 
+var CleanLeafletMap = function() {
+  if(lmap) {
+    lmap.remove();
+  }
+};
+
+var SetupLeafletMap = function() {
+  CleanLeafletMap();
+  lmap = new L.Map('map');
+  L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' + 
+    '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+    'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+    id: 'examples.map-20v6611k'
+  }).addTo(lmap);
+};
+
 var ShowExistMap = function(uuid, json_path) {
+  SetupLeafletMap();
   gViz.ShowMap(json_path, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
   var params = {'csrfmiddlewaretoken':  csrftoken};
   params['layer_uuid'] = uuid;
@@ -49,13 +68,15 @@ var ShowExistMap = function(uuid, json_path) {
   
 var ShowNewMap = function(o, type, noForeground) {
   if (gViz) {
-    gShowLeaflet = true;
+    SetupLeafletMap();
     if ( gHasProj && gPrj == undefined) {
       // wait for reading *.prj file 
       setTimeout(function(){ShowNewMap(o, type, noForeground);}, 10);  
     } else {
       $('#map').show();
-      if (noForeground==undefined) noForeground = false;
+      if (noForeground==undefined) {
+        noForeground = false;
+      }
       if (gShowLeaflet) {
         gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown,L, lmap, gPrj);
       } else {
@@ -166,12 +187,15 @@ var LoadMapNames = function(){
   });
 };
 
-var LoadFieldNames = function() {
+var LoadFieldNames = function(callback) {
   if (gViz && gViz.uuid) {
     var layer_uuid = gViz.uuid;
     $.get("../get_fields/", {"layer_uuid": layer_uuid})
     .done( function(fields) {
       FillFieldsToControls(fields);
+      if (typeof callback === "function") {
+        callback();
+      }
     });
   }
 };
@@ -280,7 +304,7 @@ var SaveMapThumbnail = function(layer_uuid, containerID) {
         data: { 
           imageData: dataURL,
           layer_uuid: layer_uuid,
-          csrfmiddlewaretoken: '{{ csrf_token }}',
+          csrfmiddlewaretoken: csrf_token,
         }
       }).done(function(data) {
         console.log('save canvas:', data); 
@@ -289,6 +313,38 @@ var SaveMapThumbnail = function(layer_uuid, containerID) {
   } else {
     setTimeout( function(){ SaveMapThumbnail(layer_uuid, containerID); }, 500); 
   }
+};
+
+var ShowCartoDBMap = function(carto_uid, carto_key, table_name, geo_type) {
+  var css = "";
+  if (geo_type == "Point") {
+    css = '#layer {marker-fill: #FF6600; marker-opacity: 1; marker-width: 6; marker-line-color: white; marker-line-width: 1; marker-line-opacity: 0.9; marker-placement: point; marker-type: ellipse; marker-allow-overlap: true;}';
+  } else if (geo_type == "Line") {
+    css = '#layer {line-width: 2; line-opacity: 0.9; line-color: #006400; }';
+  } else if (geo_type == "Polygon") {
+    css = "#layer {polygon-fill: #006400; polygon-opacity: 0.9; line-color: #CCCCCC; }";
+  }
+  //show cartodb layer and downloading iconp
+  SetupLeafletMap();
+  lmap.setView(new L.LatLng(43, -98), 1);
+  if (carto_layer) {
+    lmap.removeLayer(carto_layer);
+  }
+  carto_layer = cartodb.createLayer(lmap, {
+    user_name: carto_uid, 
+    type: 'cartodb',
+    sublayers:[{
+      sql:"SELECT * FROM " + table_name,
+      cartocss: css
+    }]
+  })
+  .addTo(lmap)
+  .on('done', function(layer_) {
+    var sql = new cartodb.SQL({user: carto_uid});
+    sql.getBounds("SELECT * FROM " + table_name).done(function(bounds){
+      lmap.fitBounds(bounds);
+    });
+  });
 };
 
 $(document).ready(function() {
@@ -303,22 +359,11 @@ $(document).ready(function() {
   //  Map
   //////////////////////////////////////////////////////////////
   
-  lmap = new L.Map('map');
-
-  L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' + 
-    '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-    'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-    id: 'examples.map-20v6611k'
-  }).addTo(lmap);
-
   // Local Storage Brushing/Linking
   localStorage.clear();  
   gViz = new d3viz($('#map-container')); 
   gViz.canvas = $('#foreground');
   gViz.SetupBrushLink();
-  //gViz.SetupWebSocket();
 
   $("#switch").switchButton({
     checked: true,
@@ -326,21 +371,15 @@ $(document).ready(function() {
     off_label: 'Leaflet Background? OFF',
     on_callback: function() {
       gShowLeaflet = true;
-      //ShowNewMap(uuid);
+      if (gViz.o) {
+        ShowNewMap(gViz.o, gViz.mapType);
+      }
     },
     off_callback: function() {
       gShowLeaflet = false;
-      //ShowNewMap(uuid);
-    },
-  });
-  
-  $("#switch-cartodb-brushlink").switchButton({
-    checked: false,
-    on_label: 'ON',
-    off_label: 'Brush&Link CartoDB Maps? OFF',
-    on_callback: function() {
-    },
-    off_callback: function() {
+      if (gViz.o) {
+        ShowNewMap(gViz.o, gViz.mapType, true);
+      }
     },
   });
   
@@ -366,7 +405,7 @@ $(document).ready(function() {
     #img-id-chk, #img-id-spin, #img-id-nochk, \
     .dlg-loading, #progress_bar_openfile, \
     #progress_bar_cartodb,#progress_bar_road,\
-    #progress_bar_spacetime,#divCartoBrush,\
+    #progress_bar_spacetime,\
     #progress_bar_lisa').hide();
   $( "#dlg-msg" ).dialog({
     dialogClass: "dialogWithDropShadow",
@@ -447,50 +486,31 @@ $(document).ready(function() {
       text: "OK",
       click: function() {
         var sel_id = $("#tabs-dlg-open-file").tabs('option','active');
-        if (sel_id == 1) {
+        if (sel_id == 2) {
           carto_uid = $('#txt-carto-id').val();
           carto_key = $('#txt-carto-key').val();
-          table_name = $('#sel-file-carto-tables').find(':selected').text(),
-          geo_type = $('#sel-file-carto-tables').find(':selected').val();
-          var css = "";
-          if (geo_type == "Point") {
-            css = '#layer {marker-fill: #FF6600; marker-opacity: 1; marker-width: 6; marker-line-color: white; marker-line-width: 1; marker-line-opacity: 0.9; marker-placement: point; marker-type: ellipse; marker-allow-overlap: true;}';
-          } else if (geo_type == "Line") {
-            css = '#layer {line-width: 2; line-opacity: 0.9; line-color: #006400; }';
-          } else if (geo_type == "Polygon") {
-            css = "#layer {polygon-fill: #006400; polygon-opacity: 0.9; line-color: #CCCCCC; }";
-          }
-          //show cartodb layer and downloading iconp
-          lmap.setView(new L.LatLng(43, -98), 1);
-          if (carto_layer) lmap.removeLayer(carto_layer);
-          carto_layer = cartodb.createLayer(lmap, {
-            user_name: carto_uid, 
-            type: 'cartodb',
-            sublayers:[{
-              sql:"SELECT * FROM " + table_name,
-              cartocss: css
-            }]
-          })
-          .addTo(lmap)
-          .on('done', function(layer_) {
-            var sql = new cartodb.SQL({user: carto_uid});
-            sql.getBounds("SELECT * FROM " + table_name).done(function(bounds){
-              lmap.fitBounds(bounds);
+          var table_name = $('#sel-file-carto-tables').find(':selected').text(),
+              geo_type = $('#sel-file-carto-tables').find(':selected').val();
+          if ($('#chk-carto-download').is(':checked')) {
+            $('#progress_bar_openfile').show();
+            var params = {
+              'cartodb_uid' : carto_uid,
+              'cartodb_key' : carto_key,
+              'table_name' : table_name,
+            };
+            $.get('../carto_download_table/', params).done(function(meta_data){
+              $('#progress_bar_openfile').hide();
+              InitDialogs(meta_data);
+              var prj_url = meta_data.shp_url.slice(0,-3) + "prj";
+              $.get(prj_url).done(function(prj_data){
+                gPrj = proj4(prj_data, proj4.defs('WGS84'));
+                ShowNewMap(meta_data.shp_url, 'shapefile');
+              });
             });
-          });
-          //lmap.addLayer(carto_layer);
-          $('#divDownload').show();
-          gViz.CartoDownloadTable(carto_uid, carto_key, table_name, function(msg){
-            gHasProj = true;
-            var ip = msg.projection; 
-            gPrj = proj4(ip, proj4.defs('WGS84'));
-            uuid = msg.uuid;  
-            var noForeground = true;
-            showLeafletMap(uuid, noForeground);
-            $('#divCartoBrush').show();
-            $('#divDownload').toggle();
-          });
-        } else if (sel_id == 2) {
+          } else {
+            ShowCartoDBMap(carto_uid, carto_key, table_name, geo_type) ;
+          } 
+        } else if (sel_id == 4) {
           var socrata_url = $('#txt-socrata-url').val();
           $.post("./cgi-bin/download_json.py", {url:socrata_url}, function(){
             $('#progress_bar_openfile').show();
@@ -502,10 +522,8 @@ $(document).ready(function() {
             showLeafletMap(uuid);
           });
         } 
-        $( this ).dialog( "close" );
       },
-    },
-    {
+    },{
       text: "Close",
       click: function() {
         $( this ).dialog( "close" );
@@ -810,22 +828,30 @@ $(document).ready(function() {
   $('#btn-cartodb-get-all-tables').click(function(){
     if (gViz) {
       $('#progress_bar_cartodb').show();
-      var uid = $('#txt-carto-setup-id').val();
-      var key = $('#txt-carto-setup-key').val();
+      var uid = $('#txt-carto-setup-id').val(),
+          key = $('#txt-carto-setup-key').val();
+      var params = {
+        'cartodb_uid' : uid,
+        'cartodb_key' : key,
+      };
       $.get('../carto_get_tables/', params).done(function(data){
         $('#progress_bar_cartodb').hide();
-        fill_carto_tables(msg['tables']);
+        fill_carto_tables(data);
       });
     }   
   });
   $('#btn-file-cartodb-get-all-tables').click(function(){
     if (gViz) {
       $('#progress_bar_openfile').show();
-      var uid = $('#txt-carto-id').val();
-      var key = $('#txt-carto-key').val();
+      var uid = $('#txt-carto-id').val(),
+          key = $('#txt-carto-key').val();
+      var params = {
+        'cartodb_uid' : uid,
+        'cartodb_key' : key,
+      };
       $.get('../carto_get_tables/', params).done(function(data){
         $('#progress_bar_openfile').hide();
-        fill_carto_tables(msg['tables']);
+        fill_carto_tables(data);
       });
     }   
   });
@@ -1432,7 +1458,9 @@ $(document).ready(function() {
     autoOpen: false,
     modal: true,
   });
-    
+  $('#btn-w-add-uid').click(function(){
+    $('#dlg-add-uniqid').dialog('open');
+  });
   $( "#dlg-add-uniqid" ).dialog({
     dialogClass: "dialogWithDropShadow",
     width: 400,
@@ -1457,14 +1485,13 @@ $(document).ready(function() {
             params = {
               'layer_uuid': layer_uuid, 
               'name': name,
-              'csrfmiddlewaretoken' : crsftoken,
+              'csrfmiddlewaretoken' : csrftoken,
             };
-            $.post("../add_UID/", params, function() {
-            }).done(function(data) { 
+            $.post("../add_UID/", params, function() {}).done(function(data) { 
               console.log("add_uid", data); 
               if (data["success"] == 1) {
                 LoadFieldNames(function() {
-                  $('#sel-w-id').val(name).change()
+                  $('#sel-w-id').val(name).change();
                 });
                 that.dialog( "close" );
                 ShowMsgBox("", "Add uniue ID successful.");

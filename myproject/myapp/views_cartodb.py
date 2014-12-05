@@ -12,9 +12,10 @@ from django.conf import settings
 from myproject.myapp.models import Document, Weights, Geodata, Preference
 from myproject.myapp.forms import DocumentForm
 
-import logging, os, zipfile
+import logging, os, zipfile, shutil
 from hashlib import md5
 from views_utils import *
+from views_utils import _save_new_shapefile
 import requests
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ def carto_get_tables(request):
             result = {}
             for tbl in table_names:
                 sql = "SELECT ST_GeometryType(the_geom) FROM %s LIMIT 1" % tbl
-                params = { 'api_key': CARTODB_API_KEY, 'q': sql,}
+                params = { 'api_key': cartodb_key, 'q': sql,}
                 r = requests.get(url, params=params, verify=False)
                 content = r.json()
                 if "error" not in content:
@@ -82,7 +83,7 @@ def carto_download_table(request):
     if request.method == 'GET': 
         cartodb_uid = request.GET.get("cartodb_uid", None)
         cartodb_key = request.GET.get("cartodb_key", None)
-        table_name = request.GET.get("cartodb_table_name", None)
+        table_name = request.GET.get("table_name", None)
         if cartodb_key and cartodb_uid and table_name:
             sql = 'select * from %s' % table_name
             url = 'https://%s.cartodb.com/api/v1/sql' % cartodb_uid

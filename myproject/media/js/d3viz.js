@@ -16,6 +16,7 @@
     this.nameDict = {}; // uuid:name
     this.dataDict = {};  // not used
     
+    this.o = undefined;
     this.prj = undefined;
     this.map = undefined;
     this.mapType = undefined; //shapefile or json
@@ -164,6 +165,7 @@
       }
       self._setupGeoVizMap(isMainMap, map, type, colorTheme, callback);
     } 
+    self.o = o;
   };
   
   /**

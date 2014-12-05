@@ -25,6 +25,12 @@ urlpatterns += patterns('myproject.myapp.views_plots',
     url(r'^moran_scatter_plot/$', 'moran_scatter_plot', name='moran scatter plot'),
 )
 
+urlpatterns += patterns('myproject.myapp.views_cartodb',
+    url(r'^carto_get_tables/$', 'carto_get_tables', name='carto get tables'),
+    url(r'^carto_download_table/$', 'carto_download_table', name='carto download table'),
+    url(r'^carto_upload_tables/$', 'carto_upload_tables', name='carto upload tables'),
+    
+)
 urlpatterns += patterns('myproject.myapp.views_map',
     url(r'^get_dropbox_data/$', 'get_dropbox_data', name='get map data dropbox'),
     url(r'^get_map_names/$', 'get_map_names', name='get map names'),
