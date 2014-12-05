@@ -19,7 +19,7 @@ from hashlib import md5
 from myproject.myapp.models import Document, Geodata, Weights, SpregModel
 from views_utils import * 
 
-from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks, Moran_Local
+from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks, Moran_Local, W
 from pysal import open as pysalOpen
 import GeoDB
 from network_cluster import NetworkCluster
@@ -403,6 +403,56 @@ def road_snap_points(request):
                 content_type="application/json"
             )
     return HttpResponse(RSP_FAIL, content_type="application/json")    
+
+@login_required
+def road_create_w(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        cartodb_uid = request.GET.get("cartodb_uid", None)
+        cartodb_key = request.GET.get("cartodb_key", None)
+        road_uuid = request.GET.get("road_uuid", None)
+        road_seg_length = request.GET.get("road_seg_length", None)
+        w_name = request.GET.get("w_name", None)
+       
+        if cartodb_key and cartodb_key and \
+           road_uuid and road_seg_length and w_name: 
+            geodata = Geodata.objects.get(uuid=road_uuid)
+            shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
+            shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
+                
+            net = NetworkCluster(shp_path) 
+            net.SegmentNetwork(sys.maxint)
+            net.CreateWeights(float(road_seg_length))
+            w = W(net.neighbors)
+            w.name = w_name            
+            weights = {}
+            for k,v in w.weights.iteritems():
+                weights[str(k)] = list(v)
+            
+            shpfilename = os.path.split(shp_path)[1]
+            wuuid = create_w_uuid(userid, road_uuid, w_name)
+            
+            new_w_item = Weights(
+                uuid=wuuid, 
+                userid=userid,
+                shpfilename=shpfilename, 
+                name = w_name, 
+                n = w.n,
+                wid = "fid", 
+                wtype = '0', 
+                wtypemeta = '{}',
+                histogram = w.histogram, 
+                neighbors = net.neighbors, 
+                weights = weights
+            )
+            
+            return HttpResponse(
+                RSP_OK,
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")   
 
 """
 Upload shape files to server. Write meta data to meta database.

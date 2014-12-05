@@ -970,14 +970,27 @@ $(document).ready(function() {
         } else if (sel_id == 2) {
           //create weights for roads
           var road_uuid = $('#sel-road-w-layer').find(':selected').val(),
+              road_seg_length = $('#txt-w-seg-road-length').val(),
               w_name = $('#txt-road-w-name').val(),
-              road_seg_length = $('#txt-snap-seg-road-length').val(),
               w_type = $('#sel-road-cont-type').find(':selected').val();
-          $.get('../road_create_w', params).done(function(msg) {
+          var params = {
+            'cartodb_uid' : uid,
+            'cartodb_key' : key,
+            'road_uuid' : road_uuid,
+            'w_name' : w_name,
+            'w_type' : 0,
+            'road_seg_length' : road_seg_length,
+          };
+          $.get('../road_create_w/', params).done(function(msg) {
             $('#progress_bar_road').hide();
-            var name = msg.name;
-            var uuid = msg.uuid;
-            OnWeightsCreated(msg.content);
+            if ( data["success"] == 1 ) {
+              ShowMsgBox("","Create W for roads done.");
+              if (gViz.uuid == road_uuid) {
+                LoadWnames();
+              }
+            } else {
+              ShowMsgBox("","Create W for roads fialed.");
+            }
           });
               
         }
