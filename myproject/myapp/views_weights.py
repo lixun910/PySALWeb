@@ -133,6 +133,7 @@ def create_weights(request):
             neighbors = {}
             for k,v in w.neighbors.iteritems():
                 neighbors[str(k)] = v
+            neighbors = json.dumps(neighbors)
         #try:
         #    weights = json.dumps(w.weights)
         #except:

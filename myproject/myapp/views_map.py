@@ -169,7 +169,7 @@ def get_map_names(request):
         maps = Geodata.objects.filter(userid=userid)
         map_names = {}
         for m in maps:
-            map_names[m.uuid] = m.name
+            map_names[m.uuid] = [m.name, int(m.geotype) if m.geotype else 0]
             
         if len(map_names) > 0:
             return HttpResponse(
@@ -304,7 +304,7 @@ def lisa_map(request):
                                  if v == j and lm.p_sim[i] < 0.05])
             results = {
                 "method" : "lisa",
-                "var": var_x,
+                "col_name": var_x,
                 "bins": bins,
                 "id_array" : id_array,
             }
@@ -427,10 +427,17 @@ def road_create_w(request):
             net.CreateWeights(float(road_seg_length))
             w = W(net.neighbors)
             w.name = w_name            
+            try:
+                neighbors = json.dumps(net.neighbors)
+            except:
+                neighbors = {}
+                for k,v in net.neighbors.iteritems():
+                    neighbors[str(k)] = v
+                neighbors = json.dumps(neighbors)
             weights = {}
             for k,v in w.weights.iteritems():
                 weights[str(k)] = list(v)
-            
+            weights = json.dumps(weights) 
             shpfilename = os.path.split(shp_path)[1]
             wuuid = create_w_uuid(userid, road_uuid, w_name)
             
@@ -444,10 +451,11 @@ def road_create_w(request):
                 wtype = '0', 
                 wtypemeta = '{}',
                 histogram = w.histogram, 
-                neighbors = net.neighbors, 
+                neighbors = neighbors, 
                 weights = weights
             )
-            
+            new_w_item.save() 
+              
             return HttpResponse(
                 RSP_OK,
                 content_type="application/json"

@@ -27,15 +27,15 @@ var ShowMsgBox = function(title, content) {
   $('#dlg-msg').dialog('open');
   };
   
-var local_map_names_sel = [
-  '#sel-carto-table-upload',
-  '#sel-road-seg',
-  '#sel-road-snap-point-layer',
-  '#sel-road-snap-road-layer',
-  '#sel-road-w-layer',
-  '#sel-spacetime-table-poly',
-  '#sel-spacetime-table-point',
-  ];
+var local_map_names_sel = {
+  '#sel-carto-table-upload':[1,2,3],
+  '#sel-road-seg':[2],
+  '#sel-road-snap-point-layer':[1],
+  '#sel-road-snap-road-layer':[2],
+  '#sel-road-w-layer':[2],
+  '#sel-spacetime-table-poly':[3],
+  '#sel-spacetime-table-point':[1],
+  };
   
 var ShowExistMap = function(uuid, json_path) {
   gViz.ShowMap(json_path, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
@@ -152,13 +152,17 @@ var InitDialogs = function(data) {
 var LoadMapNames = function(){
   $.get("../get_map_names/", {})
   .done( function(nameDict) {
-    $.each(local_map_names_sel, function(i,sel){
+    for (var sel in local_map_names_sel) {
+      var map_types =  local_map_names_sel[sel];
       $(sel).find('option').remove().end();
       for(var uuid in nameDict) {
-        var name = nameDict[uuid];
-        $(sel).append($('<option>', {value: uuid}).text(name));
+        var name = nameDict[uuid][0],
+            type = nameDict[uuid][1];
+        if (map_types.indexOf(type) >= 0) {
+          $(sel).append($('<option>', {value: uuid}).text(name));
+        }
       }
-    });
+    }
   });
 };
 
@@ -981,7 +985,7 @@ $(document).ready(function() {
             'w_type' : 0,
             'road_seg_length' : road_seg_length,
           };
-          $.get('../road_create_w/', params).done(function(msg) {
+          $.get('../road_create_w/', params).done(function(data) {
             $('#progress_bar_road').hide();
             if ( data["success"] == 1 ) {
               ShowMsgBox("","Create W for roads done.");
