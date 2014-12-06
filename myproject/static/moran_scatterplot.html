@@ -39,21 +39,20 @@ svg, canvas {
   shape-rendering: crispEdges;
 }
 </style>
-<link rel="stylesheet" href="css/jquery-ui.css">
-<link rel="stylesheet" href="css/ui-lightness/jquery-ui-1.10.4.custom.css">
+<link rel="stylesheet" href="../media/css/jquery-ui.css">
+<link rel="stylesheet" href="../media/css/ui-lightness/jquery-ui-1.10.4.custom.css">
 
-<script src="js/jquery.min.js"></script>
-<script src="js/jquery-ui-1.10.4.custom.min.js"></script>
-<script src="js/simple_statistics.js"></script>
-<script src="js/d3.v3.min.js" charset="utf-8"></script>
-<script src="js/utils.js"></script>
-<script src="js/d3viz.js"></script>
-
+<script src="../media/js/jquery.min.js"></script>
+<script src="../media/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script src="../media/js/simple_statistics.js"></script>
+<script src="../media/js/d3.v3.min.js" charset="utf-8"></script>
+<script src="../media/js/utils.js"></script>
+<script src="../media/js/d3viz.js"></script>
 <script>
 var science = { stats: {} };
 </script>
 
-<script src="js/loess.js" charset="utf-8"></script>
+<script src="../media/js/loess.js" charset="utf-8"></script>
 
 <script>
 var svg, viz, uuid, quadtree;
@@ -62,13 +61,12 @@ var background, hbuffer, buffer;
 $(document).ready(function() {
 
   // Local Storage Brushing/Linking
-  localStorage.clear();
+  //localStorage.clear();
 
-  var winID = getParameterByName("wid"),
-      json_url = getParameterByName("uuid"),
-      uuid = getParameterByName("uuid"),
-      fieldX = getParameterByName("fieldx"),
-      fieldY = getParameterByName("fieldy");
+  var msg = window.opener.gMsg;
+  layer_uuid = msg.layer_uuid;
+  fieldX = msg.x_name;
+  fieldY = msg.y_name;
       
   $(window).bind('storage', function(e) {
     var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
@@ -78,9 +76,7 @@ $(document).ready(function() {
     }
   });
   
-  viz = new d3viz(winID, $('#map-container'));
-  viz.SetupWebSocket();
-  
+  viz = new d3viz($('#map-container'));
     
   background = document.getElementById('background');
   
@@ -199,116 +195,7 @@ $(document).ready(function() {
       ctx.drawImage(buffer, 0,0);
     }
   }
- 
-  viz.RequestParameters(winID, function(params) {
-    var uuid = params["uuid"];
-    var title = params["title"];
-    var d = params["data"];
-    var fieldX = params["fieldx"];
-    var fieldY = params["fieldy"];
-  
-    for( var i in d.x) {
-      data.push([d.x[i], d.y[i]]);
-      data_copy.push([d.x[i], d.y[i]]);
-      data_dict[[d.x[i], d.y[i]]] = i;
-    }
-    data_copy.sort(function(a,b) { return a[0] - b[0]; });
-   
-    var xMin = d3.min(data, xValue), xMax = d3.max(data, xValue),
-        yMin = d3.min(data, yValue), yMax = d3.max(data, yValue),
-        xExt = (xMax - xMin) / 10.0, yExt = (yMax - yMin) / 10.0;
-
-    quadtree = d3.geom.quadtree().extent([[xMin, yMin], [xMax, yMax]])(data);
-       
-    d3.selectAll("canvas")
-        .attr("width", svg_w)
-        .attr("height", svg_h)
-        .style("padding", margin.top + "px " + margin.right + "px " + margin.bottom + "px " + margin.left + "px ");
-        
-    svg = d3.select("svg")
-        .attr("width", svg_w)
-        .attr("height", svg_h)
-      .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-   
-    svg.append("g")
-        .attr("class", "brush")
-        .call(brush)
-        .call(brush.event);
-        
-    // don't want dots overlapping axis, so add in buffer to data domain
-    var xValueRange = -xMin > xMax ? 
-          [xMin -xExt, -xMin + xExt] : [-xMax - xExt, xMax + xExt],
-        yValueRange = -yMin > yMax ? 
-          [yMin -yExt, -yMin + yExt] : [-yMax - yExt, yMax + yExt];
-          
-    xScale.domain(xValueRange);
-    yScale.domain(xValueRange);
-  
-    // x-axis
-    svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(xAxis)
-      .append("text")
-        .attr("class", "label")
-        .attr("x", width)
-        .attr("y", -6)
-        .style("text-anchor", "end")
-        .text(fieldX);
-  
-    // y-axis
-    svg.append("g")
-        .attr("class", "y axis")
-        .call(yAxis)
-      .append("text")
-        .attr("class", "label")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 6)
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text(fieldY);
-        
-    svg.append("g").append("line")
-        .attr("class", "axis-rule")
-        .style("stroke-dasharray", ("3, 3")) 
-        .attr("x1", 0)
-        .attr("x2", width)
-        .attr("y1", height / 2.0)
-        .attr("y2", height / 2.0);
-        
-    svg.append("line")
-        .attr("class", "axis-rule")
-        .style("stroke-dasharray", ("3, 3")) 
-        .attr("x1", width / 2.0)
-        .attr("x2", width / 2.0)
-        .attr("y1", 0)
-        .attr("y2", height);
-        
-    // draw points
-    var bgCtx = background.getContext('2d');
-    bgCtx.strokeStyle = "rgba(0,0,0,0.02)";
-    
-    var hctx = hbuffer.getContext('2d');
-    hctx.strokeStyle = "rgba(255,255,0,1)";
-    hctx.fillStyle = "rgba(255,255,0,1)";
-    
-    for (var i=0, n=data.length; i< n; i++ ) {
-      var x = data[i][0], y = data[i][1];
-      x = xMap(data[i]);
-      y = yMap(data[i]);
-      bgCtx.fillRect(x, y, 4,4);
-      hctx.fillRect(x,y,4,4);
-    }
-
-    var bufferCtx = buffer.getContext("2d");
-    bufferCtx.drawImage(background, 0, 0);
-    
-    draw_loess(0.4);
-    draw_linear_regression();
-  }); 
-  
-  // Render the fitted line
+   // Render the fitted line
   var draw_linear_regression = function() {
     svg.select(".reg").remove();
     svg.append('path')
@@ -330,6 +217,20 @@ $(document).ready(function() {
       );
   }
   
+  
+  // Find the nodes within the specified rectangle.
+  function search(quadtree, x0, y0, x3, y3) {
+    quadtree.visit(function(node, x1, y1, x2, y2) {
+      var p = node.point;
+      if (p) {
+        if (p[0] >= x0 && p[0] < x3 && p[1] >= y0 && p[1] < y3) {
+          selected.push(data_dict[p]);
+        }
+      }
+      return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
+    });
+  } 
+
   // Render the fitted line
   var draw_loess = function(bandwidth) {
     svg.select(".line").remove();
@@ -354,7 +255,110 @@ $(document).ready(function() {
         .y(function(d) { return d[1]; })
       );
   }
+ 
+  for (var i=0, n=msg.x.length; i<n; i++ ) {
+    var x = msg.x[i];
+    var y = msg.y[i];
+    data_copy.push([x,y]);
+    data.push([x,y]);
+    data_dict[[x,y]] = i;
+  }
+  data_copy.sort(function(a,b) { return a[0] - b[0]; });
+   
+  var xMin = d3.min(data, xValue), xMax = d3.max(data, xValue),
+      yMin = d3.min(data, yValue), yMax = d3.max(data, yValue),
+      xExt = (xMax - xMin) / 10.0, yExt = (yMax - yMin) / 10.0;
+
+  quadtree = d3.geom.quadtree().extent([[xMin, yMin], [xMax, yMax]])(data);
+       
+  d3.selectAll("canvas")
+      .attr("width", svg_w)
+      .attr("height", svg_h)
+      .style("padding", margin.top + "px " + margin.right + "px " + margin.bottom + "px " + margin.left + "px ");
+        
+  svg = d3.select("svg")
+      .attr("width", svg_w)
+      .attr("height", svg_h)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+ 
+  svg.append("g")
+      .attr("class", "brush")
+      .call(brush)
+      .call(brush.event);
+        
+  // don't want dots overlapping axis, so add in buffer to data domain
+  var xValueRange = -xMin > xMax ? 
+        [xMin -xExt, -xMin + xExt] : [-xMax - xExt, xMax + xExt],
+      yValueRange = -yMin > yMax ? 
+        [yMin -yExt, -yMin + yExt] : [-yMax - yExt, yMax + yExt];
+          
+  xScale.domain(xValueRange);
+  yScale.domain(xValueRange);
   
+  // x-axis
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text(fieldX);
+
+  // y-axis
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text(fieldY);
+      
+  svg.append("g").append("line")
+      .attr("class", "axis-rule")
+      .style("stroke-dasharray", ("3, 3")) 
+      .attr("x1", 0)
+      .attr("x2", width)
+      .attr("y1", height / 2.0)
+      .attr("y2", height / 2.0);
+      
+  svg.append("line")
+      .attr("class", "axis-rule")
+      .style("stroke-dasharray", ("3, 3")) 
+      .attr("x1", width / 2.0)
+      .attr("x2", width / 2.0)
+      .attr("y1", 0)
+      .attr("y2", height);
+      
+  // draw points
+  var bgCtx = background.getContext('2d');
+  bgCtx.strokeStyle = "rgba(0,0,0,0.02)";
+  
+  var hctx = hbuffer.getContext('2d');
+  hctx.strokeStyle = "rgba(255,255,0,1)";
+  hctx.fillStyle = "rgba(255,255,0,1)";
+  
+  for (var i=0, n=data.length; i< n; i++ ) {
+    var x = data[i][0], y = data[i][1];
+    x = xMap(data[i]);
+    y = yMap(data[i]);
+    bgCtx.fillRect(x, y, 4,4);
+    hctx.fillRect(x,y,4,4);
+  }
+
+  var bufferCtx = buffer.getContext("2d");
+  bufferCtx.drawImage(background, 0, 0);
+  
+  draw_loess(0.4);
+  draw_linear_regression();
+  
+   
   $( "#slider" ).slider({
     value: 0.40,
     min: 0.0,
@@ -366,20 +370,6 @@ $(document).ready(function() {
     }
   });
   $( "#bandwidth" ).val( $( "#slider" ).slider( "value" ) );
-  
-  
-  // Find the nodes within the specified rectangle.
-  function search(quadtree, x0, y0, x3, y3) {
-    quadtree.visit(function(node, x1, y1, x2, y2) {
-      var p = node.point;
-      if (p) {
-        if (p[0] >= x0 && p[0] < x3 && p[1] >= y0 && p[1] < y3) {
-          selected.push(data_dict[p]);
-        }
-      }
-      return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
-    });
-  } 
  
 });
 </script>

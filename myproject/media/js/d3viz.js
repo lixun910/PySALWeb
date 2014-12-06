@@ -216,11 +216,11 @@
   /**
    * Create a new Moran Scatter Plot
    */
-  d3viz.prototype.ShowMoranScatterPlot = function(msg) {
+  d3viz.prototype.PopupMoranScatterPlot = function() {
     var w = window.open(
-      this.RandUrl('moran_scatter.html'), // quantile, lisa,
+      this.RandUrl('../../static/moran_scatterplot.html'), // quantile, lisa,
       "_blank",
-      "width=900, height=700, scrollbars=yes"
+      "titlebar=no,toolbar=no,location=no,width=900, height=700, scrollbars=yes"
     );
   };
 

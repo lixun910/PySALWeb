@@ -72,8 +72,10 @@ def moran_scatter_plot(request):
             y_lag_z = (y_lag - y_lag.mean()) / y_lag.std()
             
             results = {
-                "var": var_x,
-                "data": {'x':y_z.tolist(), 'y':y_lag_z.tolist()},
+                "x_name": var_x,
+                "y_name": 'lag(%s)' %var_x,
+                'x' : y_z.tolist(),
+                'y' : y_lag_z.tolist(),
             }
             return HttpResponse(
                 json.dumps(results), 
