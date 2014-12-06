@@ -15,7 +15,8 @@ PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
 
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+#TEMPLATE_DEBUG = DEBUG
+TEMPLATE_DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1']
 
 ADMINS = (
@@ -74,7 +75,7 @@ LOGIN_URL = '/myapp/login/'
 
 THEME_JQUERY = 'redmond'
 
-GEODATA_PATH = PROJECT_ROOT + '/database/geodata.sqlite'
+GEODATA_PATH = os.path.join(PROJECT_ROOT, 'database', 'geodata.sqlite')
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')

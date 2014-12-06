@@ -89,7 +89,6 @@ def dup_email(request):
     return HttpResponse("0")
     
         
-        
 @login_required
 def main(request):
     # check user login
@@ -104,13 +103,18 @@ def main(request):
         geodata_content[i+1] = layer
         if i == 0:
             first_geodata = layer
+    jsonprefix = settings.URL_PREFIX + settings.MEDIA_URL
     # render main page with userid, shps/tables, weights
     return render_to_response(
-        'myapp/main.html', {'test': {0:1},
-            'userid': userid, 'geodata': geodata_content, \
-            'geodata0': first_geodata,'n': len(geodata), \
-            'nn':range(1,len(geodata)+1),\
-            'url_prefix': settings.URL_PREFIX,\
+        'myapp/new_portal.html', {
+            'test': {0:1},
+            'userid': userid, 
+            'geodata': geodata_content, 
+            'geodata0': first_geodata,
+            'n': len(geodata),
+            'nn':range(1,len(geodata)+1),
+            'url_prefix': settings.URL_PREFIX,
+            'jsonprefix' : jsonprefix,
             'theme_jquery': settings.THEME_JQUERY,
             },
         context_instance=RequestContext(request)

@@ -193,8 +193,12 @@ def spatial_regression(request):
     # These options are not available yet....
     s = None
     name_s = None
-    mtypes = {0: 'Standard', 1: 'Spatial Lag', 2: 'Spatial Error', \
-              3: 'Spatial Lag+Error'}    
+    mtypes = {
+        0: 'Standard', 
+        1: 'Spatial Lag', 
+        2: 'Spatial Error', 
+        3: 'Spatial Lag+Error'
+    }    
     model_type = mtypes[model_type]
     method_types = {0: 'ols', 1: 'gm', 2: 'ml'}
     method = method_types[model_method]
@@ -221,7 +225,7 @@ def spatial_regression(request):
     h = np.array([data[name] for name in name_h]).T if name_h else []
     r = np.array(data[name_r]) if name_r else None
     t = np.array(data[name_t]) if name_t else None
-    layer_name = Geodata.objects.get(uuid=layer_uuid).origfilename
+    layer_name = Geodata.objects.get(uuid=layer_uuid).filepath
     
     try:
         preference = Preference.objects.get(userid=userid)

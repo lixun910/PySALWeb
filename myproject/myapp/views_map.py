@@ -8,16 +8,21 @@ from django.conf import settings
 from django.core.files import File
 from django.contrib.auth.decorators import login_required
 
+import sys
 import numpy as np
-import json, time, os, logging, StringIO
+import json, time, os, logging, StringIO, shutil, time
 import zipfile
+import urllib
 import multiprocessing as mp
 from hashlib import md5
 
 from myproject.myapp.models import Document, Geodata, Weights, SpregModel
+from views_utils import * 
 
-from views_utils import get_file_url, RSP_FAIL, RSP_OK, get_valid_path
+from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks, Moran_Local, W
+from pysal import open as pysalOpen
 import GeoDB
+from network_cluster import NetworkCluster
 
 logger = logging.getLogger(__name__)
 
@@ -129,21 +134,15 @@ def remove_map(request):
             for f in filelist:
                 f = shp_dir + os.sep + f
                 os.remove(f)
-                
+               
             geodata = Geodata.objects.get(uuid=layer_uuid)
+            
             # remove record in Document
-            file_uuid = md5(geodata.userid + geodata.origfilename).hexdigest()
-            if shp_name.endswith(".shp"):
-                docs = Document.objects.filter(userid=userid)
-                shp_doc = docs.filter(filename=shp_name)
-                shp_doc.delete()
-                dbf_doc = docs.filter(filename=shp_name[:-3]+"dbf")
-                dbf_doc.delete()
-                shx_doc = docs.filter(filename=shp_name[:-3]+"shx")
-                shx_doc.delete()
-            else:
-                document = Document.objects.get(uuid=file_uuid)
-                document.delete()
+            user_uuid = md5(userid).hexdigest() 
+            docfile = get_rel_path(user_uuid, shp_name) 
+            docs = Document.objects.filter(docfile=docfile)
+            if doc: 
+                doc.delete()
             
             # remove record in Geodata
             geodata.delete()
@@ -161,6 +160,24 @@ def remove_map(request):
     return HttpResponse(RSP_FAIL, content_type="application/json")
         
     
+@login_required
+def get_map_names(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        maps = Geodata.objects.filter(userid=userid)
+        map_names = {}
+        for m in maps:
+            map_names[m.uuid] = [m.name, int(m.geotype) if m.geotype else 0]
+            
+        if len(map_names) > 0:
+            return HttpResponse(
+                json.dumps(map_names), 
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+
 """
 Get field names from a map layer. 
 The layer_uuid is used to query from Geodata database.
@@ -172,14 +189,31 @@ def get_fields(request):
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
-        geodata = Geodata.objects.get(uuid = layer_uuid)
-        if geodata:
-            fields = str(geodata.fields)
-            fields = fields.replace("'","\"")
-            print "get_fields", fields
-            return HttpResponse(fields, content_type="application/json")
+        field_names = GeoDB.GetColumnNamesFromTable(layer_uuid)
+        if len(field_names) > 0:
+            return HttpResponse(
+                json.dumps(field_names), 
+                content_type="application/json"
+            )
     return HttpResponse(RSP_FAIL, content_type="application/json")
 
+@login_required
+def get_metadata(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        if geodata:
+            name = str(geodata.name)
+            results = {}
+            results['layer_uuid'] = layer_uuid
+            results['name'] = name
+            results['fields'] = GeoDB.GetColumnNamesFromTable(layer_uuid)
+            return HttpResponse(json.dumps(results), content_type="application/json")
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+    
 @login_required
 def get_minmaxdist(request):
     userid = request.user.username
@@ -196,6 +230,229 @@ def get_minmaxdist(request):
                 return HttpResponse('{"min":%f, "max":%f}'%(min_val,max_val), content_type="application/json")
     return HttpResponse(RSP_FAIL, content_type="application/json")
     
+@login_required
+def thematic_map(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        col_name = request.GET.get("var","")
+        method = request.GET.get("method","")
+        k = request.GET.get("k",0)
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        if geodata and len(col_name) > 0:
+            data = GeoDB.GetTableData(str(layer_uuid), [col_name])
+            y = data[col_name]
+            k = int(k)
+            pysalFunc = None
+            if method == "quantile":
+                pysalFunc = Quantiles
+            elif method == "equal interval":
+                pysalFunc = Equal_Interval
+            elif method == "natural breaks":
+                pysalFunc = Natural_Breaks
+            elif method == "fisher jenks":
+                pysalFunc = Fisher_Jenks
+            if pysalFunc: 
+                q = pysalFunc(np.array(y), k=k)    
+                bins = q.bins
+                id_array = []
+                for i, upper in enumerate(bins):
+                    if i == 0: 
+                        id_array.append([j for j,v in enumerate(y) if v <= upper])
+                    else:
+                        id_array.append([j for j,v in enumerate(y) \
+                                         if bins[i-1] < v <= upper])
+                results = {
+                    "k": len(bins),
+                    "layer_uuid":layer_uuid,
+                    "col_name" : col_name,
+                    "method" : method,
+                    "bins": bins if isinstance(bins, list) else bins.tolist(),
+                    "id_array": id_array,
+                }
+                return HttpResponse(
+                    json.dumps(results), 
+                    content_type="application/json"
+                )
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+    
+@login_required
+def lisa_map(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        var_x = request.GET.get("var", None)
+        wuuid = request.GET.get("w", None)
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        if geodata and var_x and wuuid:
+            data = GeoDB.GetTableData(str(layer_uuid), [var_x])
+            x = data[var_x]
+            w = helper_get_W(wuuid)
+            y = np.array(x)
+            
+            lm = Moran_Local(y, w)
+            bins = ["Not Significant","High-High","Low-High","Low-Low","Hight-Low"]
+            id_array = []
+            id_array.append([i for i,v in enumerate(lm.p_sim) \
+                             if lm.p_sim[i] >= 0.05])
+            for j in range(1,5): 
+                id_array.append([i for i,v in enumerate(lm.q) \
+                                 if v == j and lm.p_sim[i] < 0.05])
+            results = {
+                "method" : "lisa",
+                "col_name": var_x,
+                "bins": bins,
+                "id_array" : id_array,
+            }
+            return HttpResponse(
+                json.dumps(results), 
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+
+@login_required
+def spacetime(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        poly_uuid = request.GET.get("poly_uuid", None)
+        point_uuid = request.GET.get("point_uuid", None)
+        col_name = request.GET.get("count_col_name", None)
+       
+        if poly_uuid and point_uuid and col_name: 
+            if GeoDB.CountPtsInPolys(poly_uuid, point_uuid, col_name):
+                return HttpResponse(
+                    RSP_OK,
+                    content_type="application/json"
+                )
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
+
+@login_required
+def road_segment(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        road_uuid = request.GET.get("road_uuid", None)
+        road_seg_length = request.GET.get("road_seg_length", None)
+        road_seg_fname = request.GET.get("road_seg_fname", None)
+       
+        if road_uuid and road_seg_length and road_seg_fname: 
+            geodata = Geodata.objects.get(uuid=road_uuid)
+            shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
+            json_path = os.path.join(settings.MEDIA_ROOT, geodata.jsonpath)
+            shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
+            prefix = os.path.split(shp_path)[0]
+            ofn = road_seg_fname
+            if ofn.endswith('shp'):
+                ofn = os.path.join(prefix, ofn)
+            else:
+                ofn = os.path.join(prefix, ofn + ".shp")
+                
+            net = NetworkCluster(shp_path) 
+            net.SegmentNetwork(int(road_seg_length))
+            net.ExportCountsToShp(ofn, counts=False)
+            
+            driver = "ESRI shapefile"
+            _save_new_shapefile(userid, driver, ofn)
+            
+            return HttpResponse(
+                RSP_OK,
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
+
+@login_required
+def road_snap_points(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        road_uuid = request.GET.get("road_uuid", None)
+        point_uuid = request.GET.get("point_uuid", None)
+        col_name = request.GET.get("count_col_name", None)
+        road_seg_length = request.GET.get("road_seg_length", None)
+       
+        if road_uuid and point_uuid and col_name: 
+            geodata = Geodata.objects.get(uuid=road_uuid)
+            shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
+            shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
+                
+            net = NetworkCluster(shp_path) 
+            net.SegmentNetwork(sys.maxint)
+            
+            geodata = Geodata.objects.get(uuid=point_uuid)
+            pt_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
+            pt_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
+            counts = net.SnapPointsToNetwork(pt_path, float(road_seg_length))
+            GeoDB.AddField(road_uuid, col_name, 0, counts)  # 0 integer
+            
+            return HttpResponse(
+                RSP_OK,
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
+
+@login_required
+def road_create_w(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        road_uuid = request.GET.get("road_uuid", None)
+        road_seg_length = request.GET.get("road_seg_length", None)
+        w_name = request.GET.get("w_name", None)
+       
+        if road_uuid and road_seg_length and w_name: 
+            geodata = Geodata.objects.get(uuid=road_uuid)
+            shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
+            shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
+                
+            net = NetworkCluster(shp_path) 
+            net.SegmentNetwork(sys.maxint)
+            net.CreateWeights(float(road_seg_length))
+            w = W(net.neighbors)
+            w.name = w_name            
+            try:
+                neighbors = json.dumps(net.neighbors)
+            except:
+                neighbors = {}
+                for k,v in net.neighbors.iteritems():
+                    neighbors[str(k)] = v
+                neighbors = json.dumps(neighbors)
+            weights = {}
+            for k,v in w.weights.iteritems():
+                weights[str(k)] = list(v)
+            weights = json.dumps(weights) 
+            shpfilename = os.path.split(shp_path)[1]
+            wuuid = create_w_uuid(userid, road_uuid, w_name)
+            
+            new_w_item = Weights(
+                uuid=wuuid, 
+                userid=userid,
+                shpfilename=shpfilename, 
+                name = w_name, 
+                n = w.n,
+                wid = "fid", 
+                wtype = '0', 
+                wtypemeta = '{}',
+                histogram = w.histogram, 
+                neighbors = neighbors, 
+                weights = weights
+            )
+            new_w_item.save() 
+              
+            return HttpResponse(
+                RSP_OK,
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")   
+
 """
 Upload shape files to server. Write meta data to meta database.
 In background, export files to spatial database. 
@@ -206,116 +463,183 @@ def upload(request):
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     
-    layer_uuid = ""
-    proc = False
+    user_uuid = md5(userid).hexdigest()
     shp_name = ""
     shp_path = ""
     isJson = False
-    isShp = False
-    isDBF = False
-    isShx = False
+    isShp = 0
+    proc = False
     
+    def _save_upload_file(f, path):
+        with open(path, 'wb+') as destination:
+            for chunk in f.chunks():
+                destination.write(chunk)        
+
+    def _process_zip(userid, extractloc, ziploc):
+        isJson = False
+        isShp = 0
+        shp_path = ""
+        driver = ""
+        zf = zipfile.ZipFile(ziploc) 
+        zf.extractall(extractloc)
+        # copy the files to md(userid) directory with proper file names
+        o_shp_path = ""
+        for fname in zf.namelist():
+            if fname.endswith('shp') or fname.endswith('json'):
+                if fname.endswith('json'):
+                    driver = "GeoJSON"
+                    isJson = True
+                o_shp_path = os.path.join(extractloc, fname)
+                shp_path = get_abs_path(userid, fname)
+                shp_name = fname
+                shp_path = get_valid_path(shp_path)
+                shutil.copy(o_shp_path, shp_path)
+        if shp_name.endswith('shp'):
+            isShp = 1
+            driver = "ESRI shapefile"
+            for i in ['dbf','shx','prj']:
+                isShp += 1
+                o_f_path = o_shp_path[:-3] + i
+                if os.path.exists(o_f_path):
+                    f_path = shp_path[:-3]  + i
+                    shutil.copy(o_f_path, f_path)
+        # add a row in Document table
+        if len(shp_path)  > 0 and isShp >= 3:
+            # save to file information database
+            docfile = get_docfile_path(shp_path)
+            newdoc = Document(userid=userid, docfile=docfile)
+            newdoc.save()
+        # remove temporary files
+        shutil.rmtree(extractloc)
+        return isJson, isShp, shp_path, driver
+        
     if request.method == 'POST': 
         # Get data from form
-        filelist = request.FILES.getlist('docfile')
+        filelist = request.FILES.getlist('userfile')
         if len(filelist) == 0:
             return HttpResponse(RSP_FAIL, content_type="application/json")
-        filenames = []
-        fileurls = []
         
-        # save all files
-        for docfile in filelist:
-            filename = str(docfile)
-            filenames.append(filename)
-            shpuuid =  md5(userid+filename).hexdigest()
-            if filename[filename.rfind("."):] in [".shp",".json",".geojson"]:
-                layer_uuid = shpuuid
-            newdoc = Document(uuid = shpuuid, userid = userid,\
-                              filename=filename, docfile = docfile)
-            newdoc.save()
-            fileurls.append(newdoc.docfile.url)
+        elif len(filelist) == 1 and str(filelist[0]).endswith("zip"):
+            # extract zip file at a temp folder under md5(userid)
+            tmp_name = gen_rnd_str()
+            base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
+            extract_loc = os.path.join(base_loc, tmp_name)
+            ziploc = os.path.join(extract_loc, str(filelist[0]))
+            if os.path.exists(extract_loc):
+                shutil.rmtree(extract_loc)
+            os.mkdir(extract_loc) 
+            _save_upload_file(filelist[0], ziploc)
+            isJson,isShp,shp_path,driver= _process_zip(userid,extract_loc,ziploc) 
+        else:
+            # save all files
+            shpFile, shxFile, dbfFile, prjFile = (None,)*4
+            for docfile in filelist:
+                filename = str(docfile)
+                if filename.endswith("json"):
+                    driver = "GeoJSON"
+                    isJson = True
+                    shpFile = docfile
+                elif filename.endswith("shp"):
+                    driver = "ESRI shapefile"
+                    isShp += 1
+                    shpFile = docfile
+                elif filename.endswith("dbf"):
+                    isShp += 1
+                    dbfFile = docfile
+                elif filename.endswith("shx"):
+                    isShp += 1
+                    shxFile = docfile
+                elif filename.endswith("prj"):
+                    isShp += 1
+                    prjFile = docfile
+                
+            if isJson or isShp >=3:
+                newdoc = Document(userid = userid, docfile = shpFile)
+                newdoc.save()
+                real_file_path = newdoc.docfile.url
+                shp_path = settings.PROJECT_ROOT
+                pitems = real_file_path.split('/')
+                for item in pitems:
+                    if item != "":
+                        shp_path = os.path.join(shp_path, item)
+                if dbfFile:
+                    dbf_path = shp_path[:-3] + "dbf"
+                    _save_upload_file(dbfFile, dbf_path)
+                if shxFile:
+                    shx_path = shp_path[:-3] + "shx"
+                    _save_upload_file(shxFile, shx_path)
+                if prjFile:
+                    prj_path = shp_path[:-3] + "prj"
+                    _save_upload_file(prjFile, prj_path)
             
-        # move files to sqlite db
-        for i, name in enumerate(filenames):
-            if name.endswith("json"):
-                driver = "GeoJSON"
-                isJson = True
-            elif name.endswith("shp"):
-                driver = "ESRI shapefile"
-                isShp = True
-            elif name.endswith("dbf"):
-                isDBF = True
-            elif name.endswith("shx"):
-                isShx = True
-                
-            if name.endswith("json") or name.endswith("shp"):
-                shp_name = name
-                shp_path = settings.PROJECT_ROOT + fileurls[i]
-                
-            if isJson or (isShp and isDBF and isShx): 
-                proc = True
-                break
+        if (isJson or isShp >= 3) and len(shp_path)> 0: 
+            proc = True
                 
     elif request.method == 'GET':
         # Get data from dropbox or other links
+        zip_url = request.GET.get('zip', None)
         json_url = request.GET.get('json', None)
         shp_url = request.GET.get('shp', None)
         shx_url = request.GET.get('shx', None)
         dbf_url = request.GET.get('dbf', None)
-        import urllib
-        if json_url != None:
-            shp_name = json_url.split("/")[-1]
-            shp_path = settings.MEDIA_ROOT + "/temp/" + shp_name
-            shp_path = get_valid_path(shp_path)
-            shp_name = shp_path[shp_path.rindex("/") + 1:]
-            urllib.urlretrieve(json_url, shp_path)
-            driver = "GeoJSON"
+        prj_url = request.GET.get('prj', None)
+        
+        if zip_url != None:
+            tmp_name = gen_rnd_str()
+            base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
+            extract_loc = os.path.join(base_loc, tmp_name)
+            if os.path.exists(extract_loc):
+                shutil.rmtree(extract_loc)
+            os.mkdir(extract_loc) 
+            zip_name = zip_url.split('/')[-1]
+            zip_loc = os.path.join(extract_loc, zip_name)
+            urllib.urlretrieve(zip_url, zip_loc)
+            isJson,isShp,shp_path,driver=_process_zip(userid,extract_loc,zip_loc) 
+            
+        elif json_url or (shp_url and shx_url and dbf_url):
+            if json_url != None:
+                shp_name = json_url.split("/")[-1]
+                shp_path = get_abs_path(userid, shp_name)
+                shp_path = get_valid_path(shp_path)
+                urllib.urlretrieve(json_url, shp_path)
+                shp_name = os.path.split(shp_path)[1]
+                driver = "GeoJSON"
+                isJson = True
+                proc = True
+                
+            elif shp_url and shx_url and dbf_url:
+                shp_name = shp_url.split("/")[-1]
+                shp_path = get_abs_path(userid, shp_name)
+                shp_path = get_valid_path(shp_path)
+                shp_name = os.path.split(shp_path)[1]
+                dbf_path = shp_path[:-3] + "dbf"
+                shx_path = shp_path[:-3] + "shx"
+                urllib.urlretrieve(shp_url, shp_path)
+                urllib.urlretrieve(dbf_url, dbf_path)
+                urllib.urlretrieve(shx_url, shx_path)
+                if prj_url:
+                    prj_path = shp_path[:-3] + "prj"
+                    urllib.urlretrieve(prj_url, prj_path)
+                driver = "ESRI shapefile"
+                isShp = 3
+                proc = True
+                
+            # save to file information database
+            newdoc = Document(
+                userid= userid,
+                docfile = get_rel_path(user_uuid, shp_name)
+            )
+            newdoc.save()
+            
+        if (isJson or isShp >= 3) and len(shp_path)> 0: 
             proc = True
-        elif shp_url and shx_url and dbf_url:
-            shp_name = shp_url.split("/")[-1]
-            shp_path = settings.MEDIA_ROOT + "/temp/" + shp_name
-            shp_path = get_valid_path(shp_path)
-            shp_name = shp_path[shp_path.rindex("/") + 1:]
-            dbf_path = shp_path[:-3] + "dbf"
-            shx_path = shp_path[:-3] + "shx"
-            print "upload from dropbox", shp_name, shp_path
-            urllib.urlretrieve(shp_url, shp_path)
-            urllib.urlretrieve(dbf_url, dbf_path)
-            urllib.urlretrieve(shx_url, shx_path)
-            driver = "ESRI shapefile"
-            proc = True
-        # save to file information database
-        layer_uuid =  md5(userid + shp_name).hexdigest()
-        #docfile = File(open(shp_path))
-        newdoc = Document(uuid= layer_uuid, userid= userid,filename=shp_name, docfile = "temp/"+shp_name)
-        newdoc.save()
-    
+            
     if proc:
-        if layer_uuid == "": 
-            layer_uuid = md5(userid + shp_name).hexdigest()
-        # save meta data to Geodata table
-        table_name = None
-        print "get meta data", shp_path
-        meta_data = GeoDB.GetMetaData(shp_path, table_name, driver)
-        print "save meta data", meta_data
-        new_geodata = Geodata(uuid=layer_uuid, userid=userid, 
-                              origfilename=shp_name, n=meta_data['n'], 
-                              geotype=str(meta_data['geom_type']), 
-                              bbox=str(meta_data['bbox']), 
-                              fields=json.dumps(meta_data['fields']))
-        new_geodata.save()
-        # export to spatial database in background
-        # note: this background process also compute min_threshold
-        # and max_thresdhold
-        from django.db import connection 
-        connection.close()
-        mp.Process(target=GeoDB.ExportToDB, 
-                   args=(shp_path,layer_uuid)).start()
-        print "uploaded done."
-        return HttpResponse('{"layer_uuid":"%s"}'%layer_uuid, 
-                            content_type="application/json")
+        result = _save_new_shapefile(userid, driver, shp_path)
+        return HttpResponse(json.dumps(result), content_type="application/json")
 
     return HttpResponse(RSP_FAIL, content_type="application/json")
+
 
 """
 Check if field exists in Django DB

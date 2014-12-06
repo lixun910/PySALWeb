@@ -10,6 +10,6 @@ print settings.MEDIA_URL
 urlpatterns = patterns('',
 	(r'myapp/', include('myproject.myapp.urls')),
 	(r'^$', RedirectView.as_view(url=settings.URL_PREFIX + '/myapp/login/')), # Just for ease of use.
-) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.URL_PREFIX + settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
+) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.URL_PREFIX + settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.URL_PREFIX + settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += staticfiles_urlpatterns()

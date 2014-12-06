@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>GeoDa.app</title>
+<style>
+.info {
+    padding: 6px 8px;
+    font: 14px/16px Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+}
+</style>
+<link rel="stylesheet" href="../media/css/d3viz.css" />
+<link rel="stylesheet" href="../media/css/leaflet.css" />
+<link rel="stylesheet" href="../media/css/jquery.switchButton.css" />
+
+<script src="../media/js/leaflet.js"></script>
+<script src="../media/js/jquery.min.js"></script>
+<script src="../media/js/d3.v3.min.js"></script>
+<script src="../media/js/colorbrewer.js"></script>
+<script src="../media/js/jmap.js"></script>
+<script src="../media/js/utils.js"></script>
+<script src="../media/js/d3viz.js"></script>
+<script src="../media/js/proj4-src.js"></script>
+<script src="../media/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script src="../media/js/jquery.switchButton.js"></script>
+<script src="../media/js/shapefile.js"></script>
+<script>
+var viz, lmap, map, data, mapType, layer_uuid, prj; 
+var prj, method, bins, id_array, title,k,colors, colorTheme={};  
+
+$(document).ready(function() {
+
+  var showInfo = function(){
+    var selector = L.control({position: 'bottomleft'});
+    selector.onAdd = function (map) {
+      var div = L.DomUtil.create('div', 'info');
+      var legend = L.DomUtil.create('div', 'legend');
+      var info = L.DomUtil.create('h4', '');
+      create_legend($(legend), bins, colors); 
+      $(div).append($(legend)); 
+      $(div).append($(info)); 
+      if ( method != "lisa") {
+      var sel = L.DomUtil.create('select', 'color-selector');
+      // fill content of color-selector
+      $.each(colorbrewer, function(k,v){
+		$(sel)
+		  .append($("<option></option>")
+			.attr("value", k)
+			.text(k));
+      });
+		$(div).append("Select to change color scheme:"); 
+		$(div).append($(sel)); 
+      }
+      return div;
+    };
+    selector.addTo(lmap);
+    // fill content of legend
+    var info = L.control();
+    info.onAdd = function (map) {
+      this._div = L.DomUtil.create('div', 'info');
+      this.update();
+      return this._div;
+    };
+    info.update = function (props) {
+      this._div.innerHTML = '<h4>'+title+'</h4>';
+    };
+    info.addTo(lmap);
+    if (method== "lisa") {
+      $('#selector').empty();
+    }
+  };
+  
+  var msg = window.opener.gMsg;
+  k = msg.k;
+  layer_uuid = msg.layer_uuid;
+  col_name = msg.col_name;
+  method = msg.method;
+  bins = msg.bins;
+  id_array = msg.id_array;
+  prj = window.opener.gPrj;
+  data = window.opener.gMap.getData();
+  mapType = window.opener.gViz.mapType;
+  title = method + " map for variable (" + col_name +")";
+      
+  if (method=="lisa") {
+	k = bins.length;
+    colors = colorbrewer.Lisa[k];
+  } else {
+    colors = colorbrewer['YlGn'][k];
+	
+  }
+  $('#map').show();
+  lmap = L.map('map');
+  L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' + 
+    '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+    'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+    id: 'examples.map-20v6611k'
+  }).addTo(lmap);
+
+  var foreground = $('#foreground').attr("id", layer_uuid); 
+  viz = new d3viz($('#map-container'), foreground);
+  viz.SetupBrushLink();
+  
+  colorTheme = {};
+  for ( var i=0, n=id_array.length; i<n; i++ ) {
+    colorTheme[colors[i]] = id_array[i];
+  }
+
+  var checkSwitch = false;
+  if (prj) {
+    checkSwitch = true; 
+  }
+  var PreMapShown = function() {
+  };
+  var OnMapShown = function(_map) {
+	map = _map;
+	$('#loading').remove();
+	lmap.on('zoomstart', function() {
+	  viz.mapCanvas.clean();
+	});
+	lmap.on('zoomend', function() {
+	  viz.mapCanvas.update();
+	});
+	lmap.on('movestart', function(e) {
+	  viz.mapCanvas.clean();
+	});
+	lmap.on('moveend', function(e) {
+	  var op = e.target.getPixelOrigin();
+	  var np = e.target._getTopLeftPoint();
+	  var offsetX = -np.x + op.x;
+	  var offsetY = -np.y + op.y;
+	  viz.mapCanvas.update({"offsetX":offsetX, "offsetY":offsetY});
+	});
+  };
+  $("#switch").switchButton({
+    checked: checkSwitch,
+    on_label: 'ON',
+    off_label: 'Leaflet Background? OFF',
+    on_callback: function() {
+	  $('#map').show();
+	  var isMainMap = true;
+      viz.ShowMap(data, mapType, isMainMap, PreMapShown, OnMapShown, L, lmap, prj, colorTheme);
+	},
+	off_callback: function() {
+	  $('#map').hide();
+	  viz.ShowThematicMap(map, colorTheme);
+	},
+  }, L, lmap, prj);
+    
+  // fill content of color-selector
+  $.each(colorbrewer, function(k,v){
+	$('#color-selector')
+  .append($("<option></option>")
+	.attr("value", k)
+	.text(k));
+  });
+  // fill content of legend
+  create_legend($('#legend'), bins, colors); 
+    
+  $('#title').empty().text(title);
+  
+  $('#color-selector').change(function(){
+	var clr_name = $('#color-selector option:selected').text();
+	colors = colorbrewer[clr_name][k];
+	colorTheme = {};
+	for ( var i=0, n=id_array.length; i<n; i++ ) {
+	  colorTheme[colors[i]] = id_array[i];
+	}
+	viz.mapCanvas.updateColor(colorTheme);
+	$('#legend').empty();
+	create_legend($('#legend'), bins, colors); 
+  });
+});
+</script>
+<body>
+
+<div id="title" class="info" style="z-index:9999;position:fixed;top:4px;right:0px; background-color:#ccc;font-size:20px;">Title</div>
+<div id="legend" class="info" style="z-index:9999;position:fixed;top:50px;right:0px;">Legend</div>
+<div id="selector" class="info" style="z-index:9999;position:fixed;top:180px;right:0px;">
+  Select to change color scheme: <select id="color-selector"></select>
+</div>
+
+<div style="z-index:9999;position:fixed; top:10px; left:50px;float:left;">
+  <div class="switch-wrapper" style="><input type="checkbox" id="switch" value="1" checked></div>
+</div>
+  
+<div id="map-container" style="position: relative; align:center; border: 0px solid red;height: 100%;position: relative;">
+  <div id="map" style="align:center; margin-top:0px;border: 0px solid red;width: 100%;height:100%;">
+  </div>
+  <canvas id="foreground" style="position: absolute; top: 0; left: 0;width: 100%; height: 100%"></canvas>
+</div>
+<div id="loading">
+     loading....
+</div>
+
+</body>
+</html>

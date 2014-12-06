@@ -1,4 +1,4 @@
-import os, json
+import os, json, sys, shutil
 import subprocess
 from osgeo import ogr
 from django.conf import settings
@@ -21,45 +21,23 @@ def GetDS():
     DS = ogr.Open(conn_str) 
     print 'open DS:', DS
     return DS
-    """
-    if DS is None:
-        print 'Connecting to GeoDB'
-        if settings.DB == 'postgres':
-            db_set = settings.DATABASES['default']
-            db_host = db_set['HOST']
-            db_port = db_set['PORT']
-            db_uname = db_set['USER']
-            db_upwd = db_set['PASSWORD']
-            db_name = db_set['NAME']
-            conn_str = "PG: host=%s dbname=%s user=%s password=%s" \
-                     % (db_host, db_name, db_uname, db_upwd)
-            print "conn_str", conn_str
-            DS = ogr.Open(conn_str) 
-        else:
-            GEODB_PATH = os.path.realpath(os.path.dirname(__file__)) \
-                       + '/../database/geodata.sqlite'
-            SQLITE_DRIVER = ogr.GetDriverByName('SQLite')
-            DS = SQLITE_DRIVER.Open(GEODB_PATH, 0) # readonly
-        print 'OK to GeoDB. DS:', DS
-        return DS
-    else:
-        print 'return cached DS:', DS
-        return DS
-    """
 
 def CloseDS(ds):
     ds.Destroy()
     ds= None
     print 'close DS:', ds
     
-def ExportToDB(shp_path, layer_uuid):
+def ExportToDB(shp_path, layer_uuid, geom_type):
     global db_host, db_port, db_uname, db_upwd, db_name
-    print "export starting..", layer_uuid
+    print "export starting..", shp_path
     table_name = TBL_PREFIX + layer_uuid
     if settings.DB == 'postgres':
-        script = 'ogr2ogr -skipfailures -append -f "PostgreSQL" -overwrite PG:"host=%s dbname=%s user=%s password=%s" %s -nln %s -nlt GEOMETRY -lco PRECISION=NO > /dev/null'  % (db_host, db_name, db_uname, db_upwd, shp_path, table_name)
+        if sys.platform == 'win32':
+            script = 'ogr2ogr -skipfailures -append -f "PostgreSQL" -overwrite PG:"host=%s dbname=%s user=%s password=%s" %s -nln %s -nlt GEOMETRY -lco PRECISION=NO'  % (db_host, db_name, db_uname, db_upwd, shp_path, table_name)
+        else:
+            script = 'ogr2ogr -skipfailures -append -f "PostgreSQL" -overwrite PG:"host=%s dbname=%s user=%s password=%s" %s -nln %s -nlt GEOMETRY -lco PRECISION=NO > /dev/null'  % (db_host, db_name, db_uname, db_upwd, shp_path, table_name)
         print script
-        rtn = subprocess.call( script, shell=True)
+        rtn = subprocess.call(script, shell=True)
     else:
         script = 'ogr2ogr -skipfailures -append -overwrite %s  %s -nln %s > /dev/null'  % (GEODB_PATH, shp_path, table_name)
         rtn = subprocess.call( script, shell=True)
@@ -75,21 +53,22 @@ def ExportToDB(shp_path, layer_uuid):
     # create a geometry only json file for visualization     
     ExportToJSON(shp_path) 
         
-    # compute meta data for weights creation
-    from pysal.weights.user import get_points_array_from_shapefile
-    # make sure using shp file in pysal
-    shp_path = shp_path[0:shp_path.rfind(".")] + ".shp"
-    points = get_points_array_from_shapefile(shp_path)
-    from scipy.spatial import cKDTree
-    kd = cKDTree(points)
-    nn = kd.query(points, k=2)
-    thres = nn[0].max(axis=0)[1]
-    
-    from myproject.myapp.models import Geodata
-    geodata = Geodata.objects.get(uuid = layer_uuid)
-    if geodata:
-        geodata.minpairdist = thres
-        geodata.save()
+    # compute meta data for weights creation, point/polygon
+    if geom_type == 1 or geom_type == 3: 
+        from pysal.weights.user import get_points_array_from_shapefile
+        # make sure using shp file in pysal
+        shp_path = shp_path[0:shp_path.rfind(".")] + ".shp"
+        points = get_points_array_from_shapefile(shp_path)
+        from scipy.spatial import cKDTree
+        kd = cKDTree(points)
+        nn = kd.query(points, k=2)
+        thres = nn[0].max(axis=0)[1]
+        
+        from myproject.myapp.models import Geodata
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        if geodata:
+            geodata.minpairdist = thres
+            geodata.save()
     
     print "export ends with ", rtn
     
@@ -107,35 +86,71 @@ def ExportToESRIShape(json_path):
 def ExportToJSON(shp_path):
     # will be called in subprocess
     import subprocess
+    prj = None
     if shp_path.endswith("json"):
         json_path = shp_path[0:shp_path.rfind(".")] + ".simp.json"
     else:
+        if os.path.exists(shp_path[:-3]+"prj"):
+            prj = "-t_srs EPSG:4326" # convert all projections to WGS84
         json_path = shp_path[0:shp_path.rfind(".")] + ".json"
-    script = 'ogr2ogr -select "" -f "GeoJSON" %s %s' %(json_path,shp_path)
+      
+    if os.path.exists(json_path):
+        os.remove(json_path)
+        
+    if prj: 
+        script = 'ogr2ogr -select "" -f "GeoJSON" %s %s %s' %(prj, json_path,shp_path)
+    else:
+        script = 'ogr2ogr -select "" -f "GeoJSON" %s %s' %(json_path,shp_path)
     rtn = subprocess.call( script, shell=True)
     
     
-def SaveDBTableToShp(geodata, table_name):
-    from myproject.myapp.models import Geodata, Document
-    file_uuid = md5(geodata.userid + geodata.origfilename).hexdigest()
-    document = Document.objects.get(uuid=file_uuid)
-    shp_path = settings.PROJECT_ROOT + document.docfile.url
-    shp_path = shp_path[0: shp_path.rindex(".")] + ".shp"
-    tmp_path = shp_path[0: shp_path.rindex("/")+1] + table_name + ".shp"
+def SaveDBTableToShp(table_name):
+    from myproject.myapp.models import Geodata
+    layer_uuid = table_name[1:]
+    geodata = Geodata.objects.get(uuid = layer_uuid)
+    if not geodata:
+        print "can't find %s in Geodata in SaveDBTableToShp"%layer_uuid
+        return False
+    shp_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
+    shp_path = shp_path[0: shp_path.rindex(".")] + ".shp" # in case of .json
+    shp_dir, shp_name = os.path.split(shp_path)
+    tmp_path = os.path.join(shp_dir, table_name + ".shp")
     import subprocess
     script = 'ogr2ogr -f "ESRI Shapefile" %s PG:"host=%s dbname=%s user=%s password=%s" %s' %(tmp_path, db_host, db_name, db_uname, db_upwd, table_name)
     print "SaveDBTableToShp", script
     rtn = subprocess.call( script, shell=True)    
-    import shutil
     shutil.copy(tmp_path[:-3]+"dbf", shp_path[:-3]+"dbf")
     # remove tmp files 
-    shp_dir = shp_path[0: shp_path.rindex("/")]
     filelist = [ f for f in os.listdir(shp_dir) \
                  if f.startswith(table_name) ]
     for f in filelist:
         f = shp_dir + os.sep + f
         os.remove(f)
         
+def GetColumnNamesFromTable(layer_uuid):
+    DS = GetDS()
+    table_name = TBL_PREFIX + layer_uuid
+    sql = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name='%s'" % table_name
+    tmp_layer = DS.ExecuteSQL(str(sql))
+    tmp_layer.ResetReading()
+    feature = tmp_layer.GetNextFeature()
+    col_names = {}
+    while feature:
+        col_name = feature.GetFieldAsString(0) 
+        col_type = feature.GetFieldAsString(1) 
+        if col_name not in ['ogc_fid','wkb_geometry']:
+            if col_type == 'integer':
+                col_type = 'Integer'
+            elif col_type == 'double precision':
+                col_type = 'Real'
+            elif col_type == 'character varying':
+                col_type = 'String'
+            else:
+                col_type = 'String'
+            col_names[col_name] = col_type
+        feature = tmp_layer.GetNextFeature()
+    CloseDS(DS)
+    return col_names
     
 def IsLayerExist(layer_uuid):
     DS = GetDS()
@@ -170,6 +185,26 @@ def IsFieldUnique(layer_uuid, field_name):
         return True
     else: 
         return False
+    
+def CountPtsInPolys(poly_uuid, point_uuid, count_col_name):
+    DS = GetDS()
+    poly_tbl = TBL_PREFIX + poly_uuid
+    pt_tbl = TBL_PREFIX + point_uuid
+    try:
+        sql = 'ALTER TABLE %s ADD COLUMN %s integer' % \
+        (poly_tbl, count_col_name)
+        DS.ExecuteSQL(str(sql))
+        sql = 'UPDATE %s SET %s = (SELECT count(*) FROM %s WHERE ST_Intersects(%s.wkb_geometry, %s.wkb_geometry))' % \
+        (poly_tbl, count_col_name, pt_tbl, pt_tbl, poly_tbl) 
+        DS.ExecuteSQL(str(sql))
+        CloseDS(DS)
+        SaveDBTableToShp(poly_tbl)
+        return True
+    except Exception, e:
+        print "CountPtsInPolys() error"
+        print str(e)
+        CloseDS(DS)
+        return False
 
 def AddUniqueIDField(layer_uuid, field_name):
     DS = GetDS()
@@ -198,7 +233,7 @@ def AddUniqueIDField(layer_uuid, field_name):
         geodata.save()
        
         # save changes to shp file (pysal needs shp file) 
-        SaveDBTableToShp(geodata, table_name)
+        SaveDBTableToShp(table_name)
         
         CloseDS(DS)
         
@@ -209,7 +244,7 @@ def AddUniqueIDField(layer_uuid, field_name):
         CloseDS(DS)
         return False
 
-def AddField(layer_uuid, field_name, field_type, values):
+def AddField(layer_uuid, field_name, field_type, values, updateShp=True):
     DS = GetDS()
     table_name = TBL_PREFIX + layer_uuid
     field_db_type = ['integer', 'numeric', 'varchar(255)'][field_type]
@@ -235,7 +270,8 @@ def AddField(layer_uuid, field_name, field_type, values):
     geodata.save()
     
     # save changes to shp file (pysal needs shp file) 
-    SaveDBTableToShp(geodata, table_name)
+    if updateShp:
+        SaveDBTableToShp(table_name)
     
 def GetDataSource(drivername, filepath):
     driver = ogr.GetDriverByName(drivername)

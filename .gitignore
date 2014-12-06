@@ -8,3 +8,11 @@
 *.json
 
 *.pyc
+*.wpr
+*.wpu
+*.prj
+wingide.wpr
+
+*.zip
+
+*.cpg

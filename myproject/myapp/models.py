@@ -1,20 +1,34 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from hashlib import md5
+
+def get_upload_path(instance, filename):
+    # build a dynamic path 
+    user_id = md5(instance.userid).hexdigest()
+    upload_dir = "temp/%s/%s" % (user_id, filename)
+    #print "Upload dir set to: %s" % upload_dir
+    return upload_dir
 
 class Document(models.Model):
+    uuid = models.AutoField(primary_key=True)
+    
     #md5 [userid, filename]
-    uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
+    #uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
     userid = models.CharField(max_length=80)
-    filename = models.CharField(max_length=255)
-    docfile = models.FileField(upload_to='temp')
+    #filename = models.CharField(max_length=255)
+    #docfile = models.FileField(upload_to=get_upload_path,storage=OverwriteStorage())
+    docfile = models.FileField(upload_to=get_upload_path)
 
 class Geodata(models.Model):
-    # unique id, that maps to layer name in a sqlite3 spatial database
+    # layer uuid: md5('temp/023420/xx.shp')
     uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
+    # what's its original filename
+    filepath = models.CharField(max_length=255)
+    jsonpath = models.CharField(max_length=255)
+    # layer name
+    name = models.CharField(max_length=80)
     # who upload 
     userid = models.CharField(max_length=80)
-    # what's its original filename
-    origfilename = models.CharField(max_length=255)
     n = models.IntegerField()
     geotype = models.CharField(max_length=10)
     # '[0.0, 0.1, 0.1, 0.0]' javascript evaled
@@ -42,6 +56,7 @@ class Preference(models.Model):
     userid = models.CharField(max_length=80, unique=True, db_index=True, primary_key=True)
     spreg = models.TextField()
     category = models.TextField()
+    cartodb = models.TextField()
     
 class SpregModel(models.Model):
     #md5([userid,layeruuid])

@@ -20,13 +20,32 @@ urlpatterns += patterns('myproject.myapp.views',
     url(r'^main/$','main', name='main'), 
 ) 
 
+urlpatterns += patterns('myproject.myapp.views_plots',
+    url(r'^scatter_plot/$', 'scatter_plot', name='scatter plot'),
+    url(r'^moran_scatter_plot/$', 'moran_scatter_plot', name='moran scatter plot'),
+)
+
+urlpatterns += patterns('myproject.myapp.views_cartodb',
+    url(r'^carto_get_tables/$', 'carto_get_tables', name='carto get tables'),
+    url(r'^carto_download_table/$', 'carto_download_table', name='carto download table'),
+    url(r'^carto_upload_table/$', 'carto_upload_table', name='carto upload tables'),
+    
+)
 urlpatterns += patterns('myproject.myapp.views_map',
     url(r'^get_dropbox_data/$', 'get_dropbox_data', name='get map data dropbox'),
-    url(r'^map_count/$', 'get_n_maps', name='login'),
+    url(r'^get_map_names/$', 'get_map_names', name='get map names'),
+    url(r'^spacetime/$', 'spacetime', name='spacetime'),
+    url(r'^road_segment/$', 'road_segment', name='road segment'),
+    url(r'^road_snap_points/$', 'road_snap_points', name='road snap points'),
+    url(r'^road_create_w/$', 'road_create_w', name='road create w'),
+    url(r'^lisa_map/$', 'lisa_map', name='lisa map'),
+    url(r'^thematic_map/$', 'thematic_map', name='thematic_map'),
+    url(r'^map_count/$', 'get_n_maps', name='get number of maps'),
     url(r'^new_map/$', 'new_map', name='get new map'),
     url(r'^remove_map/$', 'remove_map', name='delete map'),
     url(r'^download_map/$', 'download_map', name='download map'),
     url(r'^get_fields/$', 'get_fields', name='get field names'),
+    url(r'^get_metadata/$', 'get_metadata', name='get meta data'),
     url(r'^get_minmaxdist/$', 'get_minmaxdist', name='get'),
     url(r'^upload/$', 'upload', name='upload'),
     url(r'^upload_canvas/$', 'upload_canvas', name='upload canvas'),
