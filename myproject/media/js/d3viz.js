@@ -30,6 +30,10 @@
     self = this;
   };
  
+  d3viz.prototype.Clean = function() {
+      this.mapCanvas.destroy();
+  };
+  
   d3viz.prototype.SetupMap = function(map, uuid, name, isAddLayer) {
     if (!isAddLayer) {
       // main map

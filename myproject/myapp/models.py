@@ -56,6 +56,7 @@ class Preference(models.Model):
     userid = models.CharField(max_length=80, unique=True, db_index=True, primary_key=True)
     spreg = models.TextField()
     category = models.TextField()
+    cartodb = models.TextField()
     
 class SpregModel(models.Model):
     #md5([userid,layeruuid])

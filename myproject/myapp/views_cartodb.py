@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponseRedirect
@@ -9,7 +7,7 @@ from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
 
-from myproject.myapp.models import Document, Weights, Geodata, Preference
+from myproject.myapp.models import Geodata
 from myproject.myapp.forms import DocumentForm
 
 import logging, os, zipfile, shutil

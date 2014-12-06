@@ -694,11 +694,15 @@
       _buffer.height = this.mapcanvas.height;
       return _buffer;
     },
-    clean: function() {
+    destroy: function() {
       var context = _self.mapcanvas.getContext("2d");
       context.imageSmoothingEnabled= false;
       context.clearRect(0, 0, _self.mapcanvas.width, _self.mapcanvas.height);
-      return context;
+      this.mapcanvas.removeEventListener('mousemove', this.OnMouseMove, false);
+      this.mapcanvas.removeEventListener('mousedown', this.OnMouseDown, false);
+      this.mapcanvas.removeEventListener('mouseup', this.OnMouseUp, false);
+      this.mapcanvas.removeEventListener('keydown', this.OnKeyDown, true);
+      this.mapcanvas.removeEventListener('keyup', this.OnKeyUp, true);
     },  
 
     old_highlight: function( ids, context, nolinking ) {
@@ -1149,6 +1153,10 @@
         _self.buffer2Screen();
       }   
      
+    },
+    clean: function(){
+        var context = _self.mapcanvas.getContext("2d");
+        context.clearRect(0, 0, _self.mapcanvas.width, _self.mapcanvas.height);
     },
     resetDraw: function(e) {
         var context = _self.mapcanvas.getContext("2d");

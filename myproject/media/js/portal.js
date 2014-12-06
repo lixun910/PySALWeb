@@ -36,15 +36,55 @@ var local_map_names_sel = {
   '#sel-spacetime-table-poly':[3],
   '#sel-spacetime-table-point':[1],
   };
- 
+
+var toolbar_buttons = [
+  '#btnOpenData',
+  '#btnAddLayer',
+  '#btnCartoDB',
+  '#btnRoadNetwork',
+  '#btnSpaceTime',
+  '#btnKDE',
+  '#btnCreateW',
+  '#btnWHistogram',
+  '#btnSpreg',
+  '#btnShowTable',
+  '#btnNewMap',
+  '#btnScatterPlot',
+  '#btnHist',
+  '#btnPCP',
+  '#btnMoran',
+  '#btnLISA' ,
+];
+
+var ToggleToolbarButtons = function(enable) {
+  for( var i=0; i<toolbar_buttons.length; i++) {
+    var btn = toolbar_buttons[i];
+    if (enable) {
+      $(btn).css('opacity', 1);
+      $('#btnOpenData').css('opacity', 1.0);
+    } else {
+      $(btn).css('opacity', 0.5);
+      $('#btnOpenData').css('opacity', 1.0);
+    }
+  }
+};
+
 var CleanLeafletMap = function() {
   if(lmap) {
     lmap.remove();
+    lmap = undefined;
+  }
+  if (gViz) {
+    gViz.Clean();
+    gViz = undefined;
   }
 };
 
 var SetupLeafletMap = function() {
   CleanLeafletMap();
+  gViz = new d3viz($('#map-container')); 
+  gViz.canvas = $('#foreground');
+  gViz.SetupBrushLink();
   lmap = new L.Map('map');
   L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -58,6 +98,7 @@ var SetupLeafletMap = function() {
 var ShowExistMap = function(uuid, json_path) {
   SetupLeafletMap();
   gViz.ShowMap(json_path, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
+  ToggleToolbarButtons(true);
   var params = {'csrfmiddlewaretoken':  csrftoken};
   params['layer_uuid'] = uuid;
   $.get('../get_metadata/', params).done(function(data){
@@ -82,6 +123,7 @@ var ShowNewMap = function(o, type, noForeground) {
       } else {
         gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown);
       }
+      ToggleToolbarButtons(true);
     }
   }
 };
@@ -237,6 +279,7 @@ var LoadSpregP = function() {
     }
   });
 };
+
 var LoadWnames = function() {
   if (gViz && gViz.uuid){
     var layer_uuid = gViz.uuid;
@@ -252,14 +295,14 @@ var LoadWnames = function() {
         w_names.push(key); 
       }
       w_names.sort();
-      w_combobox= ['#sel-model-w-files', '#sel-kernel-w-files', '#sel-w-files','#sel-lisa-w'];
+      w_combobox= ['#sel-model-w-files', '#sel-kernel-w-files', '#sel-w-files','#sel-lisa-w','#sel-moran-w'];
       $.each( w_combobox, function(i, w_cmb ) {
         $(w_cmb).find('option').remove().end();
         $.each(w_names, function(j, w_name) {
           wtype = data[w_name]["type"];
           if ( (wtype <= 1 && w_cmb == w_combobox[0]) 
                 || (wtype == 2 && w_cmb == w_combobox[1]) 
-                || (w_cmb == w_combobox[2] || w_cmb == w_combobox[3]) ) {
+                || (w_cmb == w_combobox[2] || w_cmb == w_combobox[3] || w_cmb == w_combobox[4]) ) {
             wuuid = data[w_name]["uuid"];
             $(w_cmb).append($('<option>', {value: wuuid}).text(w_name));
           }
@@ -348,7 +391,8 @@ var ShowCartoDBMap = function(carto_uid, carto_key, table_name, geo_type) {
 };
 
 $(document).ready(function() {
-
+  ToggleToolbarButtons(false);
+  
   $('#btn_logout').click(function(){
     $.post("../logout/", {'csrfmiddlewaretoken' : csrftoken})
     .done(function(data) {
@@ -358,12 +402,7 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Map
   //////////////////////////////////////////////////////////////
-  
-  // Local Storage Brushing/Linking
   localStorage.clear();  
-  gViz = new d3viz($('#map-container')); 
-  gViz.canvas = $('#foreground');
-  gViz.SetupBrushLink();
 
   $("#switch").switchButton({
     checked: true,
@@ -371,13 +410,13 @@ $(document).ready(function() {
     off_label: 'Leaflet Background? OFF',
     on_callback: function() {
       gShowLeaflet = true;
-      if (gViz.o) {
+      if (gViz) {
         ShowNewMap(gViz.o, gViz.mapType);
       }
     },
     off_callback: function() {
       gShowLeaflet = false;
-      if (gViz.o) {
+      if (gViz) {
         ShowNewMap(gViz.o, gViz.mapType, true);
       }
     },
@@ -423,42 +462,50 @@ $(document).ready(function() {
       // close current project 
       $('#btnOpenData').css('background-image','url(../../media/img/add-file.png)');
       gProjectOpen = false;
+      CleanLeafletMap();
+      ToggleToolbarButtons(false);
       $('#dialog-open-file').dialog('option','title',"Let's get started");
       $('#dialog-open-file').dialog('open');
     }
   });
   $('#btnAddLayer').click(function(){
-    gAddLayer = true;
-    $('#img-open-dlg').attr('src',url_prefix+"/media/img/addlayer_large.png");
-    $('#dialog-open-file').dialog('option','title','Add a layer to current map');
-    $('#dialog-open-file').dialog('open');
+    if (gViz) {
+      gAddLayer = true;
+      $('#img-open-dlg').attr('src',url_prefix+"/media/img/addlayer_large.png");
+      $('#dialog-open-file').dialog('option','title','Add a layer to current map');
+      $('#dialog-open-file').dialog('open');
+    }
   });
   $('#btnCartoDB').click(function(){
-    $('#dialog-cartodb').dialog('open');
+    if (gViz) {
+      $('#dialog-cartodb').dialog('open');
+    }
   });
   $('#btnRoadNetwork').click(function(){
-    $('#dialog-road').dialog('open');
+    if (gViz) {
+      $('#dialog-road').dialog('open');
+    }
   });
   $('#btnSpaceTime').click(function(){
-    $('#dialog-spacetime').dialog('open');
+    if (gViz) { $('#dialog-spacetime').dialog('open');}
   });
   $('#btnCreateW').click(function(){
-    $('#dialog-weights').dialog('open');
+    if (gViz) { $('#dialog-weights').dialog('open');}
   });
   $('#btnSpreg').click(function(){
-    $('#dialog-regression').dialog('open');
+    if (gViz) { $('#dialog-regression').dialog('open');}
   });
   $('#btnNewMap').click(function(){
-    $('#dlg-quantile-map').dialog('open');
+    if (gViz) { $('#dlg-quantile-map').dialog('open');}
   });
   $('#btnScatterPlot').click(function(){
-    $('#dlg-scatter-plot').dialog('open');
+    if (gViz) { $('#dlg-scatter-plot').dialog('open');}
   });
   $('#btnMoran').click(function(){
-    $('#dlg-moran-scatter-plot').dialog('open');
+    if (gViz) { $('#dlg-moran-scatter-plot').dialog('open');}
   });
   $('#btnLISA').click(function(){
-    $('#dlg-lisa-map').dialog('open');
+    if (gViz) {  $('#dlg-lisa-map').dialog('open');}
   });
   
   //////////////////////////////////////////////////////////////
@@ -1795,16 +1842,22 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        if (!gViz) return;
+        if (!gViz && !gViz.uuid) return;
         var sel_var = $('#sel-moran-var').val();
-        var sel_w = $('#sel-moran-w').text();
+            sel_w = $('#sel-moran-w').val();
         if (!sel_w || sel_w.length == 0) {
           ShowMsgBox("Info", "Please select a weights first. Note: You can create a weights by click the weights creation button");
           return;
         }
-        var msg = {"command":"new_moran_scatter_plot","uuid":uuid,
-        "var": sel_var, "w_name": sel_w};
-        gViz.NewMoranScatterPlot(msg);
+        var params = {
+          "layer_uuid": gViz.uuid,
+          "var_x": sel_var, 
+          "wuuid": sel_w,
+        };
+        $.get('../moran_scatter_plot/', params).done(function(result){
+          gMsg = result;
+          gViz.PopupMoranScatterPlot();
+        });
         $(this).dialog("close");
       }, 
       Cancel: function() {$( this ).dialog( "close" );},
