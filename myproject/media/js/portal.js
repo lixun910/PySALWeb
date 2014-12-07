@@ -373,18 +373,19 @@ var ShowCartoDBMap = function(carto_uid, carto_key, table_name, geo_type) {
   if (carto_layer) {
     lmap.removeLayer(carto_layer);
   }
-  carto_layer = cartodb.createLayer(lmap, {
-    user_name: carto_uid, 
-    type: 'cartodb',
-    sublayers:[{
-      sql:"SELECT * FROM " + table_name,
-      cartocss: css
-    }],
+  carto_layer = cartodb.createLayer(lmap, 
+    {
+      user_name: carto_uid, 
+      type: 'cartodb',
+      sublayers:[{
+        sql:"SELECT * FROM " + table_name,
+        cartocss: css
+      }],
     },
     {
       https: true,
     }
-  })
+  )
   .addTo(lmap)
   .on('done', function(layer_) {
     var sql = new cartodb.SQL({user: carto_uid});
