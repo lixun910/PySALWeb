@@ -380,9 +380,10 @@ var ShowCartoDBMap = function(carto_uid, carto_key, table_name, geo_type) {
       sql:"SELECT * FROM " + table_name,
       cartocss: css
     }],
-    options: {
-      https: true,
     },
+    {
+      https: true,
+    }
   })
   .addTo(lmap)
   .on('done', function(layer_) {
