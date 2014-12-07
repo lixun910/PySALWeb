@@ -15,8 +15,7 @@ PROJECT_ROOT = os.path.realpath(os.path.dirname(__file__))
 
 
 DEBUG = True
-#TEMPLATE_DEBUG = DEBUG
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = DEBUG
 ALLOWED_HOSTS = ['127.0.0.1']
 
 ADMINS = (
@@ -29,9 +28,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', 
         'NAME': 'xun',
-        'USER': 'postgres',      
-        'PASSWORD': 'abc123',
-        'HOST': '127.0.0.1',
+        'USER': 'xun',      
+        'PASSWORD': 'AxZ5ruDz',
+        'HOST': '10.0.21.220',
         'PORT': '5432',
     },
     'sqlite': {
@@ -75,7 +74,7 @@ LOGIN_URL = '/myapp/login/'
 
 THEME_JQUERY = 'redmond'
 
-GEODATA_PATH = os.path.join(PROJECT_ROOT, 'database', 'geodata.sqlite')
+GEODATA_PATH = PROJECT_ROOT + '/database/geodata.sqlite'
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
@@ -131,7 +130,6 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'myproject.urls'
-
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'myproject.wsgi.application'

@@ -635,6 +635,7 @@ def upload(request):
             proc = True
             
     if proc:
+        from views_utils import _save_new_shapefile
         result = _save_new_shapefile(userid, driver, shp_path)
         return HttpResponse(json.dumps(result), content_type="application/json")
 

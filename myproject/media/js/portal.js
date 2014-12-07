@@ -98,7 +98,6 @@ var SetupLeafletMap = function() {
 var ShowExistMap = function(uuid, json_path) {
   SetupLeafletMap();
   gViz.ShowMap(json_path, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
-  ToggleToolbarButtons(true);
   var params = {'csrfmiddlewaretoken':  csrftoken};
   params['layer_uuid'] = uuid;
   $.get('../get_metadata/', params).done(function(data){
@@ -108,7 +107,6 @@ var ShowExistMap = function(uuid, json_path) {
 };
   
 var ShowNewMap = function(o, type, noForeground) {
-  if (gViz) {
     SetupLeafletMap();
     if ( gHasProj && gPrj == undefined) {
       // wait for reading *.prj file 
@@ -123,9 +121,7 @@ var ShowNewMap = function(o, type, noForeground) {
       } else {
         gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown);
       }
-      ToggleToolbarButtons(true);
     }
-  }
 };
 
 var BeforeMapShown = function() {
@@ -209,6 +205,7 @@ var InitDialogs = function(data) {
     setTimeout(LoadModelNames, 100);
     setTimeout(LoadMinPairDist, 3000);
   }
+  ToggleToolbarButtons(true);
 };
 
 // get all map names/uuid from server
