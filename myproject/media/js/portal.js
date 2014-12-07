@@ -374,13 +374,15 @@ var ShowCartoDBMap = function(carto_uid, carto_key, table_name, geo_type) {
     lmap.removeLayer(carto_layer);
   }
   carto_layer = cartodb.createLayer(lmap, {
-    https: true,
     user_name: carto_uid, 
     type: 'cartodb',
     sublayers:[{
       sql:"SELECT * FROM " + table_name,
       cartocss: css
-    }]
+    }],
+    options: {
+      https: true,
+    },
   })
   .addTo(lmap)
   .on('done', function(layer_) {
