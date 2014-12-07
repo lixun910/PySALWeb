@@ -102,6 +102,8 @@ def carto_download_table(request):
             content = r.content 
             loc = os.path.join(settings.MEDIA_ROOT, 'temp', 
                                md5(userid).hexdigest())
+            if not os.path.exists(loc):
+                os.mkdir(loc)
             ziploc = os.path.join(loc, "tmp.zip")
             
             o = open(ziploc, "wb")
