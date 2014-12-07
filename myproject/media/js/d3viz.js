@@ -31,7 +31,9 @@
   };
  
   d3viz.prototype.Clean = function() {
+    if(this.mapCanvas) {
       this.mapCanvas.destroy();
+    }
   };
   
   d3viz.prototype.SetupMap = function(map, uuid, name, isAddLayer) {
