@@ -888,19 +888,17 @@ $(document).ready(function() {
     }   
   });
   $('#btn-file-cartodb-get-all-tables').click(function(){
-    if (gViz) {
-      $('#progress_bar_openfile').show();
-      var uid = $('#txt-carto-id').val(),
-          key = $('#txt-carto-key').val();
-      var params = {
-        'cartodb_uid' : uid,
-        'cartodb_key' : key,
-      };
-      $.get('../carto_get_tables/', params).done(function(data){
-        $('#progress_bar_openfile').hide();
-        fill_carto_tables(data);
-      });
-    }   
+    $('#progress_bar_openfile').show();
+    var uid = $('#txt-carto-id').val(),
+        key = $('#txt-carto-key').val();
+    var params = {
+      'cartodb_uid' : uid,
+      'cartodb_key' : key,
+    };
+    $.get('../carto_get_tables/', params).done(function(data){
+      $('#progress_bar_openfile').hide();
+      fill_carto_tables(data);
+    });
   });
   $('#tabs-dlg-cartodb').tabs();
   $( "#dialog-cartodb" ).dialog({
