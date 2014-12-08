@@ -88,14 +88,16 @@ var SetupLeafletMap = function() {
   gViz = new d3viz($('#map-container')); 
   gViz.canvas = $('#foreground');
   gViz.SetupBrushLink();
-  lmap = new L.Map('map');
-  L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' + 
-    '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-    'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-    id: 'examples.map-20v6611k'
-  }).addTo(lmap);
+  if (gShowLeaflet) {
+    lmap = new L.Map('map');
+    L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' + 
+      '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+      'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+      id: 'examples.map-20v6611k'
+    }).addTo(lmap);
+  }
 };
 
 var ShowExistMap = function(uuid, json_path) {
@@ -832,7 +834,8 @@ $(document).ready(function() {
       var suffix = getSuffix(fileLink);
       var params = {'csrfmiddlewaretoken':  csrftoken};
       if ( suffix === 'geojson' || suffix === 'json') {
-        gViz.ShowMap(fileLink, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
+        ShowNewMap(fileLink, 'geojson');
+        //gViz.ShowMap(fileLink, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
         params['json'] = fileLink;
         ready = true;
       } else if ($.inArray( suffix, ['shp', 'dbf','shx','prj']) >= 0) {
@@ -859,10 +862,10 @@ $(document).ready(function() {
             $.get(prjUrl, function(data) {
               var ip = data;
               gPrj = proj4(ip, proj4.defs('WGS84'));
-              gViz.ShowMap(shpUrl, 'shapefile', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
+              ShowNewMap(shpUrl, 'shapefile');
             });
           } else {
-            gViz.ShowMap(shpUrl, 'shapefile', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
+            ShowNewMap(shpUrl, 'shapefile');
           } 
           ready = true;
         } else {

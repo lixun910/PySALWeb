@@ -126,9 +126,9 @@ def _save_new_shapefile(userid, driver, abs_shp_path):
     shp_path = os.path.join('temp', user_uuid, shp_name)
     layer_uuid = md5(shp_path).hexdigest()
     if abs_shp_path.endswith('shp'):
-        json_path = shp_path[:-3] + "json"
+        json_path = shp_path[0:shp_path.rindex(".")] + ".json"
     else:
-        json_path = shp_path[:-3] + "simp.json"
+        json_path = shp_path[0:shp_path.rindex(".")] + ".sim.json"
     json_path= json_path.replace('\\','/')
     meta_data = GeoDB.GetMetaData(abs_shp_path, table_name, driver)
     geom_type = meta_data['geom_type']
