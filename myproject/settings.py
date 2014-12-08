@@ -28,9 +28,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', 
         'NAME': 'xun',
-        'USER': 'xun',      
-        'PASSWORD': 'AxZ5ruDz',
-        'HOST': '10.0.21.220',
+        'USER': 'postgres',      
+        'PASSWORD': 'abc123',
+        'HOST': '127.0.0.1',
         'PORT': '5432',
     },
     'sqlite': {
