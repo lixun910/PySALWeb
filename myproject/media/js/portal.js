@@ -81,6 +81,9 @@ var CleanLeafletMap = function() {
 };
 
 var SetupLeafletMap = function() {
+  if (gAddLayer) {
+    return;
+  }
   CleanLeafletMap();
   gViz = new d3viz($('#map-container')); 
   gViz.canvas = $('#foreground');
@@ -549,11 +552,11 @@ $(document).ready(function() {
             };
             $.get('../carto_download_table/', params).done(function(meta_data){
               $('#progress_bar_openfile').hide();
-              InitDialogs(meta_data);
               var prj_url = meta_data.shp_url.slice(0,-3) + "prj";
               $.get(prj_url).done(function(prj_data){
                 gPrj = proj4(prj_data, proj4.defs('WGS84'));
                 ShowNewMap(meta_data.shp_url, 'shapefile');
+                InitDialogs(meta_data);
               });
             });
           } else {
