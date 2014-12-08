@@ -205,6 +205,14 @@ border: 1px solid #aaa;margin: 1px 10px;
 #map {
   align:center; margin-top:0px;border: 0px solid red;width: 100%;height:100%;
 }
+.novis {
+  visibility :hidden;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+.novis:hover{
+  visibility: visible;
+}
 .switch-wrapper {
   margin-top: 5px;
 }

@@ -130,14 +130,15 @@
     </ul>
     <div id="tabs-1">
         {% if geodata %}
-        <table>
+        <div style="text-align: left;">
           {% for i,layer in geodata.iteritems %}
-          <tr>
-            <td></td>
-            <td><a href='#' onclick="ShowExistMap('{{layer.uuid}}','{{jsonprefix}}{{layer.jsonpath}}')">{{layer.name}}</a></td>
-          </tr>
+          <p onmouseover="ShowMapTitleTool(this,true);" onmouseout="ShowMapTitleTool(this,false);">
+            <a href='#' onclick="ShowExistMap('{{layer.uuid}}','{{jsonprefix}}{{layer.jsonpath}}');">{{layer.name}}</a>
+            <img class='novis' onclick="DownloadMap('{{layer.uuid}}');" src="{{url_prefix}}/media/img/download.png">
+            <img class='novis' onclick="DeleteMap(this,'{{layer.uuid}}');" src="{{url_prefix}}/media/img/uncheckmark.gif">
+          </p>
           {% endfor %}
-        </table>
+        </div>
         {% endif %}
     </div>
     <div id="tabs-2">

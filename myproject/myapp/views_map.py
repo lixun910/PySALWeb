@@ -82,35 +82,34 @@ def download_map(request):
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
         # download map files on disk
-        shp_url_obj = get_file_url(userid, layer_uuid)
-        if shp_url_obj:
-            shp_location, shp_name = shp_url_obj
-            shp_location = settings.PROJECT_ROOT + shp_location
-            print "download: shp_location,shp_name", shp_location, shp_name
-            filename_wo_ext = shp_name[0: shp_name.rindex(".")+1]
-            shp_dir = shp_location[0: shp_location.rindex("/")]
-            filename_ext = shp_name[shp_name.rindex(".")+1:]
-            if filename_ext == "shp":
-                filelist = [ f for f in os.listdir(shp_dir) \
-                             if f.startswith(filename_wo_ext) and \
-                                 not f.endswith("json") and \
-                                 not f.endswith("png")]
-            else:
-                filelist = [shp_name] # json
-            zip_subdir = "map"
-            zip_filename = "%s.zip" % zip_subdir
-            # Open StringIO to grab in-memory ZIP contents
-            s = StringIO.StringIO()
-            # The zip compressor
-            zf = zipfile.ZipFile(s, "w")
-            for f in filelist:
-                fpath = shp_dir + os.sep + f
-                zip_path = os.path.join(zip_subdir, f)
-                zf.write(fpath, zip_path)
-            zf.close()
-            resp = HttpResponse(s.getvalue(), mimetype = "application/x-zip-compressed")
-            resp['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
-            return resp
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        file_path = geodata.filepath
+        shp_dir = os.path.join(settings.MEDIA_ROOT, "temp", md5(userid).hexdigest())
+        shp_path = os.path.join(settings.MEDIA_ROOT, file_path)
+        filename = geodata.name
+        filename_wo_ext = filename[0: filename.rindex(".")+1]
+        filename_ext = filename[filename.rindex(".")+1:]
+        if filename_ext == "shp":
+            filelist = [ f for f in os.listdir(shp_dir) \
+                         if f.startswith(filename_wo_ext) and \
+                             not f.endswith("json") and \
+                             not f.endswith("png")]
+        else:
+            filelist = [shp_name] # json
+        zip_subdir = "map"
+        zip_filename = "%s.zip" % zip_subdir
+        # Open StringIO to grab in-memory ZIP contents
+        s = StringIO.StringIO()
+        # The zip compressor
+        zf = zipfile.ZipFile(s, "w")
+        for f in filelist:
+            fpath = shp_dir + os.sep + f
+            zip_path = os.path.join(zip_subdir, f)
+            zf.write(fpath, zip_path)
+        zf.close()
+        resp = HttpResponse(s.getvalue(), mimetype = "application/x-zip-compressed")
+        resp['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
+        return resp
     return HttpResponse(RSP_FAIL, content_type="application/json")
         
 @login_required
@@ -122,41 +121,35 @@ def remove_map(request):
         layer_uuid = request.GET.get("layer_uuid","")
         # remove files on disk
         print "remove,userid,layer_uuid", userid, layer_uuid
-        shp_url_obj = get_file_url(userid, layer_uuid)
-        if shp_url_obj:
-            shp_location, shp_name = shp_url_obj
-            shp_location = settings.PROJECT_ROOT + shp_location
-            print "remove,shp_location,shp_name", shp_location, shp_name
-            filename_wo_ext = shp_name[0: shp_name.rindex(".")+1]
-            shp_dir = shp_location[0: shp_location.rindex("/")]
-            filelist = [ f for f in os.listdir(shp_dir) \
-                         if f.startswith(filename_wo_ext) ]
-            for f in filelist:
-                f = shp_dir + os.sep + f
-                os.remove(f)
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        file_path = geodata.filepath
+        shp_dir = os.path.join(settings.MEDIA_ROOT, "temp", md5(userid).hexdigest())
+        shp_path = os.path.join(settings.MEDIA_ROOT, file_path)
+        filename = geodata.name
+        filename_wo_ext = filename[0: filename.rindex(".")+1]
+        filename_ext = filename[filename.rindex(".")+1:]
+        filelist = [ f for f in os.listdir(shp_dir) \
+                     if f.startswith(filename_wo_ext) ]
+        for f in filelist:
+            f = os.path.join(shp_dir, f)
+            os.remove(f)
                
-            geodata = Geodata.objects.get(uuid=layer_uuid)
-            
             # remove record in Document
-            user_uuid = md5(userid).hexdigest() 
-            docfile = get_rel_path(user_uuid, shp_name) 
-            docs = Document.objects.filter(docfile=docfile)
-            if doc: 
+            docs = Document.objects.filter(docfile=file_path)
+            for doc in docs:
                 doc.delete()
             
-            # remove record in Geodata
-            geodata.delete()
-            # remove record in spregmodel
-            models = SpregModel.objects.filter(userid = userid)\
-                   .filter(layeruuid=layer_uuid)
-            models.delete()
-            # remove record in weights
-            weights = Weights.objects.filter(userid=userid)\
-                    .filter(shpfilename=shp_name)
-            weights.delete()
-            # remove table d+layer_uuid
-            GeoDB.DeleteLayer(layer_uuid)
+        geodata.delete()
+        # remove record in spregmodel
+        models = SpregModel.objects.filter(userid = userid).filter(layeruuid=layer_uuid)
+        models.delete()
+        # remove record in weights
+        weights = Weights.objects.filter(userid=userid).filter(shpfilename=filename)
+        weights.delete()
+        # remove table d+layer_uuid
+        GeoDB.DeleteLayer(layer_uuid)
         return HttpResponse(RSP_OK, content_type="application/json")
+    
     return HttpResponse(RSP_FAIL, content_type="application/json")
         
     

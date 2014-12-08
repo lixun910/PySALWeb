@@ -127,6 +127,17 @@ var ShowNewMap = function(o, type, noForeground) {
     }
 };
 
+var ShowMapTitleTool = function(obj, flag) {
+  var els = $(obj).children();
+  if (flag == true) {
+    $(els[1]).css('visibility','visible');
+    $(els[2]).css('visibility','visible');
+  } else {
+    $(els[1]).css('visibility','hidden');
+    $(els[2]).css('visibility','hidden');
+  }
+};
+
 var BeforeMapShown = function() {
 };
 
@@ -392,6 +403,35 @@ var ShowCartoDBMap = function(carto_uid, carto_key, table_name, geo_type) {
     sql.getBounds("SELECT * FROM " + table_name).done(function(bounds){
       lmap.fitBounds(bounds);
     });
+  });
+};
+
+var DownloadMap = function(layer_uuid) {
+  $.download("../download_map/", "layer_uuid="+layer_uuid, "get");
+};
+
+var DeleteMap = function(obj, layer_uuid) {
+  var that = obj;
+  $('<div></div>').appendTo('body')
+  .html('<br/><div>Are you sure you want to delete this map?</div>')
+  .dialog({
+    modal: true,
+    title: "Confirmation required",
+    buttons: {
+      Yes: function() {
+        var dlg = $(this);
+        $.get("../remove_map/", {"layer_uuid": layer_uuid}).done(function(data){
+          if (data["success"] == 1) {
+            $(that).parent().remove();
+          }
+          dlg.dialog("close");
+        });
+      },
+      No: function() {
+        $(this).dialog("close");
+      }
+    },
+    close: function( evt, ui) { $(this).remove(); }
   });
 };
 
