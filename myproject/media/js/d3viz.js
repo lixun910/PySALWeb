@@ -167,7 +167,7 @@
       }
       
     } else if (typeof o == 'object'){
-      if (o instanceof ShpReader) {
+      if (o instanceof ShpReader || o.constructor.name == 'ShpReader') {
         // ShpReader object 
         map = new ShpMap(o, L, lmap, prj); 
       } else {

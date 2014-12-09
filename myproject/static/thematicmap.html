@@ -82,7 +82,7 @@ $(document).ready(function() {
   bins = msg.bins;
   id_array = msg.id_array;
   prj = window.opener.gPrj;
-  data = window.opener.gMap.getData();
+  data = window.opener.gViz.map.getData();
   mapType = window.opener.gViz.mapType;
   title = method + " map for variable (" + col_name +")";
       
@@ -93,8 +93,8 @@ $(document).ready(function() {
     colors = colorbrewer['YlGn'][k];
 	
   }
-  $('#map').show();
-  lmap = L.map('map');
+  //$('#map').show();
+  lmap = new L.Map('map');
   L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' + 

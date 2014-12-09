@@ -3,24 +3,39 @@
 <head>
 <meta charset="utf-8">
 <style>
-body {
+html, body {
   font: 11px sans-serif;
-  margin: 0;
-  padding: 0;
-  align: center;
+  width: 90%;
+  height: 90%;
 }
-svg, canvas {
+#selector {
+  height : 10%; 
+  width : 100%; 
+  vertical-align: text-top;
+}
+#map-container {
+  position: relative;
+  width: 90%;
+  height: 90%;
+}
+#background {
   position: absolute;
   top: 0;
   left: 0;
-  width: 800;
-  height: 800;
+}
+svg {
+  position: relative;
 }
 .axis path,
 .axis line {
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
+}
+.reg {
+  fill-opacity: 0;
+  stroke-width: 2;
+  stroke: blue;
 }
 .line {
   fill-opacity: 0;
@@ -50,64 +65,117 @@ var science = { stats: {} };
 <script src="../media/js/loess.js" charset="utf-8"></script>
 
 <script>
-var svg, viz, uuid, quadtree;
+var msg, svg, viz, uuid, quadtree;
 var background, hbuffer, buffer;
+var xScale, yScale;
+var svg_w, svg_h;
+var loess_value = 0.5;
+// Create Scatter Plot with LOESS
+var selected = [], data = [], 
+    data_copy = [],  // for LOESS we need sorted data
+    data_dict=[]; // for selecting we need a dictionary
 
-$(document).ready(function() {
+var OnResize = function(evt) {
+  if (background) {
+    var new_h = $('#map-container').height(),
+        new_w = $('#map-container').width(); 
+    $('svg').height(new_h).width(new_w).empty();
+    $('#background').height(new_h).width(new_w);
+    var ctx = background.getContext('2d');
+    ctx.clearRect(0,0,new_w,new_h);
+    DrawPoints();
+  }
+};
 
-  // Local Storage Brushing/Linking
-  //localStorage.clear();
+window.addEventListener("resize", OnResize);
 
-  var msg = window.opener.gMsg;
-  layer_uuid = msg.layer_uuid;
-  fieldX = msg.x_name;
-  fieldY = msg.y_name;
-      
-  $(window).bind('storage', function(e) {
-    console.log("ls");
-    var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
-    for ( var uuid in hl_ids ) {
-      var ids = hl_ids[uuid];
-      highlight(ids);
-    }
-  });
-  
-  viz = new d3viz($('#map-container'));
-    
+// Render the fitted line
+var draw_linear_regression = function() {
+  svg.select(".reg").remove();
+  svg.append('path')
+    .datum(function() {
+      var xValues = [], yValues = [];
+      var lin = ss.linear_regression()
+        .data(data_copy.map(function(d){ return d;}))
+        .line();
+      var lin_data = xScale.domain().map(function(x) {
+        return [xScale(x), yScale(lin(x))];
+      });
+      return lin_data; 
+    })
+    .attr('class', 'reg')
+    .style("stroke-dasharray", ("3, 3"))
+    .attr('d', d3.svg.line()
+      .interpolate('basis')
+      .x(function(d) { 
+          return d[0]; 
+      })
+      .y(function(d) { 
+          return d[1]; 
+      })
+    );
+};
+
+// Render the fitted line
+var draw_loess = function(bandwidth) {
+  svg.select(".line").remove();
+  svg.append('path')
+    .datum(function() {
+      var xValues = [], yValues = [];
+      var loess = science.stats.loess();
+      loess.bandwidth(bandwidth);
+      for (var i in data_copy) {
+        xValues.push(data_copy[i][0]);
+        yValues.push(data_copy[i][1]);
+      }
+      var yValuesSmoothed = loess(xValues, yValues);
+      xValues = xValues.map(xScale);
+      yValuesSmoothed = yValuesSmoothed.map(yScale);
+      return d3.zip(xValues, yValuesSmoothed);
+    })
+    .attr('class', 'line')
+    .attr('d', d3.svg.line()
+      .interpolate('basis')
+      .x(function(d) { return d[0]; })
+      .y(function(d) { return d[1]; })
+    );
+};
+
+var DrawPoints = function() {  
   background = document.getElementById('background');
   
-  var svg_w = 800,//parseInt($(background).css("width")), 
-      svg_h = 800;//parseInt($(background).css("height"));
+  svg_w = parseInt($(background).parent().css("width"));
+  svg_h = parseInt($(background).parent().css("height"));
       
-  hbuffer = document.createElement("canvas");
   hbuffer.width = svg_w;
   hbuffer.height = svg_h;
   
-  buffer = document.createElement("canvas");
   buffer.width = svg_w;
   buffer.height = svg_h;
-
-  // Create Scatter Plot with LOESS
-  var selected = [],
-      data = [], 
-      data_copy = [],  // for LOESS we need sorted data
-      data_dict=[]; // for selecting we need a dictionary
    
   var margin = {top: 40, right: 40, bottom: 40, left: 40},
       width = svg_w - margin.left - margin.right,
       height = svg_h - margin.top - margin.bottom;
       
   // setup x 
-  var xValue = function(d) { return d[0];}, // data -> value
-      xScale = d3.scale.linear().range([0, width]), // value -> display
-      xMap = function(d) { return xScale(xValue(d));}, // data -> display
-      xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+  xScale = d3.scale.linear().range([0, width]); // value -> display
+  var xValue = function(d) { 
+    return d[0];
+  }; // data -> value
+  var xMap = function(d) { 
+    return xScale(xValue(d));
+  }; // data -> display
+  var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
   
   // setup y
-  var yValue = function(d) { return d[1];}, // data -> value
-      yScale = d3.scale.linear().range([height, 0]), // value -> display
-      yMap = function(d) { return yScale(yValue(d));}, // data -> display
-      yAxis = d3.svg.axis().scale(yScale).orient("left");
+  yScale = d3.scale.linear().range([height, 0]); // value -> display
+  var yValue = function(d) { 
+    return d[1];
+  }; // data -> value
+  var yMap = function(d) { 
+    return yScale(yValue(d));
+  }; // data -> display
+  var yAxis = d3.svg.axis().scale(yScale).orient("left");
   
   // Brush.
   var brushX = d3.scale.identity().domain([0, width]),
@@ -118,7 +186,7 @@ $(document).ready(function() {
       .on("brushstart", brushstart)
       .on("brush", brush)
       .on("brushend", brushend);
-      
+   
   // Clear the previously-active brush, if any.
   function brushstart(p) {
     if (brush.data !== p) {
@@ -191,29 +259,7 @@ $(document).ready(function() {
       ctx.drawImage(buffer, 0,0);
     }
   }
-   // Render the fitted line
-  var draw_linear_regression = function() {
-    svg.select(".reg").remove();
-    svg.append('path')
-      .datum(function() {
-        var xValues = [], yValues = [];
-        var lin = ss.linear_regression()
-          .data(data_copy.map(function(d){ return d;}))
-          .line();
-        var lin_data = xScale.domain().map(function(x) {
-          return [xScale(x), yScale(lin(x))];
-        });
-        return lin_data; })
-      .attr('class', 'reg')
-      .style("stroke-dasharray", ("3, 3"))
-      .attr('d', d3.svg.line()
-        .interpolate('basis')
-        .x(function(d) { return d[0]; })
-        .y(function(d) { return d[1]; })
-      );
-  }
-  
-  
+ 
   // Find the nodes within the specified rectangle.
   function search(quadtree, x0, y0, x3, y3) {
     quadtree.visit(function(node, x1, y1, x2, y2) {
@@ -226,30 +272,6 @@ $(document).ready(function() {
       return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
     });
   } 
-  // Render the fitted line
-  var draw_loess = function(bandwidth) {
-    svg.select(".line").remove();
-    svg.append('path')
-      .datum(function() {
-        var xValues = [], yValues = [];
-        var loess = science.stats.loess();
-        loess.bandwidth(bandwidth);
-        for (var i in data_copy) {
-          xValues.push(data_copy[i][0]);
-          yValues.push(data_copy[i][1]);
-        }
-        var yValuesSmoothed = loess(xValues, yValues);
-        xValues = xValues.map(xScale);
-        yValuesSmoothed = yValuesSmoothed.map(yScale);
-        return d3.zip(xValues, yValuesSmoothed);
-      })
-      .attr('class', 'line')
-      .attr('d', d3.svg.line()
-        .interpolate('basis')
-        .x(function(d) { return d[0]; })
-        .y(function(d) { return d[1]; })
-      );
-  }
 
   for (var i=0, n=msg.x.length; i<n; i++ ) {
     var x = msg.x[i];
@@ -258,110 +280,132 @@ $(document).ready(function() {
     data.push([x,y]);
     data_dict[[x,y]] = i;
   }
-    data_copy.sort(function(a,b) { return a[0] - b[0]; });
+  data_copy.sort(function(a,b) { return a[0] - b[0]; });
    
-    var xMin = d3.min(data, xValue), xMax = d3.max(data, xValue),
-        yMin = d3.min(data, yValue), yMax = d3.max(data, yValue),
-        xExt = (xMax - xMin) / 10.0, yExt = (yMax - yMin) / 10.0;
+  var xMin = d3.min(data, xValue), xMax = d3.max(data, xValue),
+      yMin = d3.min(data, yValue), yMax = d3.max(data, yValue),
+      xExt = (xMax - xMin) / 10.0, yExt = (yMax - yMin) / 10.0;
 
-    quadtree = d3.geom.quadtree().extent([[xMin, yMin], [xMax, yMax]])(data);
+  quadtree = d3.geom.quadtree().extent([[xMin, yMin], [xMax, yMax]])(data);
        
-    d3.selectAll("canvas")
-        .attr("width", svg_w)
-        .attr("height", svg_h)
-        .style("padding", margin.top + "px " + margin.right + "px " + margin.bottom + "px " + margin.left + "px ");
-        
-    svg = d3.select("svg")
-        .attr("width", svg_w)
-        .attr("height", svg_h)
+  d3.selectAll("canvas")
+      .attr("width", svg_w)
+      .attr("height", svg_h)
+      .style("padding", margin.top + "px " + margin.right + "px " + margin.bottom + "px " + margin.left + "px ");
+      
+  svg = d3.select("svg")
+      .attr("width", svg_w)
+      .attr("height", svg_h)
       .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
    
-    svg.append("g")
-        .attr("class", "brush")
-        .call(brush)
-        .call(brush.event);
+  svg.append("g")
+      .attr("class", "brush")
+      .call(brush)
+      .call(brush.event);
         
-    // don't want dots overlapping axis, so add in buffer to data domain
-    xScale.domain([xMin - xExt, xMax + xExt]);
-    yScale.domain([yMin - yExt, yMax + yExt]);
-  
-    // x-axis
-    svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(xAxis)
-      .append("text")
-        .attr("class", "label")
-        .attr("x", width)
-        .attr("y", -6)
-        .style("text-anchor", "end")
-        .text(fieldX);
-  
-    // y-axis
-    svg.append("g")
-        .attr("class", "y axis")
-        .call(yAxis)
-      .append("text")
-        .attr("class", "label")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 6)
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text(fieldY);
-        
-    // draw points
-    var bgCtx = background.getContext('2d');
-    bgCtx.strokeStyle = "rgba(0,0,0,0.02)";
-    
-    var hctx = hbuffer.getContext('2d');
-    hctx.strokeStyle = "rgba(255,255,0,1)";
-    hctx.fillStyle = "rgba(255,255,0,1)";
-    
-    for (var i=0, n=data.length; i< n; i++ ) {
-      var x = data[i][0], y = data[i][1];
-      x = xMap(data[i]);
-      y = yMap(data[i]);
-      bgCtx.fillRect(x, y, 4,4);
-      hctx.fillRect(x,y,4,4);
-    }
+  // don't want dots overlapping axis, so add in buffer to data domain
+  xScale.domain([xMin - xExt, xMax + xExt]);
+  yScale.domain([yMin - yExt, yMax + yExt]);
 
-    var bufferCtx = buffer.getContext("2d");
-    bufferCtx.drawImage(background, 0, 0);
-    
-    draw_loess(0.4);
-    draw_linear_regression();
+  // x-axis
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text(fieldX);
+
+  // y-axis
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text(fieldY);
+      
+  // draw points
+  var bgCtx = background.getContext('2d');
+  bgCtx.strokeStyle = "rgba(0,0,0,0.02)";
   
+  var hctx = hbuffer.getContext('2d');
+  hctx.strokeStyle = "rgba(255,255,0,1)";
+  hctx.fillStyle = "rgba(255,255,0,1)";
   
+  for (var i=0, n=data.length; i< n; i++ ) {
+    var x = data[i][0], y = data[i][1];
+    x = xMap(data[i]);
+    y = yMap(data[i]);
+    bgCtx.fillRect(x, y, 4,4);
+    hctx.fillRect(x,y,4,4);
+  }
+
+  var bufferCtx = buffer.getContext("2d");
+  bufferCtx.drawImage(background, 0, 0);
+  
+  draw_loess(loess_value);
+  draw_linear_regression();
+};
+
+$(document).ready(function() {
+
+  // Local Storage Brushing/Linking
+  //localStorage.clear();
+
+  msg = window.opener.gMsg;
+  layer_uuid = msg.layer_uuid;
+  fieldX = msg.x_name;
+  fieldY = msg.y_name;
+      
+  $(window).bind('storage', function(e) {
+    var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
+    for ( var uuid in hl_ids ) {
+      var ids = hl_ids[uuid];
+      highlight(ids);
+    }
+  });
+  
+  viz = new d3viz($('#map-container'));
+  hbuffer = document.createElement("canvas");
+  buffer = document.createElement("canvas");
+  DrawPoints(); 
+
   $( "#slider" ).slider({
-    value: 0.40,
+    value: loess_value,
     min: 0.0,
     max: 1.0,
     step: 0.05,
     slide: function( event, ui ) {
       $( "#bandwidth" ).val( ui.value );
-      draw_loess( ui.value );
+      loess_value = ui.value;
+      draw_loess( loess_value );
     }
   });
   $( "#bandwidth" ).val( $( "#slider" ).slider( "value" ) );
-  
  
 });
 </script>
 <body>
-<div id="map-container" style="position: relative; text-align:center; border: 0px solid red;height: 100%; width: 100%;margin-top:100px;">
-  <canvas id="background" style="position: absolute; top: 0; left: 0;"></canvas>
-  <svg></svg>
-</div>
-
-
-<div id="selector" style="margin:10px 0px 0px 100px; float: left;">
+<div id="selector">
  <table><tr><td width=250>Change the bandwidth of fitted LOESS curve:</td>
  <td width=200><div id="slider"></div></td>
  <td><input type="text" id="bandwidth" readonly style="border:0; color:#f6931f; font-weight:bold;"></td>
  </tr></table>
 </div>
-<div id="legend" style="margin-top:-60px;"></div>
+<div id="map-container"> 
+  <canvas id="background"></canvas>
+  <svg></svg>
+</div>
+
+
 </body>
 </body>
 </html>
