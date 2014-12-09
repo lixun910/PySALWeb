@@ -53,7 +53,12 @@
     xhr.onload = function() {
       var status = xhr.status;
       if (status == 200) {
-        successHandler && successHandler(xhr.response);
+        var a = xhr.response;
+        if (typeof(a) == 'string') {
+          a = a.replace(/\n/g,"");
+          a = JSON.parse(a);
+        }
+        successHandler && successHandler(a);
       } else {
         errorHandler && errorHandler(status);
       }

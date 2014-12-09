@@ -16,4 +16,4 @@ wingide.wpr
 *.zip
 
 *.cpg
-settings.py
+myproject/settings.py
