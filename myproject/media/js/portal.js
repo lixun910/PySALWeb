@@ -1877,10 +1877,11 @@ $(document).ready(function() {
           url: '../lisa_map/', 
           data: params, 
         }).done(function(result){
+          $('#progress_bar_lisa').hide();
           gMsg = result;
           gViz.PopupThematicMap();
+          $(this).dialog("close");
         });
-        $(this).dialog("close");
       }, 
       Cancel: function() {$( this ).dialog( "close" );},
     },
