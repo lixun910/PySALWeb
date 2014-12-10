@@ -352,6 +352,7 @@ def road_segment(request):
             net.ExportCountsToShp(ofn, counts=False)
             
             driver = "ESRI shapefile"
+            from views_utils import _save_new_shapefile
             _save_new_shapefile(userid, driver, ofn)
             
             return HttpResponse(

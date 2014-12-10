@@ -2,45 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<style>
-body {
-  font: 11px sans-serif;
-  margin: 0;
-  padding: 0;
-  align: center;
-}
-svg, canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 800;
-  height: 800;
-}
-.axis path,
-.axis line {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
-.axis-rule {
-  fill: none;
-  shape-rendering: crispEdges;
-  stroke: #e0e0e0;
-  stroke-width: 2.5px;
-}
-.line {
-  fill-opacity: 0;
-  stroke-width: 4;
-  stroke: #C10000;
-}
-.brush .extent {
-  stroke: #fff;
-  fill-opacity: .125;
-  shape-rendering: crispEdges;
-}
-</style>
 <link rel="stylesheet" href="../media/css/jquery-ui.css">
 <link rel="stylesheet" href="../media/css/ui-lightness/jquery-ui-1.10.4.custom.css">
+<link rel="stylesheet" href="../media/css/scatterplot.css">
 
 <script src="../media/js/jquery.min.js"></script>
 <script src="../media/js/jquery-ui-1.10.4.custom.min.js"></script>
@@ -48,6 +12,7 @@ svg, canvas {
 <script src="../media/js/d3.v3.min.js" charset="utf-8"></script>
 <script src="../media/js/utils.js"></script>
 <script src="../media/js/d3viz.js"></script>
+<script src="../media/js/scatterplot.js"></script>
 <script>
 var science = { stats: {} };
 </script>
@@ -55,206 +20,68 @@ var science = { stats: {} };
 <script src="../media/js/loess.js" charset="utf-8"></script>
 
 <script>
-var svg, viz, uuid, quadtree;
+var msg, svg, viz, uuid, quadtree;
 var background, hbuffer, buffer;
+var xScale, yScale, xMap, yMap;
+var svg_w, svg_h;
+var loess_value = 0.5;
+var brush;
+var fieldX, fieldY;
+// Create Scatter Plot with LOESS
+var selected = [], data = [], 
+    data_copy = [],  // for LOESS we need sorted data
+    data_dict=[]; // for selecting we need a dictionary
+var OnResize = function(evt) {
+  if (background) {
+    var new_h = $('#map-container').height(),
+        new_w = $('#map-container').width(); 
+    $('svg').height(new_h).width(new_w).empty();
+    $('#background').height(new_h).width(new_w);
+    var ctx = background.getContext('2d');
+    ctx.clearRect(0,0,new_w,new_h);
+    DrawPoints();
+  }
+};
 
-$(document).ready(function() {
+window.addEventListener("resize", OnResize);
 
-  // Local Storage Brushing/Linking
-  //localStorage.clear();
-
-  var msg = window.opener.gMsg;
-  layer_uuid = msg.layer_uuid;
-  fieldX = msg.x_name;
-  fieldY = msg.y_name;
-      
-  $(window).bind('storage', function(e) {
-    var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
-    for ( var uuid in hl_ids ) {
-      var ids = hl_ids[uuid];
-      highlight(ids);
-    }
-  });
-  
-  viz = new d3viz($('#map-container'));
-    
+var DrawPoints = function() {
   background = document.getElementById('background');
   
-  var svg_w = 800,//parseInt($(background).css("width")), 
-      svg_h = 800;//parseInt($(background).css("height"));
+  svg_w = parseInt($(background).parent().css("width"));
+  svg_h = parseInt($(background).parent().css("height"));
       
-  hbuffer = document.createElement("canvas");
   hbuffer.width = svg_w;
   hbuffer.height = svg_h;
   
-  buffer = document.createElement("canvas");
   buffer.width = svg_w;
   buffer.height = svg_h;
 
-  // Create Scatter Plot with LOESS
-  var selected = [],
-      data = [], 
-      data_copy = [],  // for LOESS we need sorted data
-      data_dict=[]; // for selecting we need a dictionary
-   
   var margin = {top: 40, right: 40, bottom: 40, left: 40},
       width = svg_w - margin.left - margin.right,
       height = svg_h - margin.top - margin.bottom;
       
   // setup x 
-  var xValue = function(d) { return d[0];}, // data -> value
-      xScale = d3.scale.linear().range([0, width]), // value -> display
-      xMap = function(d) { return xScale(xValue(d));}, // data -> display
-      xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+  var xValue = function(d) { return d[0];}; // data -> value
+  xScale = d3.scale.linear().range([0, width]); // value -> display
+  xMap = function(d) { return xScale(xValue(d));}; // data -> display
+  var xAxis = d3.svg.axis().scale(xScale).orient("bottom");
   
   // setup y
-  var yValue = function(d) { return d[1];}, // data -> value
-      yScale = d3.scale.linear().range([height, 0]), // value -> display
-      yMap = function(d) { return yScale(yValue(d));}, // data -> display
-      yAxis = d3.svg.axis().scale(yScale).orient("left");
+  var yValue = function(d) { return d[1];}; // data -> value
+  yScale = d3.scale.linear().range([height, 0]); // value -> display
+  yMap = function(d) { return yScale(yValue(d));}; // data -> display
+  var yAxis = d3.svg.axis().scale(yScale).orient("left");
   
   // Brush.
   var brushX = d3.scale.identity().domain([0, width]),
       brushY = d3.scale.identity().domain([0, height]);
-  var brush = d3.svg.brush()
+  brush = d3.svg.brush()
       .x(brushX)
       .y(brushY)
       .on("brushstart", brushstart)
       .on("brush", brush)
       .on("brushend", brushend);
-      
-  // Clear the previously-active brush, if any.
-  function brushstart(p) {
-    if (brush.data !== p) {
-      brush.clear();
-    }
-    if (buffer) {
-      //var ctx = background.getContext('2d');
-      //ctx.clearRect(0,0,svg_w,svg_h);
-      //ctx.drawImage(buffer, 0,0);
-    }
-  }
-
-  function highlight(ids) {
-    var ctx = background.getContext('2d');
-    ctx.strokeStyle = "rgba(255,0,0,1)";
-    ctx.fillStyle = "rgba(255,255,0,1)";
-    ctx.clearRect(0,0,width+1,height+1);
-    ctx.drawImage(buffer, 0,0);
-    for (var i=0, n=ids.length; i< n; i++ ) {
-      var id = ids[i];
-      var x = data[id][0], y = data[id][1];
-      x = xMap(data[i]);
-      y = yMap(data[i]);
-      ctx.fillRect(x, y, 4,4);
-    }
-  }
-  
-  // Highlight the selected circles.
-  function brush(p) {
-    var e = brush.extent();
-    var x0 = e[0][0], y0 = e[0][1], 
-        x1 = e[1][0], y1 = e[1][1];
-    var ctx = background.getContext('2d');
-    ctx.clearRect(0,0,width+1,height+1);
-    ctx.drawImage(buffer, 0,0);
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x0,y0, x1-x0, y1-y0);
-    ctx.clip();
-    ctx.drawImage(hbuffer, 0, 0);
-    ctx.restore();
-    
-    x0 = xScale.invert(x0),
-    x1 = xScale.invert(x1),
-    y0 = yScale.invert(y0),
-    y1 = yScale.invert(y1);
-   
-    selected = [];
-    search(quadtree, x0, y1, x1, y0);
-          
-    // clean up select rect since it's ids only
-    if (localStorage["HL_MAP"] ) {
-      hm = JSON.parse(localStorage["HL_MAP"]);
-      delete hm[uuid];
-      localStorage["HL_MAP"] = JSON.stringify(hm);
-    }
-    var hl = {};
-    if ( localStorage["HL_IDS"] ){ 
-      hl = JSON.parse(localStorage["HL_IDS"]);
-    }
-    hl[uuid] = selected;
-    localStorage["HL_IDS"] = JSON.stringify(hl);
-  }
-
-  // If the brush is empty, select all circles.
-  function brushend() {
-    if (brush.empty()) {
-      var ctx = background.getContext('2d');
-      ctx.clearRect(0,0,width+1,height+1);
-      ctx.drawImage(buffer, 0,0);
-    }
-  }
-   // Render the fitted line
-  var draw_linear_regression = function() {
-    svg.select(".reg").remove();
-    svg.append('path')
-      .datum(function() {
-        var xValues = [], yValues = [];
-        var lin = ss.linear_regression()
-          .data(data_copy.map(function(d){ return d;}))
-          .line();
-        var lin_data = xScale.domain().map(function(x) {
-          return [xScale(x), yScale(lin(x))];
-        });
-        return lin_data; })
-      .attr('class', 'reg')
-      .style("stroke-dasharray", ("3, 3"))
-      .attr('d', d3.svg.line()
-        .interpolate('basis')
-        .x(function(d) { return d[0]; })
-        .y(function(d) { return d[1]; })
-      );
-  }
-  
-  
-  // Find the nodes within the specified rectangle.
-  function search(quadtree, x0, y0, x3, y3) {
-    quadtree.visit(function(node, x1, y1, x2, y2) {
-      var p = node.point;
-      if (p) {
-        if (p[0] >= x0 && p[0] < x3 && p[1] >= y0 && p[1] < y3) {
-          selected.push(data_dict[p]);
-        }
-      }
-      return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
-    });
-  } 
-
-  // Render the fitted line
-  var draw_loess = function(bandwidth) {
-    svg.select(".line").remove();
-    svg.append('path')
-      .datum(function() {
-        var xValues = [], yValues = [];
-        var loess = science.stats.loess();
-        loess.bandwidth(bandwidth);
-        for (var i in data_copy) {
-          xValues.push(data_copy[i][0]);
-          yValues.push(data_copy[i][1]);
-        }
-        var yValuesSmoothed = loess(xValues, yValues);
-        xValues = xValues.map(xScale);
-        yValuesSmoothed = yValuesSmoothed.map(yScale);
-        return d3.zip(xValues, yValuesSmoothed);
-      })
-      .attr('class', 'line')
-      .attr('d', d3.svg.line()
-        .interpolate('basis')
-        .x(function(d) { return d[0]; })
-        .y(function(d) { return d[1]; })
-      );
-  }
  
   for (var i=0, n=msg.x.length; i<n; i++ ) {
     var x = msg.x[i];
@@ -355,18 +182,42 @@ $(document).ready(function() {
   var bufferCtx = buffer.getContext("2d");
   bufferCtx.drawImage(background, 0, 0);
   
-  draw_loess(0.4);
-  draw_linear_regression();
+  draw_loess(loess_value, svg, data_copy, xScale, yScale);
+  draw_linear_regression(svg, data_copy, xScale, yScale);
+};
+
+$(document).ready(function() {
+
+  // Local Storage Brushing/Linking
+  //localStorage.clear();
+
+  msg = window.opener.gMsg;
+  var layer_uuid = msg.layer_uuid;
+  fieldX = msg.x_name;
+  fieldY = msg.y_name;
+      
+  $(window).bind('storage', function(e) {
+    var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
+    for ( var uuid in hl_ids ) {
+      var ids = hl_ids[uuid];
+      highlight(ids);
+    }
+  });
   
-   
+  viz = new d3viz($('#map-container'));
+  hbuffer = document.createElement("canvas");
+  buffer = document.createElement("canvas");
+  DrawPoints(); 
+
   $( "#slider" ).slider({
-    value: 0.40,
+    value: loess_value,
     min: 0.0,
     max: 1.0,
     step: 0.05,
     slide: function( event, ui ) {
       $( "#bandwidth" ).val( ui.value );
-      draw_loess( ui.value );
+      loess_value = ui.value;
+      draw_loess( loess_value );
     }
   });
   $( "#bandwidth" ).val( $( "#slider" ).slider( "value" ) );
@@ -374,19 +225,16 @@ $(document).ready(function() {
 });
 </script>
 <body>
-<div id="map-container" style="position: relative; text-align:center; border: 0px solid red;height: 100%; width: 100%;margin-top:100px;">
-  <canvas id="background" style="position: absolute; top: 0; left: 0;"></canvas>
-  <svg></svg>
-</div>
-
-
-<div id="selector" style="margin:10px 0px 0px 100px; float: left;">
+<div id="selector">
  <table><tr><td width=250>Change the bandwidth of fitted LOESS curve:</td>
  <td width=200><div id="slider"></div></td>
- <td><input type="text" id="bandwidth" readonly style="border:0; color:#f6931f; font-weight:bold;"></td>
+ <td><input type="text" id="bandwidth" readonly></td>
  </tr></table>
 </div>
-<div id="legend" style="margin-top:-60px;"></div>
+<div id="map-container"i>
+  <canvas id="background"></canvas>
+  <svg></svg>
+</div>
 </body>
 </body>
 </html>

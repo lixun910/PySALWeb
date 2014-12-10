@@ -728,6 +728,7 @@ $(document).ready(function() {
     evt.preventDefault();
     $("#"+evt.target.id).css("color", "#bbb");
     // Reset progress indicator on new file selection.
+    progress.style.opacity = 1;
     progress.style.width = '0%';
     progress.textContent = '0%';
     var reader = new FileReader();
@@ -810,7 +811,10 @@ $(document).ready(function() {
       // Ensure that the progress bar displays 100% at the end.
       progress.style.width = '100%';
       progress.textContent = '100%';
-      setTimeout("document.getElementById('progress_bar').className='';", 2000);
+      setTimeout(function(){
+        document.getElementById('progress_bar').className='';
+        progress.style.opacity = 0;
+      }, 2000);
     });
     
     // display map directly
@@ -1867,7 +1871,11 @@ $(document).ready(function() {
           "var": sel_var, 
           "w": sel_w,
         };
-        $.get('../lisa_map/', params, function(){
+        $.ajax({
+          timeout: 60000,
+          type: 'GET',
+          url: '../lisa_map/', 
+          data: params, 
         }).done(function(result){
           gMsg = result;
           gViz.PopupThematicMap();
