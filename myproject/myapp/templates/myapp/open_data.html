@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PySAL Web Beta</title>
+<link rel="stylesheet" href="{{url_prefix}}/media/css/portal.css" />
+<link rel="stylesheet" href="{{url_prefix}}/media/css/jquery.switchButton.css" />
+<link rel="stylesheet" href="{{url_prefix}}/media/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
+
+<script src="{{url_prefix}}/media/js/cartodb.js"></script>
+<script src="{{url_prefix}}/media/js/jquery.min.js"></script>
+<script src="{{url_prefix}}/media/js/d3.v3.min.js"></script>
+<script src="{{url_prefix}}/media/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script>
+    var csrftoken = '{{ csrf_token }}';
+    var url_prefix = '{{url_prefix}}';
+</script>
+</head>
+
+<body>
+<div class="awesome-bar" style="background:#038D98;">
+  <table class="toolbar_tbl" align="left" >
+    <tr>
+      <td width=180"><img id="logo" src="{{url_prefix}}/media/img/pysalweb-logo.png"></td>
+      <td>
+	Open Data      
+      </td>
+      <td class="righttd">
+        <img id="account" src="{{url_prefix}}/media/img/user.png" align="">
+        <font size="2" style="margin-top:-2px">{{userid}}</font>
+        <button id="btn_logout">logout</button>
+      </td>
+    </tr>
+  </table>
+</div>
+</body>
+</html>

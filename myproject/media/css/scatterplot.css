@@ -1,0 +1,55 @@
+html, body {
+  font: 11px sans-serif;
+  width: 90%;
+  height: 90%;
+}
+#selector {
+  height : 10%; 
+  width : 100%; 
+  vertical-align: text-top;
+}
+#map-container {
+  position: relative;
+  width: 90%;
+  height: 90%;
+}
+#background {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+svg {
+  position: relative;
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+.reg {
+  fill-opacity: 0;
+  stroke-width: 2;
+  stroke: blue;
+}
+.axis-rule {
+  fill: none;
+  shape-rendering: crispEdges;
+  stroke: #e0e0e0;
+  stroke-width: 2.5px;
+}
+.line {
+  fill-opacity: 0;
+  stroke-width: 4;
+  stroke: #C10000;
+}
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+#bandwidth {
+  border:0; 
+  color:#f6931f; 
+  font-weight:bold;
+}
