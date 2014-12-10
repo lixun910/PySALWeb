@@ -17,3 +17,5 @@ wingide.wpr
 
 *.cpg
 myproject/settings.py
+*.wpu
+wingide.wpu

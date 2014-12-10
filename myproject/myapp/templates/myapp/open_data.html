@@ -3,7 +3,55 @@
 <head>
 <meta charset="utf-8">
 <title>PySAL Web Beta</title>
-<link rel="stylesheet" href="{{url_prefix}}/media/css/portal.css" />
+<style>
+html, body {
+  width: 100%;
+  height: 100%;
+}
+body {
+  text-align: center;
+  font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+  font-size: 62.5%;
+  margin: 0;
+  padding: 0;
+  background: #038d98; /* Old browsers */
+background: -moz-linear-gradient(top,  #038d98 0%, #ffffff 99%); /* FF3.6+ */
+background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#038d98), color-stop(99%,#ffffff)); /* Chrome,Safari4+ */
+background: -webkit-linear-gradient(top,  #038d98 0%,#ffffff 99%); /* Chrome10+,Safari5.1+ */
+background: -o-linear-gradient(top,  #038d98 0%,#ffffff 99%); /* Opera 11.10+ */
+background: -ms-linear-gradient(top,  #038d98 0%,#ffffff 99%); /* IE10+ */
+background: linear-gradient(to bottom,  #038d98 0%,#ffffff 99%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#038d98', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+}
+
+#logo {
+  margin-top: 10px; 
+  margin-left: 20px;
+}
+#account {
+  padding-top: 2px; 
+}
+
+.toolbar_tbl {
+  margin-top: 4px; 
+  width: 98%;
+}
+.toolbar_tbl td {
+  font-size: 160%;
+  font-family: Verdana,Helvetica,Arial,sans-serif;
+  color: white;
+}
+.toolbar_tbl td.righttd{
+  text-align: right;
+}
+.header {
+}
+.content {
+  border: 1px solid red;
+  width: 100%;
+  bottom: 0px;
+}
+</style>
 <link rel="stylesheet" href="{{url_prefix}}/media/css/jquery.switchButton.css" />
 <link rel="stylesheet" href="{{url_prefix}}/media/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
 
@@ -18,12 +66,21 @@
 </head>
 
 <body>
-<div class="awesome-bar" style="background:#038D98;">
+<div class="header">
   <table class="toolbar_tbl" align="left" >
     <tr>
       <td width=180"><img id="logo" src="{{url_prefix}}/media/img/pysalweb-logo.png"></td>
-      <td>
-	Open Data      
+      <td width=100>
+	ESDA      
+      </td>
+      <td width=100>
+	<font color="#ffaf4b">Open Data</font>
+      </td>
+      <td width=80>
+	APIs      
+      </td>
+      <td width=100>
+	Documents
       </td>
       <td class="righttd">
         <img id="account" src="{{url_prefix}}/media/img/user.png" align="">
@@ -32,6 +89,8 @@
       </td>
     </tr>
   </table>
+</div>
+<div class="content">
 </div>
 </body>
 </html>

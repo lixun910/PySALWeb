@@ -9,14 +9,13 @@ urlpatterns = patterns('',
 )
                        
 urlpatterns += patterns('myproject.myapp.views',
-    url(r'^test/$', 'test', name='test'),
+    url(r'^test/$', TemplateView.as_view(template_name='myapp/open_data.html')),
     url(r'^dup_email/$', 'dup_email', name='dup email'),
     url(r'^signup/$', 'my_signup', name='signup'),
     url(r'^login/$', 'my_login', name='login'),
     url(r'^logout/$', 'my_logout', name='logout'),
     url(r'^save_pdf/$', 'save_pdf', name='save textarea to pdf'),
     #url(r'^list/$', 'list', name='list'),
-    #url(r'^main/$', TemplateView.as_view(template_name='myapp/main.html')),
     url(r'^main/$','main', name='main'), 
 ) 
 
