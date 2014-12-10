@@ -149,6 +149,10 @@ border: 1px solid #aaa;margin: 1px 10px;
   font-family: Verdana,Helvetica,Arial,sans-serif;
   color: white;
 }
+.title_link{
+  color: #FFFFFF;
+  text-decoration: none;
+}
 .toolbar_tbl td.righttd{
   text-align: right;
 }

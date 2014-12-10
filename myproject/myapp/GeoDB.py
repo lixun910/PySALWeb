@@ -35,7 +35,7 @@ def ExportToDB(shp_path, layer_uuid, geom_type):
         if sys.platform == 'win32':
             script = 'ogr2ogr -skipfailures -append -f "PostgreSQL" -overwrite PG:"host=%s dbname=%s user=%s password=%s" %s -nln %s -nlt GEOMETRY -lco PRECISION=NO'  % (db_host, db_name, db_uname, db_upwd, shp_path, table_name)
         else:
-            script = 'ogr2ogr -skipfailures -append -f "PostgreSQL" -overwrite PG:"host=%s dbname=%s user=%s password=%s" %s -nln %s -nlt GEOMETRY -lco PRECISION=NO > /dev/null'  % (db_host, db_name, db_uname, db_upwd, shp_path, table_name)
+            script = 'export PGCLIENTENCODING="LATIN1";ogr2ogr -skipfailures -append -f "PostgreSQL" -overwrite PG:"host=%s dbname=%s user=%s password=%s" %s -nln %s -nlt GEOMETRY -lco PRECISION=NO > /dev/null'  % (db_host, db_name, db_uname, db_upwd, shp_path, table_name)
         print script
         rtn = subprocess.call(script, shell=True)
     else:

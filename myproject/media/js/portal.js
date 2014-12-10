@@ -111,11 +111,13 @@ var ShowExistMap = function(uuid, json_path) {
   });
 };
   
-var ShowNewMap = function(o, type, noForeground) {
-    SetupLeafletMap();
+var ShowNewMap = function(o, type, noForeground, recall) {
+    if (recall == undefined) {
+      SetupLeafletMap();
+    }
     if ( gHasProj && gPrj == undefined) {
       // wait for reading *.prj file 
-      setTimeout(function(){ShowNewMap(o, type, noForeground);}, 10);  
+      setTimeout(function(){ShowNewMap(o, type, noForeground, true);}, 10);  
     } else {
       $('#map').show();
       if (noForeground==undefined) {
@@ -511,6 +513,8 @@ $(document).ready(function() {
       gProjectOpen = false;
       CleanLeafletMap();
       ToggleToolbarButtons(false);
+      gAddLayer = false;
+      $('#img-open-dlg').attr('src',url_prefix+"/media/img/add-file.png");
       $('#dialog-open-file').dialog('option','title',"Let's get started");
       $('#dialog-open-file').dialog('open');
     }
@@ -604,17 +608,6 @@ $(document).ready(function() {
           } else {
             ShowCartoDBMap(carto_uid, carto_key, table_name, geo_type) ;
           } 
-        } else if (sel_id == 4) {
-          var socrata_url = $('#txt-socrata-url').val();
-          $.post("./cgi-bin/download_json.py", {url:socrata_url}, function(){
-            $('#progress_bar_openfile').show();
-          })
-          .done(function( data ) {
-            var uuid = data['uuid'];
-            $('#progress_bar_openfile').hide();
-            gHasProj = true;
-            showLeafletMap(uuid);
-          });
         } 
       },
     },{
