@@ -65,6 +65,9 @@ button {
   padding-top:4px;
   z-index:3;
 }
+#panImg {
+  cursor: hand;
+}
 </style>
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places"></script>
 <script src="../../media/js/jquery.min.js"></script>
@@ -74,8 +77,6 @@ button {
 <script>
 var csrftoken = '{{ csrf_token }}';
 var url_prefix = '{{url_prefix}}';
-var keywords = 'Liquor Store';
-var area = 'Chicago, IL';
 var searchBox;
 
 var PanGoogle = function() {
@@ -171,6 +172,30 @@ $(document).ready(function() {
   $('#map-close').hide().click(function(){
     NoPanGoogle();
   });
+
+  $('#submit_google_search').click(function(){
+    var q = $('#pac-input').val(),
+        top = $('#top').val(),
+        bottom = $('#bottom').val(),
+        left = $('#left').val(),
+        right = $('#right').val(),
+        key = $('#google-key').val(),
+        name = $('#google-filename').val();
+    if (!q || !top || !bottom || !left || !right || !key || !name) {
+      ShowMsgBox("", "Please fill all required items before submit.");
+      return;
+    }
+    var params = {
+      'q' : q,
+      'bounds' : ((top, right), (bottome, left)),
+      'key' : key,
+      'name' : name,
+    };
+    $.get('../open_data_google/', params).done(function(data) {
+      $('#pac-input, #top, #bottom, #left, #right, #google-key, #google-filename').val('');
+      ShowMsgBox("", "Search job [" + data.search_name + "] was created successfully. Please check the status in 'Check the status of exiting search'");
+     });
+  });
 });
 </script>
 
@@ -253,8 +278,8 @@ $(document).ready(function() {
                             <p style="margin-left:100px;">
                               Bottom: <input type="text" size="20" id="bottom" name="bottom" value="38.885851">
                             </p>
-                          </div>
-                            Click <img onclick="PanGoogle();" src="../../media/img/pan.png"> to automatically fill the bounding box by panning/zooming the right side Google Map.
+                          </div><br/>
+                            Click <img id="panImg" onclick="PanGoogle();" src="../../media/img/pan.png"> to automatically fill the bounds by panning/zooming the right side Google Map.
                           <br/><br/><br/>
                           <input type="radio" name="group1" id="search2">Or, search in a map(polygon) layer: <select id="sel-poly-layer"></select>
                         </p>
@@ -264,12 +289,12 @@ $(document).ready(function() {
                       <div>
                         <p>Great! You already defined your search keywords and specified the search area. Please input your Google Maps API, and we will use your API to retrieve data from Google Maps. The results will be stored in your spatial data space.</p>
                         <p>
-                          Your Google Maps API key: <br/><input id="google-key-input" type="text" size=45>
+                          Your Google Maps API key: <br/><input id="google-key" type="text" size=45>
                         </p>
                         <p>
-                          Input a spatial table name for storing the searching data: <br/><input id="table-name-input" type="text" size=45>
+                          Input a spatial table name for storing the searching data: <br/><input id="google-filename" type="text" size=45>
                         </p>
-                        <p><button type="button">Submit my search request</button></p> 
+                        <p><button type="button" id="submit_google_search">Submit my search request</button></p> 
                       </div>
                     </div>
                   </div> 
