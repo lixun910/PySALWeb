@@ -47,28 +47,28 @@
 <div class="header">
   <table class="toolbar_tbl" align="left" >
     <tr>
-      <td width=180"><img id="logo" src="../../media/img/pysalweb-logo.png"></td>
-      <td width=80>
-        <a class="title_link" href="../main/" target="_blank">ESDA</a>
+      <td width=160"><img id="logo" src="../../media/img/pysalweb-logo.png"></td>
+      <td width=160>
+        <a class="title_link" href="../main/" target="_blank">Spatial Analysis</a>
       </td>
       <td width=120>
-        <font color="#ffaf4b">Open Data</font>
+        <a class="title_link" class="" href="../open_data/" target="_blank">Open Data</a>
       </td>
       <td width=70>
-        <a class="title_link" class="" href="../open_data/" target="_blank">APIs</a>
+        <a class="title_link" class="" href="#" target="_blank">APIs</a>
       </td>
       <td width=120>
-        <a class="title_link" href="../open_data/" target="_blank">Documents</a>
+        <a class="title_link" href="#" target="_blank">Documents</a>
       </td>
       <td width=100>
-        <a class="title_link" href="../open_data/" target="_blank">My Account</a>
+        <a class="title_link" href="#" target="_blank">My Account</a>
       </td>
       <td class="righttd"></td>
     </tr>
   </table>
 </div>
 <div class="content">
-  <div class="tabs" style="width: 40%;">
+  <div class="tabs" style="padding-left: 0px;width:50%;">
     <ul class="tab-links">
       <li class="active"><a href="#tab1">Login to PySAL-Cloud</a></li>
       <li><a href="#tab2">No account? Sign Up</a></li>
@@ -76,19 +76,6 @@
 
     <div class="tab-content" style="width:400px; height:400px;">
       <div id="tab1" class="tab active" style="text-align: left;">
-        <p>
-          <img src="../../media/img/login-facebook.png">
-        </p>
-        <p>
-          <img src="../../media/img/login-twitter.png">
-        </p>
-        <p>
-          <img src="../../media/img/login-google.png">
-        </p>
-        <br>
-        <p style="border-bottom: 1px solid #ccc">
-          Or, login with your email address:
-        </p>
         <p>
           <form id="form-login" method="post">{% csrf_token %}
           <table class="logintable">
@@ -109,9 +96,23 @@
           {% endif %}
           </form>
         </p>
+        <br/><br/>
+        <p style="border-top: 1px solid #ccc">
+        </p>
+        <p style="text-align:center">
+          <img src="../../media/img/login-facebook.png">
+        </p>
+        <p style="text-align:center">
+          <img src="../../media/img/login-twitter.png">
+        </p>
+        <p style="text-align:center">
+          <img src="../../media/img/login-google.png">
+        </p>
+        <br>
       </div>
 
       <div id="tab2" class="tab" style="text-align: left;">
+        <br/><br/><br/>
         <form id="form-signup" method="post" action="../signup/">{% csrf_token %}
           <table class="signuptable" width="400px">
             <tr>
@@ -123,7 +124,7 @@
             </tr>
             <tr>
               <td>
-                <input style="width:268px" type="text" name="email" value='Email'></input>
+                <input style="width:290px" type="text" name="email" value='Email'></input>
                 <img id="img-id-chk" src="{{url_prefix}}/media/img/checkmark.png">
                 <img id="img-id-nochk" src="{{url_prefix}}/media/img/uncheckmark.gif">
                 <img id="img-id-spin" src="{{url_prefix}}/media/img/loading_small.gif">
@@ -132,27 +133,29 @@
             </tr>
             <tr>
               <td>
-                <input style="width:268px" type="text" name="reemail" value='Re-enter Email'></input>
+                <input style="width:290px" type="text" name="reemail" value='Re-enter Email'></input>
               </td>
               <td><p id="chk_reemail_msg" style="margin-left: -180px;font-size:10px;font-family: Century Gothic;color: red; "></p></td>
             </tr>
             <tr>
               <td>
-                <input style="width:268px" type="text" name="password" value='Enter Password'> </input>
+                <input style="width:290px" type="text" name="password" value='Enter Password'> </input>
               </td>
               <td><p id="chk_pwd_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
             </tr>
           </table>
           <br/>
-          <font style="font-size:10px" face="Century Gothic"> &nbsp;&nbsp;By clicking Sign Up, you agree to our Terms and Policy.</font>
+          &nbsp;&nbsp;<img id="account" src="../../media/img/user.png" align=""><font style="font-size:10px" face="Century Gothic"> By clicking Sign Up, you agree to our Terms and Policy.</font>
           <p class="text-align:right;">
           <button id="btn_signup" type="submit" class="ui-state-default button-text-only" style="width:100">Sign Up</button>
           </p>
         </form>
       </div>
-    </div>
+    <br/><br/><br/><br/><br/>
+    <br/><br/><br/><br/><br/>
     <br/><br/><br/><br/><br/>
     <img src="https://geodacenter.asu.edu/drupal_files/geoda_logo.png"><br/>
+    </div>
 </div>
 <script>
 $(document).ready(function() {

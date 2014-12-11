@@ -3,32 +3,175 @@
 <head>
 <meta charset="utf-8">
 <title>PySAL Web Beta</title>
-<style>
-</style>
 <link rel="stylesheet" href="../../media/css/header.css" />
 <link rel="stylesheet" href="../../media/css/tabs.css" />
 <link rel="stylesheet" href="../../media/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
 
-<script src="../../media/js/cartodb.js"></script>
+<style>
+button {
+  cursor: pointer;
+    padding: 4px 7px 3px 7px;
+    overflow: visible;
+    border: 1px solid #5c9d1f;
+
+    /* Text */
+    color: #FFFFFF;
+    font-weight: bold;
+    font-size: 0.9em;
+    font-family: arial,helvetica,sans-serif;
+  
+    /* Fallback colors and background */
+    background-color: #5b9c1e; 
+    background-image: url(#{path.css('../images/buttons/bg_gradient.gif')});
+
+    /* CSS3 Gradient */
+    background-image: -moz-linear-gradient(100% 100% 90deg, #5b9c1e, #80c242);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#80c242), to(#5b9c1e));
+
+    /* CSS3 Radius */
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    border-radius: 6px;
+
+    /* CSS3 Shadow */
+    -moz-box-shadow: 0px 2px 3px #999999;
+    -webkit-box-shadow: 0px 2px 3px #999999;
+    box-shadow: 0px 2px 3px #999999;
+}
+#google-open-data-accordion .ui-accordion-content {
+  max-height: 500px;
+}
+.overlay {
+  position: absolute; 
+  top:0; 
+  left:0;
+  width:100%;
+  height:100%;
+}
+#map-canvas {
+  opacity:1;
+  z-index:1;
+}
+#google-frame {
+  border:0;
+  z-index:2;
+}
+#map-cover {
+  position:absolute; bottom:0px; right:0; width:50px; height:100px; opacity:0; z-index:3;
+}
+#map-close {
+  position:absolute; top:0px; right:0; width:150px; height:25px;
+  margin-top:-25px;
+  padding-top:4px;
+  z-index:3;
+}
+</style>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places"></script>
 <script src="../../media/js/jquery.min.js"></script>
 <script src="../../media/js/jquery-ui-1.10.4.custom.min.js"></script>
 <script src="../../media/js/d3.v3.min.js"></script>
+<script src="../../media/js/msgbox.js"></script>
 <script>
-  var csrftoken = '{{ csrf_token }}';
-  var url_prefix = '{{url_prefix}}';
-  jQuery(document).ready(function() {
-      jQuery('.tabs .tab-links a').on('click', function(e)  {
-          var currentAttrValue = jQuery(this).attr('href');
-   
-          // Show/Hide Tabs
-          jQuery('.tabs ' + currentAttrValue).fadeIn(400).siblings().hide();
-   
-          // Change/remove current tab to active
-          jQuery(this).parent('li').addClass('active').siblings().removeClass('active');
-   
-          e.preventDefault();
-      });
+var csrftoken = '{{ csrf_token }}';
+var url_prefix = '{{url_prefix}}';
+var keywords = 'Liquor Store';
+var area = 'Chicago, IL';
+var searchBox;
+
+var PanGoogle = function() {
+  $('#map-canvas').css('z-index', 2);
+  $('#map-canvas').css('opacity', 1);
+  $('#google-frame').css('z-index', 1);
+  $('#google-frame').css('opacity', 0);
+  $('#map-close').show();
+};
+ 
+var NoPanGoogle = function() {
+  $('#map-canvas').css('z-index', 1);
+  $('#map-canvas').css('opacity', 0);
+  $('#google-frame').css('z-index', 2);
+  $('#google-frame').css('opacity', 1);
+  $('#map-close').hide();
+};
+var TestGoogleSearch = function() {
+  var q = $('#pac-input').val(),
+      iframe = $('#google-frame');
+  var loc = "https://www.google.com/maps/embed/v1/search?key=AIzaSyBDqDw7hBlO0EkzlbYeiP3UpS2jpEzSDfE&q=" + q;
+  iframe.attr('src', loc);  
+};
+
+var UpdateBounds = function(bounds) {
+    var ne = bounds.getNorthEast();
+    var sw = bounds.getSouthWest();
+    $('#top').val(ne.lat());
+    $('#bottom').val(sw.lat());
+    $('#left').val(sw.lng());
+    $('#right').val(ne.lng());
+};
+
+$(document).ready(function() {
+  $('#dlg-msg').hide();
+  $('.tabs .tab-links a').on('click', function(e)  {
+    var currentAttrValue = $(this).attr('href');
+    // Show/Hide Tabs
+   $('.tabs ' + currentAttrValue).fadeIn(400).siblings().hide();
+
+   // Change/remove current tab to active
+   $(this).parent('li').addClass('active').siblings().removeClass('active');
+
+   e.preventDefault();
   });
+  $('#google-open-data-accordion').accordion({
+    collapsible: true,
+    autoHeight: false,
+    navigation: true
+  });
+  $('#google-tabs').tabs();
+  $('#top, #left, #right, #bottom').prop('disabled', false);
+  $('#sel-poly-layer').prop('disabled', true);
+
+  $('#search1').change(function(){
+    $('#top, #left, #right, #bottom').prop('disabled', false);
+    $('#sel-poly-layer').prop('disabled', true);
+  });
+
+  $('#search2').change(function(){
+    $('#top, #left, #right, #bottom').prop('disabled', true);
+    $('#sel-poly-layer').prop('disabled', false);
+  });
+
+  // setup google map for setting bbox
+  var map = new google.maps.Map(document.getElementById('map-canvas'), {
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  });
+  var defaultBounds = new google.maps.LatLngBounds(
+      new google.maps.LatLng(-33.8902, 151.1759),
+      new google.maps.LatLng(-33.8474, 151.2631));
+  map.fitBounds(defaultBounds);
+  var input = document.getElementById('pac-input');
+  searchBox = new google.maps.places.SearchBox((input));
+  google.maps.event.addListener(searchBox, 'places_changed', function() {
+    TestGoogleSearch();
+    var places = searchBox.getPlaces();
+    if (places.length == 0) {
+      return;
+    }
+    var bounds = new google.maps.LatLngBounds();
+    for (var i = 0, place; place = places[i]; i++) {
+      bounds.extend(place.geometry.location);
+    }
+    UpdateBounds(bounds);
+    map.fitBounds(bounds);
+  });
+  google.maps.event.addListener(map, 'bounds_changed', function() {
+    var bounds = map.getBounds();
+    UpdateBounds(bounds);
+    searchBox.setBounds(bounds);
+  });
+  $('#map-close').hide().click(function(){
+    NoPanGoogle();
+  });
+});
 </script>
 
 </head>
@@ -37,9 +180,9 @@
 <div class="header">
   <table class="toolbar_tbl" align="left" >
     <tr>
-      <td width=180"><img id="logo" src="../../media/img/pysalweb-logo.png"></td>
-      <td width=80>
-        <a class="title_link" href="../main/" target="_blank">ESDA</a>
+      <td width=160"><img id="logo" src="../../media/img/pysalweb-logo.png"></td>
+      <td width=160>
+        <a class="title_link" href="../main/" target="_blank">Spatial Analysis</a>
       </td>
       <td width=120>
         <font color="#ffaf4b">Open Data</font>
@@ -71,27 +214,95 @@
     </ul>
  
     <div class="tab-content">
-        <div id="tab1" class="tab active">
+        <div id="tab1" class="tab">
             <p>Tab #1 content goes here!</p>
             <p>Tab #1 content goes here!</p>
         </div>
  
-        <div id="tab2" class="tab">
-            <p>Tab #2 content goes here!</p>
-            <p>Tab #1 content goes here!</p>
+        <div id="tab2" class="tab active">
+          <table width='100%' height=650>
+            <tr>
+              <td width=560 align='left' valign='top'>
+                <div id="google-tabs" style="height:600px">
+                  <ul>
+                    <li><a href="#google-tabs-1">Start a new search?</a></li>
+                    <li><a href="#google-tabs-2">Check the status of existing search?</a></li>
+                  </ul>
+                  <div id="google-tabs-1"> 
+                    <div id="google-open-data-accordion">
+                      <h3>Step 1</h3>
+                      <div>
+                        <p> Please try to search the objects in a specific area in Google Maps. You can determine your search <b>keywords</b>, and the <b>search area</b> in this step.</p>
+                        <input id="pac-input" type="text" placeholder="Keywords (e.g. Liquor Stores in Chicago, AZ)" size=55> 
+                        <br/><br/>
+                        (Results will be shown in right Google Map)
+                      </div>
+                      <h3>Step 2</h3>
+                      <div>
+                        <p>Please specify the search area in details by either define a searching box or using a map layer (ShapeType=Polygon)</p>
+                        <p>
+                          <input type="radio" name="group1" id="search1" checked>Search in a bounding box<br>
+                           <div style="margin-left:20px;border:1px solid #000000;width:400px;padding-left:40px;">
+                            <p style="margin-left:100px;">
+                              Top: <input type="text" size="20" id="top" name="top" value="38.900881">
+                            </p>
+                            <p>
+                              Left: <input type="text" size="20" id="left" name="left" value="-77.041579">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                              Right: <input type="text" size="20" id="right" name="right" value="-77.007247">
+                            </p>
+                            <p style="margin-left:100px;">
+                              Bottom: <input type="text" size="20" id="bottom" name="bottom" value="38.885851">
+                            </p>
+                          </div>
+                            Click <img onclick="PanGoogle();" src="../../media/img/pan.png"> to automatically fill the bounding box by panning/zooming the right side Google Map.
+                          <br/><br/><br/>
+                          <input type="radio" name="group1" id="search2">Or, search in a map(polygon) layer: <select id="sel-poly-layer"></select>
+                        </p>
+                        <br/><br/><br/>
+                      </div>
+                      <h3>Step 3</h3>
+                      <div>
+                        <p>Great! You already defined your search keywords and specified the search area. Please input your Google Maps API, and we will use your API to retrieve data from Google Maps. The results will be stored in your spatial data space.</p>
+                        <p>
+                          Your Google Maps API key: <br/><input id="google-key-input" type="text" size=45>
+                        </p>
+                        <p>
+                          Input a spatial table name for storing the searching data: <br/><input id="table-name-input" type="text" size=45>
+                        </p>
+                        <p><button type="button">Submit my search request</button></p> 
+                      </div>
+                    </div>
+                  </div> 
+                  <div id="google-tabs-2"> 
+                  </div> 
+                </div>
+              </td>
+              <td width=20></td>
+              <td style="position:relative;">
+                <div class="overlay" id="map-canvas" ></div>
+                <iframe id='google-frame' class="overlay" src="https://www.google.com/maps/embed/v1/search?key=AIzaSyBDqDw7hBlO0EkzlbYeiP3UpS2jpEzSDfE&q=liquor store in chicago, IL" width="100%" height="100%" frameborder="0"></iframe>
+                <div id="map-cover"></div>
+                <button type="button" id="map-close">Switch to search results</button>
+              </td>
+            </tr>
+          </table>
         </div>
  
         <div id="tab3" class="tab">
             <p>Tab #3 content goes here!</p>
-            <p>Donec pulvinar neque sed semper lacinia. Curabitur lacinia ullamcorper nibh; quis imperdiet velit eleifend ac. Donec blandit mauris eget aliquet lacinia! Donec pulvinar massa interdum risus ornare mollis. In hac habitasse platea dictumst. Ut euismod tempus hendrerit. Morbi ut adipiscing nisi. Etiam rutrum sodales gravida! Aliquam tellus orci, iaculis vel.</p>
         </div>
  
         <div id="tab4" class="tab">
             <p>Tab #4 content goes here!</p>
-            <p>Donec pulvinar neque sed semper lacinia. Curabitur lacinia ullamcorper nibh; quis imperdiet velit eleifend ac. Donec blandit mauris eget aliquet lacinia! Donec pulvinar massa interdum ri.</p>
         </div>
     </div>
 </div>
+</div>
+<div id="dlg-msg" title="Message">
+  <div class="text-align:left;">
+    <p class="font-weight:bold;" id="msg-title"></p>
+    <p id="msg-content" class="text-align:left;"></p>
+  </div>
 </div>
 </body>
 </html>

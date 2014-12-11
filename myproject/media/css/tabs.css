@@ -48,6 +48,9 @@ border-radius:3px;
 box-shadow:-1px 1px 1px rgba(0,0,0,0.15);
 background:#fff;
 height: 700px; 
+  -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
+  -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
+  box-shadow: 0 14px 18px rgba(0,0,0,0.5);
 }
 
 .tab {
