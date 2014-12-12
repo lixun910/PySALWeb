@@ -14,6 +14,7 @@ import logging, os, zipfile, shutil, time
 from hashlib import md5
 from views_utils import *
 from views_utils import _save_new_shapefile
+import multiprocessing as mp
 import google
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ def open_data(request):
         context_instance=RequestContext(request)
     )
 
-def job_google_search(userid, uuid, q,bounds,apikey, name, opath):
+def job_google_search(userid, uuid, q,bounds,apikey, name, opath,k=3):
     start_time = time.time()
     from myproject.myapp.models import Jobs
     job = Jobs.objects.get(uuid=uuid)
@@ -57,7 +58,7 @@ def job_google_search(userid, uuid, q,bounds,apikey, name, opath):
     from django.db import connection 
     connection.close()
     status = google.googlept(
-        bounds, q, apikey, lonx=False, bbox=True, k=3, ofile=opath
+        bounds, q, apikey, lonx=False, bbox=True, k=k, ofile=opath
     )
     end_time = time.time()
     try: 
@@ -96,7 +97,8 @@ def google_search(request):
         bottom = request.GET.get("bottom", None)
         gkey = request.GET.get("gkey", None)
         name = request.GET.get("name", None)
-        if q and left and right and top and bottom and gkey and name:
+        k = request.GET.get("k", None)
+        if q and left and right and top and bottom and gkey and name and k:
             bounds = [(float(top),float(left)), (float(bottom), float(right))]
             uuid = md5(q + name).hexdigest()
             result = {'success':0}
@@ -130,14 +132,15 @@ def google_search(request):
                     settings.MEDIA_ROOT, 'temp', md5(userid).hexdigest(), 
                     name+".json"
                 )
-                """
+                k = int(k)
                 job_google_search(userid, uuid, q, bounds, gkey, name, 
-                                 output_path)
+                                 output_path, k=k)
                 """
                 mp.Process(
                     target=job_google_search, 
-                    args=(userid, uuid,q,bounds,gkey,name, output_path)
+                    args=(userid, uuid,q,bounds,gkey,name, output_path,k)
                 ).start()
+                """
                 result["success"] = 1
                 return HttpResponse(
                     json.dumps(result),

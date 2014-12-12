@@ -21,6 +21,10 @@ d2r = lambda x: x * math.pi / 180.0
 # radian to degree conversion
 r2d = lambda x: x * 180.0 / math.pi
 
+def haversine(x):
+    x = math.sin(x/2)
+    return x*x
+
 def radangle(p0,p1):
     x0, y0 = d2r(p0[0]),d2r(p0[1])
     x1, y1 = d2r(p1[0]),d2r(p1[1])
@@ -220,8 +224,7 @@ def googlepoints(querypoints,apikey,sradius,q,newid=False,verbose=True):
             if data['status'] == 'OVER_QUERY_LIMIT':
                 return data['status'], findings
             if verbose:
-                #print data['status'], len(results)
-                pass
+                print data['status'], len(results)
             if len(results) == 200:
                 status = 'FINER_QUERY_NEEDED'
                 print "WARNING: query truncated at 200"

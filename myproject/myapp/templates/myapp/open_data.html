@@ -348,12 +348,13 @@ $(document).ready(function() {
         left = $('#left').val(),
         right = $('#right').val(),
         key = $('#google-key').val(),
+        k = $('#google-k').val(),
         name = $('#google-filename').val();
-    if (!keywords || !area || !top || !bottom || !left || !right || !key || !name) {
+    if (!keywords || !area || !top || !bottom || !left || !right || !key || !name || !k) {
       ShowMsgBox("", "Please fill all required items before submit.");
       return;
     }
-    if (/^[A-Za-z0-9]*$/.test(name)) {
+    if (/^[A-Za-z0-9]*$/.test(name)==false) {
       ShowMsgBox("", "The name of searching data is not valid. Note: only valid characters (e.g a-z A-Z 0-9) are allowed");
       return;
     }
@@ -372,6 +373,7 @@ $(document).ready(function() {
       'bounds' : [[top, right], [bottom, left]],
       'gkey' : key,
       'name' : name,
+      'k' : k,
     };
     $.get('../google_search/', params).done(function(data) {
       if ('error' in data) {
@@ -593,6 +595,9 @@ $(document).ready(function() {
                       <h3>Step 3</h3>
                       <div>
                         <p>Great! You already defined your search keywords and specified the search area. Please input your Google Maps API, and we will use your API to retrieve data from Google Maps. The results will be stored in your spatial data space.</p>
+                        <p>
+                          Input the size of grid (N x N)that we will use to divide the search area into small piecies for searching. N=<input id="google-k" type="text" size=10 value="3">
+                        </p>
                         <p>
                           Your Google Maps API key: <br/><input id="google-key" type="text" size=45 value="{{google_key}}">
                         </p>
