@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>PySAL Web Beta</title>
 <link rel="stylesheet" href="../../media/css/header.css" />
+<link rel="stylesheet" href="../../media/css/pure-min.css" />
 <link rel="stylesheet" href="../../media/css/tabs.css" />
 <link rel="stylesheet" href="../../media/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
 
@@ -69,16 +70,21 @@ button {
   cursor: hand;
 }
 div#column1, div#column2, div#column3, div#column4, div#column5 {
-        float:left;
-        width:250px;
-      }
+  float:left;
+  width:250px;
+}
 
-      div#column1 li, div#column2 li, div#column3 li, div#column4 li, div#column5 li {
-        list-style-type: none;
-      }
+div#column1 li, div#column2 li, div#column3 li, div#column4 li, div#column5 li {
+  list-style-type: none;
+}
 .ui-autocomplete {
   text-align: left;
 }
+td.status0 {color: yellow;}
+td.status1 {color: yellow;}
+td.status2 {color: blue;}
+td.status3 {color: green;}
+td.status4 {color: red;}
 </style>
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places"></script>
 <script src="../../media/js/jquery.min.js"></script>
@@ -219,8 +225,47 @@ var UpdateBounds = function(bounds) {
     $('#right').val(ne.lng());
 };
 
+var GetJobs = function() {
+  $.get('../get_jobs/', {'type':'google_search'}).done(function(data){
+    if ('success' in data) {
+      return; 
+    }
+    var table = '<table class="pure-table pure-table-bordered" style="font: normal medium/1.4 sans-serif;">';
+    table += '<thead><tr><td>job name</td><td>job status</td><td>job time (minutes)</td><td>job log</td></tr></thead>';
+    table += '<tbody>';
+    for (var i=0, n=data.length; i<n; i++) {
+      var item = data[i],
+          stat = item.status;
+      var stat_str = "";
+      if (stat == 0) {
+        stat_str = "Init"
+      } else if (stat == 1){
+        stat_str = "Pending"
+      } else if (stat == 2){
+        stat_str = "Working"
+      } else if (stat == 3){
+        stat_str = "Complete"
+      } else if (stat == 4){
+        stat_str = "Error"
+      }
+      table += '<tr><td>'+item.name+'</td>';
+      table += '<td class="status'+stat+'">'+stat_str+'</td>';
+      table += '<td>'+item.time+'</td>';
+      table += '<td>'+item.log+'</td>';
+      table += '</tr>';
+    }
+    table += '</tbody>';
+    table += '</table>';
+    $('#google-jobs').empty().append(table);
+  });
+};
+
 $(document).ready(function() {
-  $('#dlg-msg').hide();
+  $( "#dlg-msg" ).dialog({
+    dialogClass: "dialogWithDropShadow",
+    width: 400, height: 200, autoOpen: false, modal: true,
+    buttons: {OK: function() {$( this ).dialog( "close" );}}
+  }).hide();
   $('#keywords').autocomplete({
     source: google_types
   });
@@ -308,11 +353,15 @@ $(document).ready(function() {
       ShowMsgBox("", "Please fill all required items before submit.");
       return;
     }
+    if (/^[A-Za-z0-9]*$/.test(name)) {
+      ShowMsgBox("", "The name of searching data is not valid. Note: only valid characters (e.g a-z A-Z 0-9) are allowed");
+      return;
+    }
     var q = ''; 
     if (google_types.indexOf(keywords)==-1) {
       q = 'name=' + keywords;
     } else {
-      q = 'type=' + keywords;
+      q = 'types=' + keywords;
     }
     var params = {
       'q' : q,
@@ -325,10 +374,19 @@ $(document).ready(function() {
       'name' : name,
     };
     $.get('../google_search/', params).done(function(data) {
-      $('#pac-input, #keywords, #area, #top, #bottom, #left, #right, #google-key, #google-filename').val('');
-      ShowMsgBox("", "Search job [" + data.search_name + "] was created successfully. Please check the status in 'Check the status of exiting search'");
+      if ('error' in data) {
+        ShowMsgBox("Error", data['error']);
+        return;
+      }
+      //$('#pac-input, #keywords, #area, #top, #bottom, #left, #right, #google-key, #google-filename').val('');
+      ShowMsgBox("", "Search job was created successfully. Please check the status in 'Check the status of exiting search'");
+      $('#google-tabs').tabs({selected: 1});
      });
   });
+  $('#google-jobs-refresh').click(function(){
+    GetJobs();
+  });
+  GetJobs();
 });
 </script>
 
@@ -398,116 +456,116 @@ $(document).ready(function() {
                         <input id="pac-input" type="hidden" placeholder="Keywords (e.g. Liquor Stores in Chicago, AZ)" size=55> 
                         <br/><br/>
                         Tips: Keywords supported by Google Maps
-<table>
- <tr><td>
-  <ul>
-    <li><code>accounting</code></li>
-    <li><code>airport</code></li>
-    <li><code>amusement_park</code></li>
-    <li><code>aquarium</code></li>
-    <li><code>art_gallery</code></li>
-    <li><code>atm</code></li>
-    <li><code>bakery</code></li>
-    <li><code>bank</code></li>
-    <li><code>bar</code></li>
-    <li><code>beauty_salon</code></li>
-    <li><code>bicycle_store</code></li>
-    <li><code>book_store</code></li>
-    <li><code>bowling_alley</code></li>
-    <li><code>bus_station</code></li>
-    <li><code>cafe</code></li>
-    <li><code>campground</code></li>
-    <li><code>car_dealer</code></li>
-    <li><code>car_rental</code></li>
-    <li><code>car_repair</code></li>
-    <li><code>car_wash</code></li>
-    <li><code>casino</code></li>
-    <li><code>cemetery</code></li>
-    <li><code>church</code></li>
-    <li><code>city_hall</code></li>
-    <li><code>clothing_store</code></li>
-    <li><code>convenience_store</code></li>
-    <li><code>courthouse</code></li>
-    <li><code>dentist</code></li>
-    <li><code>department_store</code></li>
-    <li><code>doctor</code></li>
-    <li><code>electrician</code></li>
-    <li><code>electronics_store</code></li>
-  </ul>
-</td>
-<td>
-  <ul>
-    <li><code>embassy</code></li>
-    <li><code>establishment</code></li>
-    <li><code>finance</code></li>
-    <li><code>fire_station</code></li>
-    <li><code>florist</code></li>
-    <li><code>food</code></li>
-    <li><code>funeral_home</code></li>
-    <li><code>furniture_store</code></li>
-    <li><code>gas_station</code></li>
-    <li><code>general_contractor</code></li>
-    <li><code>grocery_or_supermarket</code></li>
-    <li><code>gym</code></li>
-    <li><code>hair_care</code></li>
-    <li><code>hardware_store</code></li>
-    <li><code>health</code></li>
-    <li><code>hindu_temple</code></li>
-    <li><code>home_goods_store</code></li>
-    <li><code>hospital</code></li>
-    <li><code>insurance_agency</code></li>
-    <li><code>jewelry_store</code></li>
-    <li><code>laundry</code></li>
-    <li><code>lawyer</code></li>
-    <li><code>library</code></li>
-    <li><code>liquor_store</code></li>
-    <li><code>local_government_office</code></li>
-    <li><code>locksmith</code></li>
-    <li><code>lodging</code></li>
-    <li><code>meal_delivery</code></li>
-    <li><code>meal_takeaway</code></li>
-    <li><code>mosque</code></li>
-    <li><code>movie_rental</code></li>
-    <li><code>movie_theater</code></li>
-  </ul>
-</td>
-<td>
-  <ul>
-    <li><code>moving_company</code></li>
-    <li><code>museum</code></li>
-    <li><code>night_club</code></li>
-    <li><code>painter</code></li>
-    <li><code>park</code></li>
-    <li><code>parking</code></li>
-    <li><code>pet_store</code></li>
-    <li><code>pharmacy</code></li>
-    <li><code>physiotherapist</code></li>
-    <li><code>place_of_worship</code></li>
-    <li><code>plumber</code></li>
-    <li><code>police</code></li>
-    <li><code>post_office</code></li>
-    <li><code>real_estate_agency</code></li>
-    <li><code>restaurant</code></li>
-    <li><code>roofing_contractor</code></li>
-    <li><code>rv_park</code></li>
-    <li><code>school</code></li>
-    <li><code>shoe_store</code></li>
-    <li><code>shopping_mall</code></li>
-    <li><code>spa</code></li>
-    <li><code>stadium</code></li>
-    <li><code>storage</code></li>
-    <li><code>store</code></li>
-    <li><code>subway_station</code></li>
-    <li><code>synagogue</code></li>
-    <li><code>taxi_stand</code></li>
-    <li><code>train_station</code></li>
-    <li><code>travel_agency</code></li>
-    <li><code>university</code></li>
-    <li><code>veterinary_care</code></li>
-    <li><code>zoo</code></li>
-  </ul>
-</td></tr>
-</table>
+    <table>
+     <tr><td>
+      <ul>
+        <li><code>accounting</code></li>
+        <li><code>airport</code></li>
+        <li><code>amusement_park</code></li>
+        <li><code>aquarium</code></li>
+        <li><code>art_gallery</code></li>
+        <li><code>atm</code></li>
+        <li><code>bakery</code></li>
+        <li><code>bank</code></li>
+        <li><code>bar</code></li>
+        <li><code>beauty_salon</code></li>
+        <li><code>bicycle_store</code></li>
+        <li><code>book_store</code></li>
+        <li><code>bowling_alley</code></li>
+        <li><code>bus_station</code></li>
+        <li><code>cafe</code></li>
+        <li><code>campground</code></li>
+        <li><code>car_dealer</code></li>
+        <li><code>car_rental</code></li>
+        <li><code>car_repair</code></li>
+        <li><code>car_wash</code></li>
+        <li><code>casino</code></li>
+        <li><code>cemetery</code></li>
+        <li><code>church</code></li>
+        <li><code>city_hall</code></li>
+        <li><code>clothing_store</code></li>
+        <li><code>convenience_store</code></li>
+        <li><code>courthouse</code></li>
+        <li><code>dentist</code></li>
+        <li><code>department_store</code></li>
+        <li><code>doctor</code></li>
+        <li><code>electrician</code></li>
+        <li><code>electronics_store</code></li>
+      </ul>
+    </td>
+    <td>
+      <ul>
+        <li><code>embassy</code></li>
+        <li><code>establishment</code></li>
+        <li><code>finance</code></li>
+        <li><code>fire_station</code></li>
+        <li><code>florist</code></li>
+        <li><code>food</code></li>
+        <li><code>funeral_home</code></li>
+        <li><code>furniture_store</code></li>
+        <li><code>gas_station</code></li>
+        <li><code>general_contractor</code></li>
+        <li><code>grocery_or_supermarket</code></li>
+        <li><code>gym</code></li>
+        <li><code>hair_care</code></li>
+        <li><code>hardware_store</code></li>
+        <li><code>health</code></li>
+        <li><code>hindu_temple</code></li>
+        <li><code>home_goods_store</code></li>
+        <li><code>hospital</code></li>
+        <li><code>insurance_agency</code></li>
+        <li><code>jewelry_store</code></li>
+        <li><code>laundry</code></li>
+        <li><code>lawyer</code></li>
+        <li><code>library</code></li>
+        <li><code>liquor_store</code></li>
+        <li><code>local_government_office</code></li>
+        <li><code>locksmith</code></li>
+        <li><code>lodging</code></li>
+        <li><code>meal_delivery</code></li>
+        <li><code>meal_takeaway</code></li>
+        <li><code>mosque</code></li>
+        <li><code>movie_rental</code></li>
+        <li><code>movie_theater</code></li>
+      </ul>
+    </td>
+    <td>
+      <ul>
+        <li><code>moving_company</code></li>
+        <li><code>museum</code></li>
+        <li><code>night_club</code></li>
+        <li><code>painter</code></li>
+        <li><code>park</code></li>
+        <li><code>parking</code></li>
+        <li><code>pet_store</code></li>
+        <li><code>pharmacy</code></li>
+        <li><code>physiotherapist</code></li>
+        <li><code>place_of_worship</code></li>
+        <li><code>plumber</code></li>
+        <li><code>police</code></li>
+        <li><code>post_office</code></li>
+        <li><code>real_estate_agency</code></li>
+        <li><code>restaurant</code></li>
+        <li><code>roofing_contractor</code></li>
+        <li><code>rv_park</code></li>
+        <li><code>school</code></li>
+        <li><code>shoe_store</code></li>
+        <li><code>shopping_mall</code></li>
+        <li><code>spa</code></li>
+        <li><code>stadium</code></li>
+        <li><code>storage</code></li>
+        <li><code>store</code></li>
+        <li><code>subway_station</code></li>
+        <li><code>synagogue</code></li>
+        <li><code>taxi_stand</code></li>
+        <li><code>train_station</code></li>
+        <li><code>travel_agency</code></li>
+        <li><code>university</code></li>
+        <li><code>veterinary_care</code></li>
+        <li><code>zoo</code></li>
+      </ul>
+    </td></tr>
+    </table>
                       </div>
                       <h3>Step 2</h3>
                       <div>
@@ -536,26 +594,20 @@ $(document).ready(function() {
                       <div>
                         <p>Great! You already defined your search keywords and specified the search area. Please input your Google Maps API, and we will use your API to retrieve data from Google Maps. The results will be stored in your spatial data space.</p>
                         <p>
-                          Your Google Maps API key: <br/><input id="google-key" type="text" size=45>
+                          Your Google Maps API key: <br/><input id="google-key" type="text" size=45 value="{{google_key}}">
                         </p>
                         <p>
-                          Input a spatial table name for storing the searching data: <br/><input id="google-filename" type="text" size=45>
+                          Input a name of the searching data (must be a single word with valid characters [0-9a-zA-Z]): <br/><input id="google-filename" type="text" size=45>
                         </p>
                         <p><button type="button" id="submit_google_search">Submit my search request</button></p> 
                       </div>
                     </div>
                   </div> 
                   <div id="google-tabs-2"> 
-                  
-                  {% if jobs %}
-                  <div style="text-align: left;">
-                    {% for i,job in jobs.iteritems %}
-                    <p >
-                      {{job.name}},{{job.status}}
-                    </p>
-                    {% endfor %}
+                  <button id="google-jobs-refresh" >Refresh</button>
+                  <br/><br/>
+                  <div id="google-jobs">
                   </div>
-                  {% endif %}
                   </div> 
                 </div>
               </td>

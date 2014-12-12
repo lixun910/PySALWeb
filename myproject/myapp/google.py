@@ -10,7 +10,8 @@ Author(s):
 __author__ = "Luc Anselin <luc.anselin@asu.edu, Xun Li <xun.li@asu.edu"
 
 import urllib2
-import json
+import json, math
+from pysal.cg.sphere import radangle, r2d, d2r
 
 __all__ = ['querypoints','queryradius','googlepoints','ptdict2geojson']
 
@@ -18,11 +19,36 @@ def lonlat(pointslist):
     newpts = [(i[1],i[0]) for i in pointslist]
     return newpts    
 
+def geointerpolate(p0,p1,t,lonx=True):
+    if not(lonx):
+        p = lonlat([p0,p1])
+        p0 = p[0]
+        p1 = p[1]
+        
+    d = radangle(p0,p1)
+    k = 1.0 / math.sin(d)
+    t = t*d
+    A = math.sin(d-t) * k
+    B = math.sin(t) * k
+    
+    x0, y0 = d2r(p0[0]),d2r(p0[1])
+    x1, y1 = d2r(p1[0]),d2r(p1[1])
+    
+    x = A * math.cos(y0) * math.cos(x0) + B * math.cos(y1) * math.cos(x1)
+    y = A * math.cos(y0) * math.sin(x0) + B * math.cos(y1) * math.sin(x1)
+    z = A * math.sin(y0) + B * math.sin(y1)
+
+    newpx = r2d(math.atan2(y, x))
+    newpy = r2d(math.atan2(z, math.sqrt(x*x + y*y)))
+    if not(lonx):
+        return newpy,newpx
+    return newpx,newpy
+
 def geogrid(pup, pdown, k, lonx=True):
     if lonx:
-            corners = [pup,pdown]
-        else:
-            corners = lonlat([pup,pdown])
+        corners = [pup,pdown]
+    else:
+        corners = lonlat([pup,pdown])
     tpoints = [float(i)/k for i in range(k)[1:]]
     leftcorners = [corners[0],(corners[0][0],corners[1][1])]
     rightcorners = [(corners[1][0],corners[0][1]),corners[1]]
@@ -49,9 +75,9 @@ def geogrid(pup, pdown, k, lonx=True):
     
 def harcdist(p0,p1,lonx=True,radius=6371.0):
     if not(lonx):
-            p = lonlat([p0,p1])
-            p0 = p[0]
-            p1 = p[1]
+        p = lonlat([p0,p1])
+        p0 = p[0]
+        p1 = p[1]
             
     d = radangle(p0,p1)
     if radius is not None:
@@ -118,7 +144,7 @@ def queryradius(grid,k,lonx=False):
     dist2 = harcdist(p3,p1,lonx=lonx)
     return round(max([dist1,dist2])*1000.0)
 
-def googlepoints(querypoints,apikey,sradius,stype,newid=True,verbose=True):
+def googlepoints(querypoints,apikey,sradius,q,newid=False,verbose=True):
     """
     Queries the Google Places API for locations (lat-lon) of a 
     given type of facility
@@ -166,10 +192,11 @@ def googlepoints(querypoints,apikey,sradius,stype,newid=True,verbose=True):
      
     The key in the dictionary is the Google ID of the facility
     """
-    base_url = 'https://maps.googleapis.com/maps/api/place/radarsearch/json?location=%s,%s&radius=%s&types=%s&key=%s'
+    base_url = 'https://maps.googleapis.com/maps/api/place/radarsearch/json?location=%s,%s&radius=%s&%s&key=%s'
     # list of urls to query
-    query_urls = [base_url%(lat,lon,sradius,stype,apikey) for lat,lon in querypoints]
+    query_urls = [base_url%(lat,lon,sradius,q,apikey) for lat,lon in querypoints]
     findings = {}
+    status = 'OK' 
     
     for url in query_urls:
         rsp = urllib2.urlopen(url)
@@ -177,9 +204,13 @@ def googlepoints(querypoints,apikey,sradius,stype,newid=True,verbose=True):
         data = json.loads(content)
         if 'results' in data:         # avoid empty records
             results = data['results']
+            if data['status'] == 'OVER_QUERY_LIMIT':
+                return data['status'], findings
             if verbose:
-                print data['status'], len(results)
+                #print data['status'], len(results)
+                pass
             if len(results) == 200:
+                status = 'FINER_QUERY_NEEDED'
                 print "WARNING: query truncated at 200"
             for item in results:
                 place_id = item['place_id']
@@ -197,9 +228,9 @@ def googlepoints(querypoints,apikey,sradius,stype,newid=True,verbose=True):
             newdict[ii]=dd
             ii = ii + 1
     else:
-        return findings
+        return status, findings
     
-    return newdict
+    return status, newdict
     
 def ptdict2geojson(d,location=["lng","lat"],values=[],ofile="output.geojson"):
     """
@@ -246,7 +277,7 @@ def ptdict2geojson(d,location=["lng","lat"],values=[],ofile="output.geojson"):
     outfile.close()
     return
     
-def googlept(pointlist,stype,apikey,lonx=False,bbox=True,k=5,sradius=5000,verbose=True,ofile="output.geojson"):
+def googlept(pointlist,q,apikey,lonx=False,bbox=True,k=5,sradius=5000,verbose=True,ofile="output.geojson"):
     """
     User function to query google points
     
@@ -280,10 +311,12 @@ def googlept(pointlist,stype,apikey,lonx=False,bbox=True,k=5,sradius=5000,verbos
     if bbox:
         sradius = queryradius(grid,k=k,lonx=lonx)
     # query google places
-    ptdict = googlepoints(grid,apikey,sradius,stype,newid=True,verbose=verbose)
+    status, ptdict = googlepoints(grid,apikey,sradius,q,newid=True,verbose=verbose)
+    if status == 'OVER_QUERY_LIMIT':
+        return status
     # create output file
     ptdict2geojson(ptdict,location=["lng","lat"],values=["placeid"],ofile=ofile)
-    return
+    return status
     
 if __name__ == '__main__':
     print "Welcome to PySAL Google Points Query"
@@ -320,7 +353,7 @@ if __name__ == '__main__':
             sradius = float(sr)
     
     outfile = raw_input("Enter the name for the output file : ")
-    googlept(plist,stype,apikey,lonx=False,bbox=bbox,k=k,sradius=sr,
+    googlept(plist,"type="+stype,apikey,lonx=False,bbox=bbox,k=k,sradius=sr,
           verbose=True,ofile=outfile)
     print "Output is in file %s " % outfile
     

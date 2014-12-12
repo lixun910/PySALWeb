@@ -7,14 +7,14 @@ from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
 
-from myproject.myapp.models import Geodata, Jobs
+from myproject.myapp.models import Geodata, Jobs, Preference
 from myproject.myapp.forms import DocumentForm
 
-import logging, os, zipfile, shutil
+import logging, os, zipfile, shutil, time
 from hashlib import md5
 from views_utils import *
 from views_utils import _save_new_shapefile
-import requests
+import google
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +27,17 @@ def open_data(request):
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     
     jobs = Jobs.objects.all().filter( userid=userid )
+    try:
+        pref = Preference.objects.get(userid=userid)
+        google_key = pref.googlekey
+    except:
+        google_key = ""
     
     jsonprefix = settings.URL_PREFIX + settings.MEDIA_URL
     return render_to_response(
         'myapp/open_data.html', {
             'userid': userid, 
+            'google_key' : google_key,
             'jobs': jobs, 
             'n': len(jobs),
             'nn':range(1,len(jobs)+1),
@@ -42,8 +48,38 @@ def open_data(request):
         context_instance=RequestContext(request)
     )
 
-def job_google_search(q,bounds,gkey,name):
-    pass
+def job_google_search(userid, uuid, q,bounds,apikey, name, opath):
+    start_time = time.time()
+    from myproject.myapp.models import Jobs
+    job = Jobs.objects.get(uuid=uuid)
+    job.status = 2
+    job.save()
+    from django.db import connection 
+    connection.close()
+    status = google.googlept(
+        bounds, q, apikey, lonx=False, bbox=True, k=3, ofile=opath
+    )
+    end_time = time.time()
+    try: 
+        job = Jobs.objects.get(uuid=uuid)
+        job.log = status
+        job.time = (end_time - start_time) / 60.0
+        if status == 'OK':
+            job.status = 3
+        job.save()
+        from django.db import connection 
+        connection.close()
+        
+        if status == 'OK':
+            _save_new_shapefile(userid, "GeoJSON", opath) 
+    except:
+        job = Jobs.objects.get(uuid=uuid)
+        job.log = status
+        job.time = (end_time - start_time) / 60.0
+        job.status = 4
+        job.save()
+        from django.db import connection 
+        connection.close()
 
 @login_required
 def google_search(request):
@@ -61,9 +97,19 @@ def google_search(request):
         gkey = request.GET.get("gkey", None)
         name = request.GET.get("name", None)
         if q and left and right and top and bottom and gkey and name:
-            bounds = [(float(top),float(right)), (float(bottom), float(left))]
+            bounds = [(float(top),float(left)), (float(bottom), float(right))]
             uuid = md5(q + name).hexdigest()
             result = {'success':0}
+            try:
+                pref = Preference.objects.get(userid=userid)
+                pref.googlekey= gkey
+                pref.save()
+            except:
+                new_pref = Preference(
+                    userid = userid,
+                    googlekey = gkey
+                )
+                new_pref.save()
             try:
                 job = Jobs.objects.get(uuid=uuid)
                 result["error"] = "job already exists."
@@ -78,7 +124,20 @@ def google_search(request):
                     parameters=json.dumps({'q':q,'bounds':bounds,'gkey':gkey,'name':name})
                 )
                 new_job_item.save()
-                mp.Process(target=job_google_search, args=(q,bounds,gkey,name)).start()
+                from django.db import connection 
+                connection.close()
+                output_path = os.path.join(
+                    settings.MEDIA_ROOT, 'temp', md5(userid).hexdigest(), 
+                    name+".json"
+                )
+                """
+                job_google_search(userid, uuid, q, bounds, gkey, name, 
+                                 output_path)
+                """
+                mp.Process(
+                    target=job_google_search, 
+                    args=(userid, uuid,q,bounds,gkey,name, output_path)
+                ).start()
                 result["success"] = 1
                 return HttpResponse(
                     json.dumps(result),

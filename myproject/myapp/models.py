@@ -56,7 +56,8 @@ class Preference(models.Model):
     userid = models.CharField(max_length=80, unique=True, db_index=True, primary_key=True)
     spreg = models.TextField()
     category = models.TextField()
-    cartodb = models.TextField()
+    cartodb = models.CharField(max_length=255)
+    googlekey = models.CharField(max_length=255)
     
 class SpregModel(models.Model):
     #md5([userid,layeruuid])
@@ -70,8 +71,9 @@ class Jobs(models.Model):
     userid = models.CharField(max_length=80)
     type = models.CharField(max_length=80)
     name = models.CharField(max_length=255)
-    status = models.IntegerField() #0:init 1:pending 2:working 3: error 4:done
+    status = models.IntegerField() #0:init 1:pending 2:working 3: done 4:error
     parameters = models.TextField()
     log = models.TextField()
+    time = models.FloatField(null=True, blank=True)
     
     
