@@ -65,4 +65,13 @@ class SpregModel(models.Model):
     name = models.CharField(max_length=255)
     content = models.TextField()
     
+class Jobs(models.Model):
+    uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
+    userid = models.CharField(max_length=80)
+    type = models.CharField(max_length=80)
+    name = models.CharField(max_length=255)
+    status = models.IntegerField() #0:init 1:pending 2:working 3: error 4:done
+    parameters = models.TextField()
+    log = models.TextField()
+    
     

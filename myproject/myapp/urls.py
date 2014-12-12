@@ -9,7 +9,7 @@ urlpatterns = patterns('',
 )
                        
 urlpatterns += patterns('myproject.myapp.views',
-    url(r'^open_data/$', TemplateView.as_view(template_name='myapp/open_data.html')),
+    #url(r'^open_data/$', TemplateView.as_view(template_name='myapp/open_data.html')),
     url(r'^dup_email/$', 'dup_email', name='dup email'),
     url(r'^signup/$', 'my_signup', name='signup'),
     url(r'^login/$', 'my_login', name='login'),
@@ -18,6 +18,11 @@ urlpatterns += patterns('myproject.myapp.views',
     #url(r'^list/$', 'list', name='list'),
     url(r'^main/$','main', name='main'), 
 ) 
+
+urlpatterns += patterns('myproject.myapp.views_opendata',
+    url(r'^open_data/$', 'open_data', name='open data portal'),
+    url(r'^google_search/$', 'google_search', name='google search'),
+)
 
 urlpatterns += patterns('myproject.myapp.views_plots',
     url(r'^scatter_plot/$', 'scatter_plot', name='scatter plot'),

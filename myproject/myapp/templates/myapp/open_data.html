@@ -316,7 +316,11 @@ $(document).ready(function() {
     }
     var params = {
       'q' : q,
-      'bounds' : ((top, right), (bottome, left)),
+      'top' : top,
+      'right':right,
+      'bottom': bottom,
+      'left': left,
+      'bounds' : [[top, right], [bottom, left]],
       'gkey' : key,
       'name' : name,
     };
@@ -542,6 +546,16 @@ $(document).ready(function() {
                     </div>
                   </div> 
                   <div id="google-tabs-2"> 
+                  
+                  {% if jobs %}
+                  <div style="text-align: left;">
+                    {% for i,job in jobs.iteritems %}
+                    <p >
+                      {{job.name}},{{job.status}}
+                    </p>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
                   </div> 
                 </div>
               </td>
