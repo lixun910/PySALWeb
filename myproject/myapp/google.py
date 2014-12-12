@@ -11,9 +11,22 @@ __author__ = "Luc Anselin <luc.anselin@asu.edu, Xun Li <xun.li@asu.edu"
 
 import urllib2
 import json, math
-from pysal.cg.sphere import radangle, r2d, d2r
 
 __all__ = ['querypoints','queryradius','googlepoints','ptdict2geojson']
+
+
+# degree to radian conversion
+d2r = lambda x: x * math.pi / 180.0
+
+# radian to degree conversion
+r2d = lambda x: x * 180.0 / math.pi
+
+def radangle(p0,p1):
+    x0, y0 = d2r(p0[0]),d2r(p0[1])
+    x1, y1 = d2r(p1[0]),d2r(p1[1])
+    d = 2.0 * math.asin(math.sqrt(haversine(y1 - y0) + 
+                        math.cos(y0) * math.cos(y1)*haversine(x1 - x0)))
+    return d
 
 def lonlat(pointslist):
     newpts = [(i[1],i[0]) for i in pointslist]
