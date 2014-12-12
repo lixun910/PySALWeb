@@ -38,7 +38,7 @@ def get_jobs(request):
         item['type'] = job.type
         item['name'] = job.name
         item['status'] = job.status
-        item['time'] = '%.2f' % job.time
+        item['time'] = '%.2f' % job.time if job.time else ''
         item['log'] = job.log
         results.append(item)
     
