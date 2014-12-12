@@ -39,7 +39,7 @@ button {
     box-shadow: 0px 2px 3px #999999;
 }
 #google-open-data-accordion .ui-accordion-content {
-  max-height: 500px;
+  max-height: 300px;
 }
 .overlay {
   position: absolute; 
@@ -68,6 +68,17 @@ button {
 #panImg {
   cursor: hand;
 }
+div#column1, div#column2, div#column3, div#column4, div#column5 {
+        float:left;
+        width:250px;
+      }
+
+      div#column1 li, div#column2 li, div#column3 li, div#column4 li, div#column5 li {
+        list-style-type: none;
+      }
+.ui-autocomplete {
+  text-align: left;
+}
 </style>
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places"></script>
 <script src="../../media/js/jquery.min.js"></script>
@@ -75,6 +86,104 @@ button {
 <script src="../../media/js/d3.v3.min.js"></script>
 <script src="../../media/js/msgbox.js"></script>
 <script>
+var google_types = [
+"accounting",
+"airport",
+"amusement_park",
+"aquarium",
+"art_gallery",
+"atm",
+"bakery",
+"bank",
+"bar",
+"beauty_salon",
+"bicycle_store",
+"book_store",
+"bowling_alley",
+"bus_station",
+"cafe",
+"campground",
+"car_dealer",
+"car_rental",
+"car_repair",
+"car_wash",
+"casino",
+"cemetery",
+"church",
+"city_hall",
+"clothing_store",
+"convenience_store",
+"courthouse",
+"dentist",
+"department_store",
+"doctor",
+"electrician",
+"electronics_store",
+"embassy",
+"establishment",
+"finance",
+"fire_station",
+"florist",
+"food",
+"funeral_home",
+"furniture_store",
+"gas_station",
+"general_contractor",
+"grocery_or_supermarket",
+"gym",
+"hair_care",
+"hardware_store",
+"health",
+"hindu_temple",
+"home_goods_store",
+"hospital",
+"insurance_agency",
+"jewelry_store",
+"laundry",
+"lawyer",
+"library",
+"liquor_store",
+"local_government_office",
+"locksmith",
+"lodging",
+"meal_delivery",
+"meal_takeaway",
+"mosque",
+"movie_rental",
+"movie_theater",
+"moving_company",
+"museum",
+"night_club",
+"painter",
+"park",
+"parking",
+"pet_store",
+"pharmacy",
+"physiotherapist",
+"place_of_worship",
+"plumber",
+"police",
+"post_office",
+"real_estate_agency",
+"restaurant",
+"roofing_contractor",
+"rv_park",
+"school",
+"shoe_store",
+"shopping_mall",
+"spa",
+"stadium",
+"storage",
+"store",
+"subway_station",
+"synagogue",
+"taxi_stand",
+"train_station",
+"travel_agency",
+"university",
+"veterinary_care",
+"zoo",
+];
 var csrftoken = '{{ csrf_token }}';
 var url_prefix = '{{url_prefix}}';
 var searchBox;
@@ -112,6 +221,9 @@ var UpdateBounds = function(bounds) {
 
 $(document).ready(function() {
   $('#dlg-msg').hide();
+  $('#keywords').autocomplete({
+    source: google_types
+  });
   $('.tabs .tab-links a').on('click', function(e)  {
     var currentAttrValue = $(this).attr('href');
     // Show/Hide Tabs
@@ -140,7 +252,17 @@ $(document).ready(function() {
     $('#top, #left, #right, #bottom').prop('disabled', true);
     $('#sel-poly-layer').prop('disabled', false);
   });
-
+  $('#test-google-search').click(function(){
+    var keywords = $('#keywords').val();
+    var area = $('#area').val();
+    var q = keywords + ' in ' + area;
+    var input = document.getElementById('pac-input');
+    input.value = q;
+    google.maps.event.trigger(input, 'focus');
+    google.maps.event.trigger(input, 'keydown', {
+      keyCode: 13
+    });
+  });
   // setup google map for setting bbox
   var map = new google.maps.Map(document.getElementById('map-canvas'), {
     mapTypeId: google.maps.MapTypeId.ROADMAP
@@ -174,25 +296,32 @@ $(document).ready(function() {
   });
 
   $('#submit_google_search').click(function(){
-    var q = $('#pac-input').val(),
+    var keywords = $('#keywords').val().toLowerCase(),
+        area = $('#area').val(),
         top = $('#top').val(),
         bottom = $('#bottom').val(),
         left = $('#left').val(),
         right = $('#right').val(),
         key = $('#google-key').val(),
         name = $('#google-filename').val();
-    if (!q || !top || !bottom || !left || !right || !key || !name) {
+    if (!keywords || !area || !top || !bottom || !left || !right || !key || !name) {
       ShowMsgBox("", "Please fill all required items before submit.");
       return;
+    }
+    var q = ''; 
+    if (google_types.indexOf(keywords)==-1) {
+      q = 'name=' + keywords;
+    } else {
+      q = 'type=' + keywords;
     }
     var params = {
       'q' : q,
       'bounds' : ((top, right), (bottome, left)),
-      'key' : key,
+      'gkey' : key,
       'name' : name,
     };
-    $.get('../open_data_google/', params).done(function(data) {
-      $('#pac-input, #top, #bottom, #left, #right, #google-key, #google-filename').val('');
+    $.get('../google_search/', params).done(function(data) {
+      $('#pac-input, #keywords, #area, #top, #bottom, #left, #right, #google-key, #google-filename').val('');
       ShowMsgBox("", "Search job [" + data.search_name + "] was created successfully. Please check the status in 'Check the status of exiting search'");
      });
   });
@@ -256,17 +385,132 @@ $(document).ready(function() {
                   <div id="google-tabs-1"> 
                     <div id="google-open-data-accordion">
                       <h3>Step 1</h3>
-                      <div>
-                        <p> Please try to search the objects in a specific area in Google Maps. You can determine your search <b>keywords</b>, and the <b>search area</b> in this step.</p>
-                        <input id="pac-input" type="text" placeholder="Keywords (e.g. Liquor Stores in Chicago, AZ)" size=55> 
+                      <div style="text-align: left">
+                        <p> Please try to search the objects in a specific area in Google Maps. You can determine your search <b>keywords</b>, and the <b>search area</b> in this step.(Results will be shown in Google Map on the right.)
+                        </p>
+                        <input id="keywords" type="text" placeholder="Keywords (e.g. Liquor Stores)" size=30> in 
+                        <input id="area" type="text" placeholder="Area (e.g. Chicago, AZ)" size=30>
+                        <button id="test-google-search" type="button">Search</button><br/>
+                        <input id="pac-input" type="hidden" placeholder="Keywords (e.g. Liquor Stores in Chicago, AZ)" size=55> 
                         <br/><br/>
-                        (Results will be shown in right Google Map)
+                        Tips: Keywords supported by Google Maps
+<table>
+ <tr><td>
+  <ul>
+    <li><code>accounting</code></li>
+    <li><code>airport</code></li>
+    <li><code>amusement_park</code></li>
+    <li><code>aquarium</code></li>
+    <li><code>art_gallery</code></li>
+    <li><code>atm</code></li>
+    <li><code>bakery</code></li>
+    <li><code>bank</code></li>
+    <li><code>bar</code></li>
+    <li><code>beauty_salon</code></li>
+    <li><code>bicycle_store</code></li>
+    <li><code>book_store</code></li>
+    <li><code>bowling_alley</code></li>
+    <li><code>bus_station</code></li>
+    <li><code>cafe</code></li>
+    <li><code>campground</code></li>
+    <li><code>car_dealer</code></li>
+    <li><code>car_rental</code></li>
+    <li><code>car_repair</code></li>
+    <li><code>car_wash</code></li>
+    <li><code>casino</code></li>
+    <li><code>cemetery</code></li>
+    <li><code>church</code></li>
+    <li><code>city_hall</code></li>
+    <li><code>clothing_store</code></li>
+    <li><code>convenience_store</code></li>
+    <li><code>courthouse</code></li>
+    <li><code>dentist</code></li>
+    <li><code>department_store</code></li>
+    <li><code>doctor</code></li>
+    <li><code>electrician</code></li>
+    <li><code>electronics_store</code></li>
+  </ul>
+</td>
+<td>
+  <ul>
+    <li><code>embassy</code></li>
+    <li><code>establishment</code></li>
+    <li><code>finance</code></li>
+    <li><code>fire_station</code></li>
+    <li><code>florist</code></li>
+    <li><code>food</code></li>
+    <li><code>funeral_home</code></li>
+    <li><code>furniture_store</code></li>
+    <li><code>gas_station</code></li>
+    <li><code>general_contractor</code></li>
+    <li><code>grocery_or_supermarket</code></li>
+    <li><code>gym</code></li>
+    <li><code>hair_care</code></li>
+    <li><code>hardware_store</code></li>
+    <li><code>health</code></li>
+    <li><code>hindu_temple</code></li>
+    <li><code>home_goods_store</code></li>
+    <li><code>hospital</code></li>
+    <li><code>insurance_agency</code></li>
+    <li><code>jewelry_store</code></li>
+    <li><code>laundry</code></li>
+    <li><code>lawyer</code></li>
+    <li><code>library</code></li>
+    <li><code>liquor_store</code></li>
+    <li><code>local_government_office</code></li>
+    <li><code>locksmith</code></li>
+    <li><code>lodging</code></li>
+    <li><code>meal_delivery</code></li>
+    <li><code>meal_takeaway</code></li>
+    <li><code>mosque</code></li>
+    <li><code>movie_rental</code></li>
+    <li><code>movie_theater</code></li>
+  </ul>
+</td>
+<td>
+  <ul>
+    <li><code>moving_company</code></li>
+    <li><code>museum</code></li>
+    <li><code>night_club</code></li>
+    <li><code>painter</code></li>
+    <li><code>park</code></li>
+    <li><code>parking</code></li>
+    <li><code>pet_store</code></li>
+    <li><code>pharmacy</code></li>
+    <li><code>physiotherapist</code></li>
+    <li><code>place_of_worship</code></li>
+    <li><code>plumber</code></li>
+    <li><code>police</code></li>
+    <li><code>post_office</code></li>
+    <li><code>real_estate_agency</code></li>
+    <li><code>restaurant</code></li>
+    <li><code>roofing_contractor</code></li>
+    <li><code>rv_park</code></li>
+    <li><code>school</code></li>
+    <li><code>shoe_store</code></li>
+    <li><code>shopping_mall</code></li>
+    <li><code>spa</code></li>
+    <li><code>stadium</code></li>
+    <li><code>storage</code></li>
+    <li><code>store</code></li>
+    <li><code>subway_station</code></li>
+    <li><code>synagogue</code></li>
+    <li><code>taxi_stand</code></li>
+    <li><code>train_station</code></li>
+    <li><code>travel_agency</code></li>
+    <li><code>university</code></li>
+    <li><code>veterinary_care</code></li>
+    <li><code>zoo</code></li>
+  </ul>
+</td></tr>
+</table>
                       </div>
                       <h3>Step 2</h3>
                       <div>
                         <p>Please specify the search area in details by either define a searching box or using a map layer (ShapeType=Polygon)</p>
                         <p>
-                          <input type="radio" name="group1" id="search1" checked>Search in a bounding box<br>
+                          <input type="radio" name="group1" id="search1" checked>Search in a bounding box:<br>
+                            <br/>&nbsp;&nbsp;Click <img id="panImg" onclick="PanGoogle();" src="../../media/img/pan.png"> to automatically fill the bounds by panning/zooming the right side Google Map.<br/>
                            <div style="margin-left:20px;border:1px solid #000000;width:400px;padding-left:40px;">
                             <p style="margin-left:100px;">
                               Top: <input type="text" size="20" id="top" name="top" value="38.900881">
@@ -279,7 +523,6 @@ $(document).ready(function() {
                               Bottom: <input type="text" size="20" id="bottom" name="bottom" value="38.885851">
                             </p>
                           </div><br/>
-                            Click <img id="panImg" onclick="PanGoogle();" src="../../media/img/pan.png"> to automatically fill the bounds by panning/zooming the right side Google Map.
                           <br/><br/><br/>
                           <input type="radio" name="group1" id="search2">Or, search in a map(polygon) layer: <select id="sel-poly-layer"></select>
                         </p>
