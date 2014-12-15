@@ -230,7 +230,7 @@ var GetJobs = function() {
     if ('success' in data) {
       return; 
     }
-    var table = '<table class="pure-table pure-table-bordered" style="font: normal medium/1.4 sans-serif;">';
+    var table = '<table class="pure-table pure-table-bordered" style="font: small medium/1.4 sans-serif;">';
     table += '<thead><tr><td>job name</td><td>job status</td><td>job time (minutes)</td><td>job log</td></tr></thead>';
     table += '<tbody>';
     for (var i=0, n=data.length; i<n; i++) {
@@ -261,6 +261,7 @@ var GetJobs = function() {
 };
 
 $(document).ready(function() {
+  $('#progress_bar_googlesearch').hide();
   $( "#dlg-msg" ).dialog({
     dialogClass: "dialogWithDropShadow",
     width: 400, height: 200, autoOpen: false, modal: true,
@@ -354,7 +355,7 @@ $(document).ready(function() {
       ShowMsgBox("", "Please fill all required items before submit.");
       return;
     }
-    if (/^[A-Za-z0-9]*$/.test(name)==false) {
+    if (/^[_A-Za-z0-9]*$/.test(name)==false) {
       ShowMsgBox("", "The name of searching data is not valid. Note: only valid characters (e.g a-z A-Z 0-9) are allowed");
       return;
     }
@@ -375,7 +376,9 @@ $(document).ready(function() {
       'name' : name,
       'k' : k,
     };
+    $('#progress_bar_googlesearch').show();
     $.get('../google_search/', params).done(function(data) {
+      $('#progress_bar_googlesearch').hide();
       if ('error' in data) {
         ShowMsgBox("Error", data['error']);
         return;
@@ -605,6 +608,8 @@ $(document).ready(function() {
                           Input a name of the searching data (must be a single word with valid characters [0-9a-zA-Z]): <br/><input id="google-filename" type="text" size=45>
                         </p>
                         <p><button type="button" id="submit_google_search">Submit my search request</button></p> 
+                        <br/>
+                        <div id="progress_bar_googlesearch"><img src="../../media/img/progress-bar.gif"></div>
                       </div>
                     </div>
                   </div> 
