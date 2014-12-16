@@ -103,32 +103,34 @@ var SetupLeafletMap = function() {
 var ShowExistMap = function(uuid, json_path) {
   SetupLeafletMap();
   gViz.ShowMap(json_path, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
-  var params = {'csrfmiddlewaretoken':  csrftoken};
-  params['layer_uuid'] = uuid;
-  $.get('../get_metadata/', params).done(function(data){
-    gPrj = proj4(proj4.defs('WGS84'), proj4.defs('WGS84'));
-    InitDialogs(data);
-  });
+  if (uuid) {
+    var params = {'csrfmiddlewaretoken':  csrftoken};
+    params['layer_uuid'] = uuid;
+    $.get('../get_metadata/', params).done(function(data){
+      gPrj = proj4(proj4.defs('WGS84'), proj4.defs('WGS84'));
+      InitDialogs(data);
+    });
+  }
 };
   
 var ShowNewMap = function(o, type, noForeground, recall) {
-    if (recall == undefined) {
-      SetupLeafletMap();
+  if (recall == undefined) {
+    SetupLeafletMap();
+  }
+  if ( gHasProj && gPrj == undefined) {
+    // wait for reading *.prj file 
+    setTimeout(function(){ShowNewMap(o, type, noForeground, true);}, 10);  
+  } else {
+    $('#map').show();
+    if (noForeground==undefined) {
+      noForeground = false;
     }
-    if ( gHasProj && gPrj == undefined) {
-      // wait for reading *.prj file 
-      setTimeout(function(){ShowNewMap(o, type, noForeground, true);}, 10);  
+    if (gShowLeaflet) {
+      gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown,L, lmap, gPrj);
     } else {
-      $('#map').show();
-      if (noForeground==undefined) {
-        noForeground = false;
-      }
-      if (gShowLeaflet) {
-        gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown,L, lmap, gPrj);
-      } else {
-        gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown);
-      }
+      gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown);
     }
+  }
 };
 
 var ShowMapTitleTool = function(obj, flag) {
@@ -577,7 +579,7 @@ $(document).ready(function() {
   $( "#dialog-open-file" ).dialog({
     height: 450,
     width: 500,
-    autoOpen: true,
+    autoOpen: false,
     modal: false,
     dialogClass: "dialogWithDropShadow",
     buttons: [{
@@ -617,7 +619,15 @@ $(document).ready(function() {
       },
     }]
   });
-  //$('#dialog-open-file').dialog('open');
+  if (getParameterByName("uuid")) {
+    uuid = getParameterByName("uuid");
+    $.get('../get_metadata/', {'layer_uuid':uuid}).done(function(data){
+      ShowExistMap(undefined, data.json_path);
+      InitDialogs(data);
+    });
+  } else {
+    $('#dialog-open-file').dialog('open');
+  }
    //////////////////////////////////////////////////////////////
   //  Drag & Drop
   //////////////////////////////////////////////////////////////

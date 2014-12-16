@@ -85,6 +85,18 @@ td.status1 {color: yellow;}
 td.status2 {color: blue;}
 td.status3 {color: green;}
 td.status4 {color: red;}
+
+.fixed_height {
+  height: 500px;
+}
+#google-jobs {
+  position : relative;
+  height:100%;
+  overflow:auto;
+}
+#google-jobs a:link{
+  text-decoration: underline;
+}
 </style>
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places"></script>
 <script src="../../media/js/jquery.min.js"></script>
@@ -251,7 +263,7 @@ var GetJobs = function() {
       if (item.uuid == '') {
         table += '<tr><td>'+item.name+'</td>';
       } else {
-        table += '<tr><td><a href="../main/uuid='+item.uuid+'">'+item.name+'</a></td>';
+        table += '<tr><td><a href="../main/?uuid='+item.uuid+'">'+item.name+'</a></td>';
       }
       table += '<td class="status'+stat+'">'+stat_str+'</td>';
       table += '<td>'+item.time+'</td>';
@@ -618,10 +630,9 @@ $(document).ready(function() {
                     </div>
                   </div> 
                   <div id="google-tabs-2"> 
-                  <button id="google-jobs-refresh" >Refresh</button>
-                  <br/><br/>
-                  <div id="google-jobs">
-                  </div>
+                    <button id="google-jobs-refresh" >Refresh</button>
+                    <br/><br/>
+                    <div class="fixed_height"><div id="google-jobs"></div></div>
                   </div> 
                 </div>
               </td>

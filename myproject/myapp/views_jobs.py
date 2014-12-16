@@ -42,10 +42,14 @@ def get_jobs(request):
         item['log'] = job.log
         item['uuid'] = ''
         if job.status == 3:
-            objs = Geodata.objects.filter(userid=userid).filter(name=job.name)
+            geodata_name = job.name + '.json'
+            objs = Geodata.objects.filter(userid=userid).filter(name=geodata_name)
             for geodata in objs:
                 item['uuid'] = geodata.uuid
                 
         results.append(item)
     
-    return HttpResponse(json.dumps(results), content_type="application/json")    
+    return HttpResponse(
+        json.dumps(results), 
+        content_type="application/json"
+    )
