@@ -248,7 +248,11 @@ var GetJobs = function() {
       } else if (stat == 4){
         stat_str = "Error"
       }
-      table += '<tr><td>'+item.name+'</td>';
+      if (item.uuid == '') {
+        table += '<tr><td>'+item.name+'</td>';
+      } else {
+        table += '<tr><td><a href="../main/uuid='+item.uuid+'">'+item.name+'</a></td>';
+      }
       table += '<td class="status'+stat+'">'+stat_str+'</td>';
       table += '<td>'+item.time+'</td>';
       table += '<td>'+item.log+'</td>';
