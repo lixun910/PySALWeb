@@ -19,9 +19,14 @@ urlpatterns += patterns('myproject.myapp.views',
     url(r'^main/$','main', name='main'), 
 ) 
 
+urlpatterns += patterns('myproject.myapp.views_table',
+    url(r'^get_table/$', 'get_table', name='get table'),
+)
+
 urlpatterns += patterns('myproject.myapp.views_jobs',
     url(r'^get_jobs/$', 'get_jobs', name='get jobs'),
 )
+
 urlpatterns += patterns('myproject.myapp.views_opendata',
     url(r'^open_data/$', 'open_data', name='open data portal'),
     url(r'^google_search/$', 'google_search', name='google search'),

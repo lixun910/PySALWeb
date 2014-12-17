@@ -4,7 +4,7 @@ from osgeo import ogr
 from django.conf import settings
 from hashlib import md5
 
-TBL_PREFIX = "d"
+TBL_PREFIX = "myapp_"
 db_set = settings.DATABASES['default']
 db_host = db_set['HOST']
 db_port = db_set['PORT']
