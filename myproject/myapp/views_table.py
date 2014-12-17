@@ -64,7 +64,6 @@ def get_table(request):
     userid = request.user.username
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
-    s = time.time()
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
         attrs = {'__module__': 'myproject.myapp.models'}
@@ -126,7 +125,6 @@ def get_table(request):
                         model = Shp
                         exclude = ("wkb_", )                        
                 """
-                print time.time() - s
                 return render(request, "myapp/dbtable.html", {
                     'userid': userid, 
                     'dbtable':Shp.objects.all(),
