@@ -85,7 +85,7 @@
         <td><div class="block_button" id="btnCreateW"></div></td>
         <td><div class="block_button" id="btnWHistogram"></div></td> 
         <td><div class="block_button" id="btnSpreg"></div></td>
-        <td><div class="block_button" id="btnShowTable"></div></td> 
+        <td><a class="block_button" target="_blank" id="btnShowTable"></div></td> 
         <td><div class="block_button" id="btnNewMap"></div></td> 
         <td><div class="block_button" id="btnScatterPlot"></div></td> 
         <td><div class="block_button" id="btnHist"></div></td> 
@@ -145,7 +145,7 @@
         <div style="text-align: left;">
           {% for i,layer in geodata.iteritems %}
           <p onmouseover="ShowMapTitleTool(this,true);" onmouseout="ShowMapTitleTool(this,false);">
-            <a href='#' onclick="ShowExistMap('{{layer.uuid}}','{{jsonprefix}}{{layer.jsonpath}}');">{{layer.name}}</a>
+            <a href='../main/?uuid={{layer.uuid}}'>{{layer.name}}</a>
             <img class='novis' onclick="DownloadMap('{{layer.uuid}}');" src="{{url_prefix}}/media/img/download.png">
             <img class='novis' onclick="DeleteMap(this,'{{layer.uuid}}');" src="{{url_prefix}}/media/img/uncheckmark.gif">
           </p>

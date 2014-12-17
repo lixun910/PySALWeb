@@ -211,6 +211,9 @@ var InitDialogs = function(data) {
       layer_name = data.name,
       fields = data.fields,
       field_names = [];
+  
+  $('#btnShowTable').attr('href','../get_table/?layer_uuid=' + layer_uuid);
+  
   // setup uuid in GeoVizMap
   gViz.SetupMap(gMap, layer_uuid, layer_name, gAddLayer); 
   LoadMapNames();
