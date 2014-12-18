@@ -3,6 +3,7 @@ import subprocess
 from osgeo import ogr
 from django.conf import settings
 from hashlib import md5
+from django.db import connections, DEFAULT_DB_ALIAS
 
 TBL_PREFIX = "myapp_"
 db_set = settings.DATABASES['default']
@@ -187,23 +188,24 @@ def IsFieldUnique(layer_uuid, field_name):
         return False
     
 def CountPtsInPolys(poly_uuid, point_uuid, count_col_name):
-    DS = GetDS()
+    connection = connections['default']
+    cursor = connection.cursor() 
+    
     poly_tbl = TBL_PREFIX + poly_uuid
     pt_tbl = TBL_PREFIX + point_uuid
-    try:
-        sql = 'ALTER TABLE %s ADD COLUMN %s integer' % \
-        (poly_tbl, count_col_name)
-        DS.ExecuteSQL(str(sql))
+    try: 
+        sql = 'ALTER TABLE %s ADD COLUMN %s integer' % (poly_tbl, count_col_name)
+        cursor.execute(sql)
+        
         sql = 'UPDATE %s SET %s = (SELECT count(*) FROM %s WHERE ST_Intersects(%s.wkb_geometry, %s.wkb_geometry))' % \
-        (poly_tbl, count_col_name, pt_tbl, pt_tbl, poly_tbl) 
-        DS.ExecuteSQL(str(sql))
-        CloseDS(DS)
-        SaveDBTableToShp(poly_tbl)
+            (poly_tbl, count_col_name, pt_tbl, pt_tbl, poly_tbl) 
+        cursor.execute(sql)
+        cursor.close()     
         return True
     except Exception, e:
         print "CountPtsInPolys() error"
         print str(e)
-        CloseDS(DS)
+        cursor.close()     
         return False
 
 def AddUniqueIDField(layer_uuid, field_name):
