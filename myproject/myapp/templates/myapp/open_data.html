@@ -411,8 +411,12 @@ var GetGeoDaData = function() {
       table += '<td></td>';
       table += '<td>';
 	  table += '<a href="../download_map/?layer_uuid='+item.uuid+'" target="_blank">Download</a>&nbsp;&nbsp;';
-	  table += '<a href="#" onclick="SaveToMyCloud(\''+item.uuid+'\');">Save to my cloud</a>&nbsp;&nbsp;';
 	  table += '<a href="../tag_map/?layer_uuid='+item.uuid+'" target="_blank">Tag this data</a>&nbsp;&nbsp;';
+	  if (item.incloud) {
+		table += 'In my cloud&nbsp;&nbsp;';
+	  } else {
+		table += '<a href="#" onclick="SaveToMyCloud(\''+item.uuid+'\');">Save to my cloud</a>&nbsp;&nbsp;';
+	  }
 	  table += '</td>';
       table += '</tr>';
     }

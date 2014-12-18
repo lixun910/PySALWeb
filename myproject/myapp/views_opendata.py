@@ -61,7 +61,8 @@ def get_geoda_data(request):
         ds = []
     else:
         ds = Geodata.objects.all().filter(userid="geodacenter@asu.edu")
-        
+       
+    check_in_cloud = False if userid == "geodacenter@asu.edu" else True
     results = []
     for d in ds:
         item = {}
@@ -70,6 +71,10 @@ def get_geoda_data(request):
         item['description'] = d.description
         item['uuid'] = d.uuid.strip()
         item['incloud'] = False
+        if check_in_cloud:
+            chk = Geodata.objects.filter(name=d.name).filter(userid=userid)
+            if len(chk) > 0:
+                item['incloud'] = True
         results.append(item)
     
     return HttpResponse(
