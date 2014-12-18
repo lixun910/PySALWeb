@@ -27,6 +27,28 @@ from pysal import lag_spatial
 logger = logging.getLogger(__name__)
 
 @login_required
+def histogram(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        var_x = request.GET.get("var_x", None)
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        if geodata and var_x:
+            data = GeoDB.GetTableData(str(layer_uuid), [var_x])
+            x = data[var_x]
+            results = {
+                "x": x,
+                "x_name": var_x,
+            }
+            return HttpResponse(
+                json.dumps(results), 
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+
+@login_required
 def scatter_plot(request):
     userid = request.user.username
     if not userid:

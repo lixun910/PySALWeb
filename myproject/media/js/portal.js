@@ -10,6 +10,7 @@ var carto_uid, carto_key, carto_layer,
 var fields_combobox= {
   '#sel-var' : ['Integer','Real'], 
   '#sel-w-id': ['Integer'], 
+  '#sel-histogram-x':['Integer','Real'], 
   '#sel-scatter-x':['Integer','Real'], 
   '#sel-scatter-y':['Integer','Real'], 
   '#sel-moran-var':['Integer','Real'],
@@ -556,6 +557,9 @@ $(document).ready(function() {
   });
   $('#btnScatterPlot').click(function(){
     if (gViz) { $('#dlg-scatter-plot').dialog('open');}
+  });
+  $('#btnHist').click(function(){
+    if (gViz) { $('#dlg-histogram').dialog('open');}
   });
   $('#btnMoran').click(function(){
     if (gViz) { $('#dlg-moran-scatter-plot').dialog('open');}
@@ -1951,6 +1955,37 @@ $(document).ready(function() {
         }).done(function(result){
           gMsg = result;
           gViz.PopupScatterPlot();
+        });
+        $(this).dialog("close");
+      }, 
+      Cancel: function() {$( this ).dialog( "close" );},
+    },
+  });
+  //////////////////////////////////////////////////////////////
+  //  Histogram
+  //////////////////////////////////////////////////////////////
+  $( "#dlg-histogram" ).dialog({
+    dialogClass: "dialogWithDropShadow",
+    width: 400,
+    height: 200,
+    autoOpen: false,
+    modal: true,
+    buttons: {
+      "Open": function() {
+        if (!gViz && !gViz.uuid) return;
+        var sel_x = $('#sel-histogram-x').val();
+        if (sel_x == '') {
+          ShowMsgBox("Info", "Please select variable for histogram plot.")
+          return;
+        }
+        var params = {
+          "layer_uuid": gViz.uuid,
+          "var_x": sel_x, 
+        };
+        $.get('../histogram/', params, function(){
+        }).done(function(result){
+          gMsg = result;
+          gViz.PopupHistogram();
         });
         $(this).dialog("close");
       }, 

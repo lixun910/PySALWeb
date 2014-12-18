@@ -34,6 +34,7 @@ urlpatterns += patterns('myproject.myapp.views_opendata',
 )
 
 urlpatterns += patterns('myproject.myapp.views_plots',
+    url(r'^histogram/$', 'histogram', name='histogram'),
     url(r'^scatter_plot/$', 'scatter_plot', name='scatter plot'),
     url(r'^moran_scatter_plot/$', 'moran_scatter_plot', name='moran scatter plot'),
 )

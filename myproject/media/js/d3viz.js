@@ -232,6 +232,16 @@
   };
 
   /**
+   * Create a new Moran Scatter Plot
+   */
+  d3viz.prototype.PopupHistogram = function() {
+    var w = window.open(
+      this.RandUrl('../../static/histogram.html'),
+      "_blank",
+      "titlebar=no,toolbar=no,location=no,width=900, height=700, scrollbars=yes"
+    );
+  };
+  /**
    * Create a new Cartodb map
    */
   d3viz.prototype.ShowCartodbMap= function(msg) {
