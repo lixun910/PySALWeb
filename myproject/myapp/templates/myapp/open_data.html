@@ -89,14 +89,133 @@ td.status4 {color: red;}
 .fixed_height {
   height: 500px;
 }
-#google-jobs {
+#google-jobs, #geoda-data {
   position : relative;
   height:100%;
   overflow:auto;
 }
-#google-jobs a:link{
+#google-jobs a:link, #geoda-data a:link {
   text-decoration: underline;
 }
+/*-------------------------------------*/
+    
+    .cf:before, .cf:after{
+      content:"";
+      display:table;
+    }
+    
+    .cf:after{
+      clear:both;
+    }
+
+    .cf{
+      zoom:1;
+    }
+
+    /*-------------------------------------*/	
+    
+    .form-wrapper {
+        width: 650px;
+        padding: 0px;
+        background: #444;
+        background: rgba(0,0,0,.2);
+        -moz-border-radius: 10px;
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        -moz-box-shadow: 0 1px 1px rgba(0,0,0,.4) inset, 0 1px 0 rgba(255,255,255,.2);
+        -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.4) inset, 0 1px 0 rgba(255,255,255,.2);
+        box-shadow: 0 1px 1px rgba(0,0,0,.4) inset, 0 1px 0 rgba(255,255,255,.2);
+    }
+    
+    .form-wrapper input {
+        width: 530px;
+        height: 20px;
+        padding: 10px 5px;
+        float: left;    
+        font: bold 15px 'lucida sans', 'trebuchet MS', 'Tahoma';
+        border: 0;
+        background: #eee;
+        -moz-border-radius: 3px 0 0 3px;
+        -webkit-border-radius: 3px 0 0 3px;
+        border-radius: 3px 0 0 3px;      
+    }
+    
+    .form-wrapper input:focus {
+        outline: 0;
+        background: #fff;
+        -moz-box-shadow: 0 0 2px rgba(0,0,0,.8) inset;
+        -webkit-box-shadow: 0 0 2px rgba(0,0,0,.8) inset;
+        box-shadow: 0 0 2px rgba(0,0,0,.8) inset;
+    }
+    
+    .form-wrapper input::-webkit-input-placeholder {
+       color: #999;
+       font-weight: normal;
+       font-style: italic;
+    }
+    
+    .form-wrapper input:-moz-placeholder {
+        color: #999;
+        font-weight: normal;
+        font-style: italic;
+    }
+    
+    .form-wrapper input:-ms-input-placeholder {
+        color: #999;
+        font-weight: normal;
+        font-style: italic;
+    }    
+    
+    .form-wrapper button {
+		overflow: visible;
+        position: relative;
+        float: right;
+        border: 0;
+        padding: 0;
+        cursor: pointer;
+        height: 40px;
+        width: 110px;
+        font: bold 15px/40px 'lucida sans', 'trebuchet MS', 'Tahoma';
+        color: #fff;
+        text-transform: uppercase;
+        background: #009933;
+        -moz-border-radius: 0 3px 3px 0;
+        -webkit-border-radius: 0 3px 3px 0;
+        border-radius: 0 3px 3px 0;      
+        text-shadow: 0 -1px 0 rgba(0, 0 ,0, .3);
+    }   
+      
+    .form-wrapper button:hover{		
+        background: #00CC99;
+    }	
+      
+    .form-wrapper button:active,
+    .form-wrapper button:focus{   
+        background: #009933;    
+    }
+    
+    .form-wrapper button:before {
+        content: '';
+        position: absolute;
+        border-width: 8px 8px 8px 0;
+        border-style: solid solid solid none;
+        border-color: transparent #009933 transparent;
+        top: 12px;
+        left: -6px;
+    }
+    
+    .form-wrapper button:hover:before{
+        border-right-color: #00CC99;
+    }
+    
+    .form-wrapper button:focus:before{
+        border-right-color: #009933;
+    }    
+    
+    .form-wrapper button::-moz-focus-inner {
+        border: 0;
+        padding: 0;
+    }  
 </style>
 <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places"></script>
 <script src="../../media/js/jquery.min.js"></script>
@@ -276,7 +395,54 @@ var GetJobs = function() {
   });
 };
 
+var GetGeoDaData = function() {
+  $.get('../geoda_data/').done(function(data) {
+    if ('success' in data) {
+      return; 
+    }
+    var table = '<table class="pure-table pure-table-bordered" style="font: medium medium/0.8 sans-serif;width:98%;">';
+    table += '<thead><tr><td>Data Name</td><td>Description</td><td># Obs</td><td>Tags</td><td>Operation</td></tr></thead>';
+    table += '<tbody>';
+    for (var i=0, n=data.length; i<n; i++) {
+      var item = data[i];
+      table += '<td><a href="../main/?uuid='+item.uuid+'" target="_blank">'+item.name+'</a></td>';
+      table += '<td>'+item.description+'</td>';
+      table += '<td>'+item.n+'</td>';
+      table += '<td></td>';
+      table += '<td>';
+	  table += '<a href="../download_map/?layer_uuid='+item.uuid+'" target="_blank">Download</a>&nbsp;&nbsp;';
+	  table += '<a href="#" onclick="SaveToMyCloud(\''+item.uuid+'\');">Save to my cloud</a>&nbsp;&nbsp;';
+	  table += '<a href="../tag_map/?layer_uuid='+item.uuid+'" target="_blank">Tag this data</a>&nbsp;&nbsp;';
+	  table += '</td>';
+      table += '</tr>';
+    }
+    table += '</tbody>';
+    table += '</table>';
+    $('#geoda-data').empty().append(table);
+  });
+};
+
+var SaveToMyCloud = function(uuid) {
+  $.get('../saveas_map/',{"layer_uuid":uuid}).done(function(data) {
+    if ('success' in data) {
+	  if (data.success == 1) {
+		ShowMsgBox("", "The table has been copied to your cloud successfully. You can open it in Spatial Analysis.");
+	  } else {
+		ShowMsgBox("Error", "Failed to copy this table to your cloud successfully.");
+	  }
+    }
+  });
+};
+
 $(document).ready(function() {
+  GetGeoDaData();
+  $('#btn_logout').click(function(){
+    $.post("../logout/", {'csrfmiddlewaretoken' : csrftoken})
+    .done(function(data) {
+      location.reload();
+    });
+  });
+  
   $('#progress_bar_googlesearch').hide();
   $( "#dlg-msg" ).dialog({
     dialogClass: "dialogWithDropShadow",
@@ -452,8 +618,19 @@ $(document).ready(function() {
  
     <div class="tab-content">
         <div id="tab1" class="tab">
-            <p>Tab #1 content goes here!</p>
-            <p>Tab #1 content goes here!</p>
+          <br>
+          <br>
+		  <div style="margin-left:100px;">
+              <form class="form-wrapper cf">
+                <input type="text" placeholder="Search PySAL/GeoDa open data here..." required>
+                <button type="submit">Search</button>
+              </form>   
+		  </div>
+          <br>
+          <br>
+          <br>
+          <br>
+          <div id="geoda-data"></div>
         </div>
  
         <div id="tab2" class="tab active">

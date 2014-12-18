@@ -35,6 +35,9 @@ class Geodata(models.Model):
     bbox = models.TextField()
     # fields: {fieldname:type}
     fields = models.TextField()
+    category = models.CharField(max_length=80)
+    keywords = models.CharField(max_length=255)
+    description = models.TextField()
     minpairdist = models.FloatField(null=True, blank=True)
     thumbnail = models.URLField()
 

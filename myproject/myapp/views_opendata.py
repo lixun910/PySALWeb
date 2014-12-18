@@ -50,6 +50,34 @@ def open_data(request):
     )
 
 @login_required
+def get_geoda_data(request):
+    # check user login
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+   
+    q = request.GET.get("q", None) 
+    if q:
+        ds = []
+    else:
+        ds = Geodata.objects.all().filter(userid="geodacenter@asu.edu")
+        
+    results = []
+    for d in ds:
+        item = {}
+        item['name'] = d.name
+        item['n'] = d.n
+        item['description'] = d.description
+        item['uuid'] = d.uuid.strip()
+        item['incloud'] = False
+        results.append(item)
+    
+    return HttpResponse(
+        json.dumps(results), 
+        content_type="application/json"
+    )
+
+@login_required
 def google_search(request):
     # check user login
     userid = request.user.username

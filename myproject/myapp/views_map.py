@@ -18,6 +18,7 @@ from hashlib import md5
 
 from myproject.myapp.models import Document, Geodata, Weights, SpregModel
 from views_utils import * 
+from views_utils import _save_new_shapefile
 
 from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks, Moran_Local, W
 from pysal import open as pysalOpen
@@ -51,6 +52,46 @@ def get_n_maps(request):
     
     return HttpResponse(RSP_FAIL, content_type="application/json")
     
+
+@login_required
+def saveas_map(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        try:
+            geodata = Geodata.objects.filter(uuid=layer_uuid).filter(userid=userid)
+            if len(geodata) == 0:
+                basedata = Geodata.objects.get(uuid=layer_uuid)
+                ofpath = basedata.filepath
+                base_loc, shp_name = os.path.split(ofpath)
+                base_loc = os.path.join(settings.MEDIA_ROOT, base_loc)
+                shp_name_noext = os.path.splitext(shp_name)[0]
+                
+                user_uuid = md5(userid).hexdigest()
+                shp_path = os.path.join('temp', user_uuid, shp_name)
+                abs_shp_path = os.path.join(settings.MEDIA_ROOT, shp_path)
+                new_base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
+                new_layer_uuid = md5(shp_path).hexdigest()
+                
+                if shp_name.endswith("json"):
+                    driver = "GeoJSON"
+                    shutil.copy(ofpath, shp_path) 
+                else:
+                    driver = "ESRI shapefile"
+                    for f in os.listdir(base_loc):
+                        if f.startswith(shp_name_noext):
+                            old_f = os.path.join(base_loc, f)
+                            new_f = os.path.join(new_base_loc, f)
+                            shutil.copy(old_f,new_f)
+                            
+                _save_new_shapefile(userid, driver, abs_shp_path)
+                return HttpResponse(RSP_OK, content_type="application/json")
+        except:
+            pass
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+
 @login_required
 def new_map(request):
     userid = request.user.username
@@ -485,8 +526,9 @@ def upload(request):
                     driver = "GeoJSON"
                     isJson = True
                 o_shp_path = os.path.join(extractloc, fname)
-                shp_path = get_abs_path(userid, fname)
-                shp_name = fname
+                shp_name = fname if fname.find(os.sep) < 0 else \
+                    os.path.split(fname)[-1]
+                shp_path = get_abs_path(userid, shp_name)
                 shp_path = get_valid_path(shp_path)
                 shutil.copy(o_shp_path, shp_path)
         if shp_name.endswith('shp'):
@@ -518,6 +560,8 @@ def upload(request):
             # extract zip file at a temp folder under md5(userid)
             tmp_name = gen_rnd_str()
             base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
+            if not os.path.exists(base_loc):
+                os.mkdir(base_loc) 
             extract_loc = os.path.join(base_loc, tmp_name)
             ziploc = os.path.join(extract_loc, str(filelist[0]))
             if os.path.exists(extract_loc):
