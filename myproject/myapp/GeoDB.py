@@ -297,9 +297,3 @@ def GetTableData(layer_uuid, column_names, drivername=None, filepath=None):
             column_values[col_name].append(row[i])
     cursor.close()
     return column_values
-
-#print GetMetaData("nat")
-    
-#GetTableData("nat", ["state_fips","hr70","name"])
-
-#AddField("6f162b17c71e4ebefffc3415519d9811", "id", 0, range(49))
