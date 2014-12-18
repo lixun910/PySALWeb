@@ -52,11 +52,10 @@ def ExportToDB(shp_path, layer_uuid, geom_type):
         
     # convert json file to shapefile for PySAL usage if needed
     if shp_path.endswith(".json") or shp_path.endswith(".geojson"):
-        mp.Process(target=ExportToESRIShape, args=(shp_path)).start()
+        ExportToESRIShape(shp_path) 
    
     # create a geometry only json file for visualization     
-    print shp_path
-    mp.Process(target=ExportToJSON, args=(shp_path)).start()
+    ExportToJSON(shp_path) 
         
     # compute meta data for weights creation, point/polygon
     if geom_type == 1 or geom_type == 3: 
