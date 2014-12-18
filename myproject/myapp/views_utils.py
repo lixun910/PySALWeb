@@ -118,7 +118,7 @@ def get_docfile_path(path):
 def gen_rnd_str(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
-def _save_new_shapefile(userid, driver, abs_shp_path):
+def Save_new_shapefile(userid, driver, abs_shp_path):
     table_name = None
     print "get meta data", abs_shp_path
     base_name, shp_name = os.path.split(abs_shp_path)
@@ -146,19 +146,10 @@ def _save_new_shapefile(userid, driver, abs_shp_path):
         fields=json.dumps(meta_data['fields'])
     )
     new_geodata.save()
-    # export to spatial database in background
-    # note: this background process also compute min_threshold
-    # and max_thresdhold
-    from django.db import connection 
-    connection.close()
-    mp.Process(
-        target=GeoDB.ExportToDB, 
-        args=(abs_shp_path,layer_uuid, geom_type)
-    ).start()
+    GeoDB.ExportToDB(abs_shp_path,layer_uuid, geom_type)
     print "uploaded done."
     result = meta_data
     result['layer_uuid'] = layer_uuid
-    # in case of download from cartodb, show downloaded data directly
     result['shp_url'] = settings.URL_PREFIX + settings.MEDIA_URL + shp_path
     result['name'] = shp_name    
     

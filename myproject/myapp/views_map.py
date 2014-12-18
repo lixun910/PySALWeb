@@ -13,12 +13,11 @@ import numpy as np
 import json, time, os, logging, StringIO, shutil, time
 import zipfile
 import urllib
-import multiprocessing as mp
 from hashlib import md5
 
 from myproject.myapp.models import Document, Geodata, Weights, SpregModel
 from views_utils import * 
-from views_utils import _save_new_shapefile
+from views_utils import Save_new_shapefile
 
 from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks, Moran_Local, W
 from pysal import open as pysalOpen
@@ -86,7 +85,7 @@ def saveas_map(request):
                             new_f = os.path.join(new_base_loc, f)
                             shutil.copy(old_f,new_f)
                             
-                _save_new_shapefile(userid, driver, abs_shp_path)
+                Save_new_shapefile(userid, driver, abs_shp_path)
                 return HttpResponse(RSP_OK, content_type="application/json")
         except:
             pass
@@ -418,8 +417,8 @@ def road_segment(request):
             net.ExportCountsToShp(ofn, counts=False)
             
             driver = "ESRI shapefile"
-            from views_utils import _save_new_shapefile
-            _save_new_shapefile(userid, driver, ofn)
+            from views_utils import Save_new_shapefile
+            Save_new_shapefile(userid, driver, ofn)
             
             return HttpResponse(
                 RSP_OK,
@@ -698,8 +697,8 @@ def upload(request):
             proc = True
             
     if proc:
-        from views_utils import _save_new_shapefile
-        result = _save_new_shapefile(userid, driver, shp_path)
+        from views_utils import Save_new_shapefile
+        result = Save_new_shapefile(userid, driver, shp_path)
         return HttpResponse(json.dumps(result), content_type="application/json")
 
     return HttpResponse(RSP_FAIL, content_type="application/json")

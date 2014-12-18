@@ -4,7 +4,7 @@ from osgeo import ogr
 from django.conf import settings
 from hashlib import md5
 
-from views_utils import _save_new_shapefile
+from views_utils import Save_new_shapefile
 import google
 
 def job_google_search(userid, uuid, q,bounds,apikey, name, opath,k=3):
@@ -31,7 +31,7 @@ def job_google_search(userid, uuid, q,bounds,apikey, name, opath,k=3):
         connection.close()
         
         if status == 'OK':
-            _save_new_shapefile(userid, "GeoJSON", opath) 
+            Save_new_shapefile(userid, "GeoJSON", opath) 
     except:
         job = Jobs.objects.get(uuid=uuid)
         job.log = status

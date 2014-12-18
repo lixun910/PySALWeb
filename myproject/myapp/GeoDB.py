@@ -1,8 +1,10 @@
 import os, json, sys, shutil
 import subprocess
 from osgeo import ogr
-from django.conf import settings
 from hashlib import md5
+import multiprocessing as mp
+
+from django.conf import settings
 from django.db import connections, DEFAULT_DB_ALIAS
 
 from pysal.weights.user import get_points_array_from_shapefile
@@ -28,6 +30,11 @@ def CloseDS(ds):
     ds.Destroy()
     ds= None
     
+"""
+export to spatial database in background
+note: this background process also compute min_threshold
+and max_thresdhold
+"""
 def ExportToDB(shp_path, layer_uuid, geom_type):
     global db_host, db_port, db_uname, db_upwd, db_name
     print "export starting..", shp_path
@@ -43,16 +50,13 @@ def ExportToDB(shp_path, layer_uuid, geom_type):
         script = 'ogr2ogr -skipfailures -append -overwrite %s  %s -nln %s > /dev/null'  % (GEODB_PATH, shp_path, table_name)
         rtn = subprocess.call( script, shell=True)
         
-    if rtn != 0:
-        # note: write to log
-        pass
-    
     # convert json file to shapefile for PySAL usage if needed
     if shp_path.endswith(".json") or shp_path.endswith(".geojson"):
-        ExportToESRIShape(shp_path) 
+        mp.Process(target=ExportToESRIShape, args=(shp_path)).start()
    
     # create a geometry only json file for visualization     
-    ExportToJSON(shp_path) 
+    print shp_path
+    mp.Process(target=ExportToJSON, args=(shp_path)).start()
         
     # compute meta data for weights creation, point/polygon
     if geom_type == 1 or geom_type == 3: 
@@ -71,14 +75,14 @@ def ExportToDB(shp_path, layer_uuid, geom_type):
     print "export ends with ", rtn
     
 def ExportToESRIShape(json_path):
-    # will be called in subprocess
+    print "ExportToESRIShape"
     shp_path = json_path[0:json_path.rfind(".")] + ".shp"
-    print "ExportToESRIShape", shp_path
-    script = 'ogr2ogr -f "ESRI Shapefile" %s %s' %(shp_path,json_path)
-    rtn = subprocess.call( script, shell=True)
+    script = 'ogr2ogr -f "ESRI Shapefile" %s %s' % (shp_path,json_path)
+    proc = subprocess.Popen(script, shell=True, stdin=None, 
+                            stdout=None, stderr=None, close_fds=True)
 
 def ExportToJSON(shp_path):
-    # will be called in subprocess
+    print "ExportToJSON"
     prj = None
     if shp_path.endswith("json"):
         json_path = shp_path[0:shp_path.rfind(".")] + ".simp.json"
@@ -91,10 +95,12 @@ def ExportToJSON(shp_path):
         os.remove(json_path)
         
     if prj: 
-        script = 'ogr2ogr -select "" -f "GeoJSON" %s %s %s' %(prj, json_path,shp_path)
+        script = 'ogr2ogr -select "" -f "GeoJSON" %s %s %s' %\
+            (prj, json_path,shp_path)
     else:
-        script = 'ogr2ogr -select "" -f "GeoJSON" %s %s' %(json_path,shp_path)
-    rtn = subprocess.call( script, shell=True)
+        script = 'ogr2ogr -select "" -f "GeoJSON" %s %s' % (json_path,shp_path)
+    proc = subprocess.Popen(script, shell=True, stdin=None, 
+                            stdout=None, stderr=None, close_fds=True)
     
 def SaveDBTableToShp(table_name):
     layer_uuid = table_name[len(TBL_PREFIX):]

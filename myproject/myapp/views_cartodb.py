@@ -13,7 +13,7 @@ from myproject.myapp.forms import DocumentForm
 import logging, os, zipfile, shutil
 from hashlib import md5
 from views_utils import *
-from views_utils import _save_new_shapefile
+from views_utils import Save_new_shapefile
 import requests
 
 logger = logging.getLogger(__name__)
@@ -124,7 +124,7 @@ def carto_download_table(request):
                         pass
             shp_path = os.path.join(loc, 'cartodb_'+table_name + ".shp")
             driver = 'ESRI shapefile'
-            result = _save_new_shapefile(userid, driver, shp_path)
+            result = Save_new_shapefile(userid, driver, shp_path)
 
             return HttpResponse(
                 json.dumps(result),
