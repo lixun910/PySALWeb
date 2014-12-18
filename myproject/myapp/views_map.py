@@ -116,6 +116,18 @@ def new_map(request):
     return HttpResponse(RSP_FAIL, content_type="application/json")
 
 @login_required
+def map_exist(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        bMap = GeoDB.IsLayerExist(layer_uuid)
+        if bMap:
+            return HttpResponse(RSP_OK, content_type="application/json")
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+        
+@login_required
 def download_map(request):
     userid = request.user.username
     if not userid:
@@ -123,34 +135,37 @@ def download_map(request):
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
         # download map files on disk
-        geodata = Geodata.objects.get(uuid = layer_uuid)
-        file_path = geodata.filepath
-        shp_dir = os.path.join(settings.MEDIA_ROOT, "temp", md5(userid).hexdigest())
-        shp_path = os.path.join(settings.MEDIA_ROOT, file_path)
-        filename = geodata.name
-        filename_wo_ext = filename[0: filename.rindex(".")+1]
-        filename_ext = filename[filename.rindex(".")+1:]
-        if filename_ext == "shp":
-            filelist = [ f for f in os.listdir(shp_dir) \
-                         if f.startswith(filename_wo_ext) and \
-                             not f.endswith("json") and \
-                             not f.endswith("png")]
-        else:
-            filelist = [shp_name] # json
-        zip_subdir = "map"
-        zip_filename = "%s.zip" % zip_subdir
-        # Open StringIO to grab in-memory ZIP contents
-        s = StringIO.StringIO()
-        # The zip compressor
-        zf = zipfile.ZipFile(s, "w")
-        for f in filelist:
-            fpath = shp_dir + os.sep + f
-            zip_path = os.path.join(zip_subdir, f)
-            zf.write(fpath, zip_path)
-        zf.close()
-        resp = HttpResponse(s.getvalue(), mimetype = "application/x-zip-compressed")
-        resp['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
-        return resp
+        try:
+            geodata = Geodata.objects.get(uuid = layer_uuid)
+            file_path = geodata.filepath
+            shp_dir = os.path.join(settings.MEDIA_ROOT, "temp", md5(userid).hexdigest())
+            shp_path = os.path.join(settings.MEDIA_ROOT, file_path)
+            filename = geodata.name
+            filename_wo_ext = filename[0: filename.rindex(".")+1]
+            filename_ext = filename[filename.rindex(".")+1:]
+            if filename_ext == "shp":
+                filelist = [ f for f in os.listdir(shp_dir) \
+                             if f.startswith(filename_wo_ext) and \
+                                 not f.endswith("json") and \
+                                 not f.endswith("png")]
+            else:
+                filelist = [shp_name] # json
+            zip_subdir = "map"
+            zip_filename = "%s.zip" % zip_subdir
+            # Open StringIO to grab in-memory ZIP contents
+            s = StringIO.StringIO()
+            # The zip compressor
+            zf = zipfile.ZipFile(s, "w")
+            for f in filelist:
+                fpath = shp_dir + os.sep + f
+                zip_path = os.path.join(zip_subdir, f)
+                zf.write(fpath, zip_path)
+            zf.close()
+            resp = HttpResponse(s.getvalue(), mimetype = "application/x-zip-compressed")
+            resp['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
+            return resp
+        except:
+            pass
     return HttpResponse(RSP_FAIL, content_type="application/json")
         
 @login_required
@@ -161,38 +176,40 @@ def remove_map(request):
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
         # remove files on disk
-        print "remove,userid,layer_uuid", userid, layer_uuid
-        geodata = Geodata.objects.get(uuid = layer_uuid)
-        file_path = geodata.filepath
-        shp_dir = os.path.join(settings.MEDIA_ROOT, "temp", md5(userid).hexdigest())
-        shp_path = os.path.join(settings.MEDIA_ROOT, file_path)
-        filename = geodata.name
-        filename_wo_ext = filename[0: filename.rindex(".")+1]
-        filename_ext = filename[filename.rindex(".")+1:]
-        filelist = [ f for f in os.listdir(shp_dir) \
-                     if f.startswith(filename_wo_ext) ]
-        for f in filelist:
-            f = os.path.join(shp_dir, f)
-            os.remove(f)
-               
-            # remove record in Document
-            docs = Document.objects.filter(docfile=file_path)
-            for doc in docs:
-                doc.delete()
-            
-        geodata.delete()
-        # remove record in spregmodel
-        models = SpregModel.objects.filter(userid = userid).filter(layeruuid=layer_uuid)
-        models.delete()
-        # remove record in weights
-        weights = Weights.objects.filter(userid=userid).filter(shpfilename=filename)
-        weights.delete()
-        # remove table d+layer_uuid
-        GeoDB.DeleteLayer(layer_uuid)
-        return HttpResponse(RSP_OK, content_type="application/json")
+        try:
+            print "remove,userid,layer_uuid", userid, layer_uuid
+            geodata = Geodata.objects.get(uuid = layer_uuid)
+            file_path = geodata.filepath
+            shp_dir = os.path.join(settings.MEDIA_ROOT, "temp", md5(userid).hexdigest())
+            shp_path = os.path.join(settings.MEDIA_ROOT, file_path)
+            filename = geodata.name
+            filename_wo_ext = filename[0: filename.rindex(".")+1]
+            filename_ext = filename[filename.rindex(".")+1:]
+            filelist = [ f for f in os.listdir(shp_dir) \
+                         if f.startswith(filename_wo_ext) ]
+            for f in filelist:
+                f = os.path.join(shp_dir, f)
+                os.remove(f)
+                   
+                # remove record in Document
+                docs = Document.objects.filter(docfile=file_path)
+                for doc in docs:
+                    doc.delete()
+                
+            geodata.delete()
+            # remove record in spregmodel
+            models = SpregModel.objects.filter(userid = userid).filter(layeruuid=layer_uuid)
+            models.delete()
+            # remove record in weights
+            weights = Weights.objects.filter(userid=userid).filter(shpfilename=filename)
+            weights.delete()
+            # remove table d+layer_uuid
+            GeoDB.DeleteLayer(layer_uuid)
+            return HttpResponse(RSP_OK, content_type="application/json")
+        except:
+            pass
     
     return HttpResponse(RSP_FAIL, content_type="application/json")
-        
     
 @login_required
 def get_map_names(request):
@@ -238,8 +255,8 @@ def get_metadata(request):
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
-        geodata = Geodata.objects.get(uuid = layer_uuid)
-        if geodata:
+        try:
+            geodata = Geodata.objects.get(uuid = layer_uuid)
             name = str(geodata.name)
             results = {}
             results['layer_uuid'] = layer_uuid
@@ -247,6 +264,8 @@ def get_metadata(request):
             results['fields'] = GeoDB.GetColumnNamesFromTable(layer_uuid)
             results['json_path'] = settings.URL_PREFIX + settings.MEDIA_URL + geodata.jsonpath
             return HttpResponse(json.dumps(results), content_type="application/json")
+        except:
+            pass
     return HttpResponse(RSP_FAIL, content_type="application/json")
     
 @login_required
@@ -256,13 +275,15 @@ def get_minmaxdist(request):
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
-        geodata = Geodata.objects.get(uuid = layer_uuid)
-        if geodata:
+        try:
+            geodata = Geodata.objects.get(uuid = layer_uuid)
             min_val = geodata.minpairdist
             if min_val: 
                 bbox = eval(geodata.bbox)
                 max_val = ((bbox[1] - bbox[0])**2 + (bbox[3] - bbox[2])**2)**0.5
                 return HttpResponse('{"min":%f, "max":%f}'%(min_val,max_val), content_type="application/json")
+        except:
+            pass
     return HttpResponse(RSP_FAIL, content_type="application/json")
     
 @login_required
@@ -275,42 +296,45 @@ def thematic_map(request):
         col_name = request.GET.get("var","")
         method = request.GET.get("method","")
         k = request.GET.get("k",0)
-        geodata = Geodata.objects.get(uuid = layer_uuid)
-        if geodata and len(col_name) > 0:
-            data = GeoDB.GetTableData(str(layer_uuid), [col_name])
-            y = data[col_name]
-            k = int(k)
-            pysalFunc = None
-            if method == "quantile":
-                pysalFunc = Quantiles
-            elif method == "equal interval":
-                pysalFunc = Equal_Interval
-            elif method == "natural breaks":
-                pysalFunc = Natural_Breaks
-            elif method == "fisher jenks":
-                pysalFunc = Fisher_Jenks
-            if pysalFunc: 
-                q = pysalFunc(np.array(y), k=k)    
-                bins = q.bins
-                id_array = []
-                for i, upper in enumerate(bins):
-                    if i == 0: 
-                        id_array.append([j for j,v in enumerate(y) if v <= upper])
-                    else:
-                        id_array.append([j for j,v in enumerate(y) \
-                                         if bins[i-1] < v <= upper])
-                results = {
-                    "k": len(bins),
-                    "layer_uuid":layer_uuid,
-                    "col_name" : col_name,
-                    "method" : method,
-                    "bins": bins if isinstance(bins, list) else bins.tolist(),
-                    "id_array": id_array,
-                }
-                return HttpResponse(
-                    json.dumps(results), 
-                    content_type="application/json"
-                )
+        try:
+            geodata = Geodata.objects.get(uuid = layer_uuid)
+            if len(col_name) > 0:
+                data = GeoDB.GetTableData(str(layer_uuid), [col_name])
+                y = data[col_name]
+                k = int(k)
+                pysalFunc = None
+                if method == "quantile":
+                    pysalFunc = Quantiles
+                elif method == "equal interval":
+                    pysalFunc = Equal_Interval
+                elif method == "natural breaks":
+                    pysalFunc = Natural_Breaks
+                elif method == "fisher jenks":
+                    pysalFunc = Fisher_Jenks
+                if pysalFunc: 
+                    q = pysalFunc(np.array(y), k=k)    
+                    bins = q.bins
+                    id_array = []
+                    for i, upper in enumerate(bins):
+                        if i == 0: 
+                            id_array.append([j for j,v in enumerate(y) if v <= upper])
+                        else:
+                            id_array.append([j for j,v in enumerate(y) \
+                                             if bins[i-1] < v <= upper])
+                    results = {
+                        "k": len(bins),
+                        "layer_uuid":layer_uuid,
+                        "col_name" : col_name,
+                        "method" : method,
+                        "bins": bins if isinstance(bins, list) else bins.tolist(),
+                        "id_array": id_array,
+                    }
+                    return HttpResponse(
+                        json.dumps(results), 
+                        content_type="application/json"
+                    )
+        except:
+            pass
     return HttpResponse(RSP_FAIL, content_type="application/json")
     
 @login_required

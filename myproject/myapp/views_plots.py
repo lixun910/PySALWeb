@@ -34,18 +34,18 @@ def histogram(request):
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
         var_x = request.GET.get("var_x", None)
-        geodata = Geodata.objects.get(uuid = layer_uuid)
-        if geodata and var_x:
-            data = GeoDB.GetTableData(str(layer_uuid), [var_x])
-            x = data[var_x]
-            results = {
-                "x": x,
-                "x_name": var_x,
-            }
-            return HttpResponse(
-                json.dumps(results), 
-                content_type="application/json"
-            )
+        try:
+            geodata = Geodata.objects.get(uuid = layer_uuid)
+            if var_x:
+                data = GeoDB.GetTableData(str(layer_uuid), [var_x])
+                x = data[var_x]
+                results = {"x": x, "x_name": var_x,}
+                return HttpResponse(
+                    json.dumps(results), 
+                    content_type="application/json"
+                )
+        except:
+            pass
     return HttpResponse(RSP_FAIL, content_type="application/json")
 
 @login_required
