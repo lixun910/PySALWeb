@@ -227,15 +227,17 @@ var InitDialogs = function(data) {
     LoadWnames();
     setTimeout(LoadSpregP, 100);
     setTimeout(LoadModelNames, 100);
-    setTimeout(LoadMinPairDist, 3000);
+    //setTimeout(LoadMinPairDist, 3000);
   }
   ToggleToolbarButtons(true);
 };
 
 // get all map names/uuid from server
 var LoadMapNames = function(){
+  $('#w-dist-loading').show();
   $.get("../get_map_names/", {})
   .done( function(nameDict) {
+    $('#w-dist-loading').hide();
     for (var sel in local_map_names_sel) {
       var map_types =  local_map_names_sel[sel];
       $(sel).find('option').remove().end();
@@ -269,7 +271,9 @@ var LoadMinPairDist = function() {
     $.get("../get_minmaxdist/", {"layer_uuid": layer_uuid})
     .done( function(data) {
       if ( data["success"] != 0 ) {
-        $('#dist-slider').slider('option', {min: data['min'], max: data['max']});
+        $('#dist-slider').slider('option', {
+          min: data['min'], max: data['max'], step: data['step']
+        });
         $('#txt-dist-thr').val(data['min']);
       }
     });
@@ -495,7 +499,7 @@ $(document).ready(function() {
       setTimeout(function(){ $(divToPop).fadeOut('slow');}, 2000);
     });
   };
-  $('#divPop,#divDownload, \
+  $('#w-dist-loading, #divPop,#divDownload, \
     #img-id-chk, #img-id-spin, #img-id-nochk, \
     .dlg-loading, #progress_bar_openfile, \
     #progress_bar_cartodb,#progress_bar_road,\
@@ -1264,6 +1268,14 @@ $(document).ready(function() {
       });
     }
   });
+  
+  $('input:radio[name=rdo-dist]').change(function(){
+    dist_method = $('input:radio[name=rdo-dist]:checked').attr("id");
+    if (dist_method == 1 && gViz) {
+      LoadMinPairDist();
+    }
+  });
+  
   $( "#dialog-weights" ).dialog({
     height: 380, 
     width: 480,

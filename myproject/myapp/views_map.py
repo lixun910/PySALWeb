@@ -275,12 +275,13 @@ def get_minmaxdist(request):
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
         try:
-            geodata = Geodata.objects.get(uuid = layer_uuid)
-            min_val = geodata.minpairdist
-            if min_val: 
-                bbox = eval(geodata.bbox)
-                max_val = ((bbox[1] - bbox[0])**2 + (bbox[3] - bbox[2])**2)**0.5
-                return HttpResponse('{"min":%f, "max":%f}'%(min_val,max_val), content_type="application/json")
+            min_val, max_val = GeoDB.GetMinMaxDist(layer_uuid)
+            results = {}
+            results['min'] = min_val
+            results['max'] = max_val
+            results['step'] = (max_val-min_val) / 100.0
+            return HttpResponse(json.dumps(results), 
+                                content_type="application/json")
         except:
             pass
     return HttpResponse(RSP_FAIL, content_type="application/json")

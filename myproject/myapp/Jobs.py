@@ -27,11 +27,7 @@ def job_google_search(userid, uuid, q,bounds,apikey, name, opath,k=3):
         if status == 'OK':
             job.status = 3
         job.save()
-        from django.db import connection 
-        connection.close()
         
-        if status == 'OK':
-            Save_new_shapefile(userid, "GeoJSON", opath) 
     except:
         job = Jobs.objects.get(uuid=uuid)
         job.log = status
@@ -40,3 +36,8 @@ def job_google_search(userid, uuid, q,bounds,apikey, name, opath,k=3):
         job.save()
         from django.db import connection 
         connection.close()
+
+    from django.db import connection 
+    connection.close()
+    if status == 'OK':
+        Save_new_shapefile(userid, "GeoJSON", opath) 

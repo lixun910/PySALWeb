@@ -57,21 +57,33 @@ def ExportToDB(shp_path, layer_uuid, geom_type):
     # create a geometry only json file for visualization     
     ExportToJSON(shp_path) 
         
-    # compute meta data for weights creation, point/polygon
-    if geom_type == 1 or geom_type == 3: 
-        # make sure using shp file in pysal
-        shp_path = shp_path[0:shp_path.rfind(".")] + ".shp"
-        points = get_points_array_from_shapefile(shp_path)
-        kd = cKDTree(points)
-        nn = kd.query(points, k=2)
-        thres = nn[0].max(axis=0)[1]
-        try:
-            geodata = Geodata.objects.get(uuid = layer_uuid)
-            geodata.minpairdist = thres
-            geodata.save()
-        except:
-            pass
     print "export ends with ", rtn
+    
+def GetMinMaxDist(layer_uuid):
+    # compute meta data for weights creation, point/polygon
+    try:
+        geodata = Geodata.objects.get(uuid = layer_uuid)
+        geotype = geodata.geotype
+        min_val = geodata.minpairdist
+        bbox = eval(geodata.bbox)
+        max_val = ((bbox[1] - bbox[0])**2 + (bbox[3] - bbox[2])**2)**0.5
+        
+        if min_val == None and (geotype == "1" or geotype == "3"): 
+            filepath = geodata.filepath 
+            shp_path = os.path.join(settings.MEDIA_ROOT, filepath)
+            shp_path, ext = os.path.splitext(shp_path)
+            shp_path = shp_path + ".shp"
+            
+            points = get_points_array_from_shapefile(shp_path)
+            kd = cKDTree(points)
+            nn = kd.query(points, k=2)
+            min_val = nn[0].max(axis=0)[1]
+            
+            geodata.minpairdist = min_val
+            geodata.save()
+        return min_val, max_val
+    except:
+        return 0,10000
     
 def ExportToESRIShape(json_path):
     print "ExportToESRIShape"

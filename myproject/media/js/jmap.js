@@ -1046,9 +1046,12 @@
       if (_self.shpType == "LineString" || _self.shpType == "Line") {
         context.strokeStyle = fillColor ? fillColor : _self.FILL_CLR;
         context.lineWidth = lineWidth ? lineWidth: _self.LINE_WIDTH;
-      } else {
+      } else if (_self.shpType == "Polygon" || _self.shpType == "MultiPolygon") {
         context.strokeStyle = strokeColor ? strokeColor : _self.STROKE_CLR;
         context.fillStyle = fillColor ? fillColor : _self.FILL_CLR;
+      } else {
+        context.strokeStyle = strokeColor ? strokeColor : _self.STROKE_CLR;
+        context.fillStyle = fillColor ? fillColor : '#FF6600';
       }
       
       if (_self.shpType == "Polygon" || _self.shpType == "MultiPolygon" ) {

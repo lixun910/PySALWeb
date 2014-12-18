@@ -133,7 +133,6 @@ def google_search(request):
                     name+".json"
                 )
                 k = int(k)
-                """
                 job_google_search(userid, uuid, q, bounds, gkey, name, 
                                  output_path, k=k)
                 """
@@ -141,6 +140,7 @@ def google_search(request):
                     target=job_google_search, 
                     args=(userid, uuid,q,bounds,gkey,name, output_path,k)
                 ).start()
+                """
                 result["success"] = 1
                 return HttpResponse(
                     json.dumps(result),
