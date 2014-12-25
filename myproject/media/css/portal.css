@@ -123,6 +123,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   height: 48px;
   z-index: 9999;
   opacity: 0.9;
+  background-image: url("http://i1087.photobucket.com/albums/j480/jinjah/snowmist.png");
   -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
