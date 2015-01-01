@@ -110,6 +110,7 @@ def ExportToJSON(shp_path):
             (prj, json_path,shp_path)
     else:
         script = 'ogr2ogr -select "" -f "GeoJSON" %s %s' % (json_path,shp_path)
+    script += "; zip %s %s" % (json_path + ".zip", json_path)
     proc = subprocess.Popen(script, shell=True, stdin=None, 
                             stdout=None, stderr=None, close_fds=True)
     

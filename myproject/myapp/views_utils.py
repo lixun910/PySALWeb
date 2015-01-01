@@ -139,7 +139,7 @@ def Save_new_shapefile(userid, driver, abs_shp_path):
         userid=userid, 
         name=shp_name,
         filepath=shp_path, 
-        jsonpath=json_path,
+        jsonpath=json_path+".zip",
         n=meta_data['n'], 
         geotype=str(geom_type), 
         bbox=str(meta_data['bbox']), 

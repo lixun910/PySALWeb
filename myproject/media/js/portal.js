@@ -633,8 +633,19 @@ $(document).ready(function() {
   if (getParameterByName("uuid")) {
     uuid = getParameterByName("uuid");
     $.get('../get_metadata/', {'layer_uuid':uuid}).done(function(data){
-      ShowExistMap(undefined, data.json_path);
-      InitDialogs(data);
+      ///ShowExistMap(undefined, data.json_path);
+      var xhr = new XMLHttpRequest();
+      xhr.responseType="blob";
+      xhr.open("GET", data.json_path, true);
+      xhr.onload = function(e) {
+        if(this.status == 200) {
+          var blob = this.response;
+          ProcessDropZipFile(blob, function(){
+            InitDialogs(data);
+          });
+        }
+      }
+      xhr.send();
     });
   } else {
     $('#dialog-open-file').dialog('open');
@@ -687,7 +698,7 @@ $(document).ready(function() {
     xhr.send(formData);
   };
  
-  var ProcessDropZipFile = function(f) {
+  var ProcessDropZipFile = function(f, callback) {
     var bShp=0;
     zip.createReader(new zip.BlobReader(f), function(zipReader) {
       zipReader.getEntries(function(entries) {
@@ -706,6 +717,7 @@ $(document).ready(function() {
               o = JSON.parse(o);
               ShowNewMap(o, 'geojson');
               $('#progress_bar_openfile').hide();
+              if (callback) callback();
               return;
             } else if (suffix === "shp") {
               bShp += 1;
@@ -721,6 +733,7 @@ $(document).ready(function() {
             if (bShp >= 3) {
               ShowNewMap(shpFile, 'shapefile');
               $('#progress_bar_openfile').hide();
+              if (callback) callback();
             }
           });
         });
