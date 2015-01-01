@@ -437,6 +437,11 @@ var DeleteMap = function(obj, layer_uuid) {
         $.get("../remove_map/", {"layer_uuid": layer_uuid}).done(function(data){
           if (data["success"] == 1) {
             $(that).parent().remove();
+            if($('#tabs-1').text().indexOf('a') > 0) {
+              $('#tabs-dlg-open-file').tabs('option','active', 0);
+            }  else {
+              $('#tabs-dlg-open-file').tabs('option','active', 1);
+            }
           }
           dlg.dialog("close");
         });
@@ -582,10 +587,11 @@ $(document).ready(function() {
     modal: true,
     dialogClass: "dialogWithDropShadow",
   });
-  if($('#tabs-1').text().length > 0) {
-    $('#tabs-dlg-open-file').tabs({selected : 1});
+  $('#tabs-dlg-open-file').tabs();
+  if($('#tabs-1').text().indexOf('a') > 0) {
+    $('#tabs-dlg-open-file').tabs('option','active', 0);
   }  else {
-    $('#tabs-dlg-open-file').tabs();
+    $('#tabs-dlg-open-file').tabs('option','active', 1);
   }
   $( "#dialog-open-file" ).dialog({
     height: 450,

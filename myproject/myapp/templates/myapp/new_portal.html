@@ -78,7 +78,7 @@
         <tr>
         <td><div class="block_button" id="btnOpenData"></div></td>
         <td><div class="block_button" id="btnAddLayer"></div></td> 
-        <td><div class="block_button" id="btnCartoDB"></div></td> 
+        <!--<td><div class="block_button" id="btnCartoDB"></div></td> -->
         <td><div class="block_button" id="btnRoadNetwork"></div></td> 
         <td><div class="block_button" id="btnSpaceTime"></div></td> 
         <td><div class="block_button" id="btnKDE"></div></td> 
@@ -129,15 +129,15 @@
       <img id="img-open-dlg" src="{{url_prefix}}/media/img/add-file.png">
       </td>
       <td>
-    You can load ESRI Shapefile files from local disk, your Dropbox or public open data.
+      Load your map files from one of these sources (shp, json, etc.):
       </td></tr>
     </table><br/><br/><br/></span>
   <div id="tabs-dlg-open-file">
     <ul>
       <li><a href="#tabs-1">My Maps</a></li>
       <li><a href="#tabs-2">Local Disk</a></li>
-      <li><a href="#tabs-3">CartoDB</a></li>
-      <li><a href="#tabs-4">Dropbox</a></li>
+      <li><a href="#tabs-3">Dropbox</a></li>
+      <li><a href="#tabs-4">CartoDB</a></li>
     </ul>
     <div id="tabs-1">
         {% if geodata %}
@@ -154,36 +154,40 @@
     </div>
     <div id="tabs-2">
       <div id="drop_zone">Drop files here
-        <p style="font-size:12px;"><label id="lbl-drop-json">*.json</label>&nbsp;&nbsp;or &nbsp;&nbsp;
-        <label  id="lbl-drop-shp">*.shp</label>&nbsp;<label id="lbl-drop-dbf">*.dbf</label>
-        &nbsp;<label id="lbl-drop-shx">.shx</label>&nbsp;&nbsp;or &nbsp;&nbsp;
-        <label>*.zip</label></p>
+        <p style="font-size:12px;"><label id="lbl-drop-json">.json</label>&nbsp;&nbsp;or &nbsp;&nbsp;
+        <label  id="lbl-drop-shp">.shp</label>&nbsp;<label id="lbl-drop-dbf">.dbf</label>
+        &nbsp;<label id="lbl-drop-shx">.shx</label>&nbsp;.prj&nbsp;&nbsp;&nbsp;or &nbsp;&nbsp;
+        <label>.zip</label></p>
       </div>
       <div id="progress_bar"><div class="percent">0%</div></div>
       <table>
       </table>
     </div>
     <div id="tabs-3">
+      <div id="dropbox_div"></div>
+    </div>
+    <div id="tabs-4">
       <form id="cartodb-form">
         <img src="{{url_prefix}}/media/img/cartodb.png">
         <table>
           <tr>
             <td>CartoDB user id</td>
             <td>
-              <input type="text" id="txt-carto-id" size=55 value="lixun910">
+              <input type="text" id="txt-carto-id" size=45 value="lixun910">
             </td>
           </tr>
           <tr>
             <td>CartoDB app key</td>
             <td>
-              <input type="text" id="txt-carto-key" size=55 value="340808e9a453af9680684a65990eb4eb706e9b56">
+              <input type="text" id="txt-carto-key" size=45 value="340808e9a453af9680684a65990eb4eb706e9b56">
+	      &nbsp;&nbsp;&nbsp;<img id='btn-file-cartodb-get-all-tables'src="{{url_prefix}}/media/img/refresh.png">
+
             </td>
           </tr>
           <tr>
             <td>CartoDB table name</td>
             <td>
-              <select id="sel-file-carto-tables"></select>&nbsp;&nbsp;&nbsp;<img id='btn-file-cartodb-get-all-tables'src="{{url_prefix}}/media/img/refresh.png">
-            </td>
+              <select id="sel-file-carto-tables"></select>            </td>
           </tr>
           <tr>
             <td></td>
@@ -193,9 +197,6 @@
           </tr>
         </table>
       </form>
-    </div>
-    <div id="tabs-4">
-      <div id="dropbox_div"></div>
     </div>
   </div>
   <br/><br/>
