@@ -38,6 +38,14 @@ and max_thresdhold
 def ExportToDB(shp_path, layer_uuid, geom_type):
     global db_host, db_port, db_uname, db_upwd, db_name
     print "export starting..", shp_path
+    
+    # convert json file to shapefile for PySAL usage if needed
+    if shp_path.endswith(".json") or shp_path.endswith(".geojson"):
+        ExportToESRIShape(shp_path) 
+   
+    # create a geometry only json file for visualization     
+    ExportToJSON(shp_path) 
+        
     table_name = TBL_PREFIX + layer_uuid
     if settings.DB == 'postgres':
         if sys.platform == 'win32':
@@ -49,13 +57,6 @@ def ExportToDB(shp_path, layer_uuid, geom_type):
     else:
         script = 'ogr2ogr -skipfailures -append -overwrite %s  %s -nln %s > /dev/null'  % (GEODB_PATH, shp_path, table_name)
         rtn = subprocess.call( script, shell=True)
-        
-    # convert json file to shapefile for PySAL usage if needed
-    if shp_path.endswith(".json") or shp_path.endswith(".geojson"):
-        ExportToESRIShape(shp_path) 
-   
-    # create a geometry only json file for visualization     
-    ExportToJSON(shp_path) 
         
     print "export ends with ", rtn
     
@@ -110,7 +111,10 @@ def ExportToJSON(shp_path):
             (prj, json_path,shp_path)
     else:
         script = 'ogr2ogr -select "" -f "GeoJSON" %s %s' % (json_path,shp_path)
-    script += "; zip %s %s" % (json_path + ".zip", json_path)
+    if sys.platform == 'win32':
+        script += "& 7za a %s %s" % (json_path + ".zip", json_path)
+    else:
+        script += "; zip %s %s" % (json_path + ".zip", json_path)
     proc = subprocess.Popen(script, shell=True, stdin=None, 
                             stdout=None, stderr=None, close_fds=True)
     
