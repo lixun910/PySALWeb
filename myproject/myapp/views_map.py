@@ -569,13 +569,13 @@ def upload(request):
                     f_path = shp_path[:-3]  + i
                     shutil.copy(o_f_path, f_path)
         # add a row in Document table
-        if len(shp_path)  > 0 and isShp >= 3:
+        #if len(shp_path)  > 0 and isShp >= 3:
             # save to file information database
-            docfile = get_docfile_path(shp_path)
-            newdoc = Document(userid=userid, docfile=docfile)
-            newdoc.save()
+            #docfile = get_docfile_path(shp_path)
+            #newdoc = Document(userid=userid, docfile=docfile)
+            #newdoc.save()
         # remove temporary files
-        shutil.rmtree(extractloc)
+        shutil.rmtree(extractloc,ignore_errors=True)
         return isJson, isShp, shp_path, driver
         
     if request.method == 'POST': 
