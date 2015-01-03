@@ -504,7 +504,7 @@ $(document).ready(function() {
       setTimeout(function(){ $(divToPop).fadeOut('slow');}, 2000);
     });
   };
-  $('#w-dist-loading, #divPop,#divDownload, \
+  $('#w-dist-loading, #divPop,#divDownload,#divUpload, \
     #img-id-chk, #img-id-spin, #img-id-nochk, \
     .dlg-loading, #progress_bar_openfile, \
     #progress_bar_cartodb,#progress_bar_road,\
@@ -638,12 +638,14 @@ $(document).ready(function() {
   });
   if (getParameterByName("uuid")) {
     uuid = getParameterByName("uuid");
+    $('#divDownload').show();
     $.get('../get_metadata/', {'layer_uuid':uuid}).done(function(data){
       ///ShowExistMap(undefined, data.json_path);
       var xhr = new XMLHttpRequest();
       xhr.responseType="blob";
       xhr.open("GET", data.json_path, true);
       xhr.onload = function(e) {
+        $('#divDownload').hide();
         if(this.status == 200) {
           var blob = this.response;
           ProcessDropZipFile(blob, function(){
@@ -678,11 +680,53 @@ $(document).ready(function() {
     }
   };
   
-  var UploadFilesToServer = function(formData, precall, callback) {
+  var UploadFilesToServer = function(files, precall, callback) {
     if (typeof precall === "function") {
-      $('#divDownload').show();
+      $('#divUpload').show();
       precall();
     }
+    // zip files
+    var n = files.length,
+        fileCnt = 0,
+        zipWriter;
+    var addFile = function(f, onend) {
+        zipWriter.add(f.name, new zip.BlobReader(f), onend); 
+    };
+    var OnAddFile = function() {
+      fileCnt += 1; 
+      if (fileCnt < n) {
+        addFile(files[fileCnt], OnAddFile);
+      } else {
+        zipWriter.close(function(blob){
+          var formData = new FormData();
+          formData.append('userfile', blob, "upload.zip");
+          formData.append('csrfmiddlewaretoken', csrftoken);
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', '../upload/');
+          xhr.onload = function() {
+            console.log("[Upload]", this.responseText);
+            try{
+              var metadata = JSON.parse(this.responseText);
+              InitDialogs(metadata);
+            } catch(e){
+              console.log("[Error][Upload Files]", e);
+            }
+            if (typeof callback === "function") {
+              $('#divUpload').hide();
+              callback();
+            }
+          }; 
+          xhr.upload.onprogress = UpdateProgress;
+          xhr.send(formData);
+        });
+      }
+    };
+    
+    zip.createWriter(new zip.BlobWriter(), function(writer){
+      zipWriter = writer;
+      addFile(files[0], OnAddFile);
+    });
+    /*
     // upload files to server
     formData.append('csrfmiddlewaretoken', csrftoken);
     var xhr = new XMLHttpRequest();
@@ -696,12 +740,13 @@ $(document).ready(function() {
         console.log("[Error][Upload Files]", e);
       }
       if (typeof callback === "function") {
-        $('#divDownload').hide();
+        $('#divUpload').hide();
         callback();
       }
     }; 
     xhr.upload.onprogress = UpdateProgress;
     xhr.send(formData);
+    */
   };
  
   var ProcessDropZipFile = function(f, callback) {
@@ -782,10 +827,10 @@ $(document).ready(function() {
       if (suffix === "zip") { // extract zip file
         ProcessDropZipFile(f);
         
-        var formData = new FormData();
-        formData.append('userfile', f, f.name);
+        //var formData = new FormData();
+        //formData.append('userfile', f, f.name);
         
-        UploadFilesToServer(formData, function(){
+        UploadFilesToServer([f], function(){
           document.getElementById('progress_bar').className = 'uploading...';
         },function(){
           // Ensure that the progress bar displays 100% at the end.
@@ -828,6 +873,7 @@ $(document).ready(function() {
     // to upload fast
      
     // upload file
+    /*
     var formData = new FormData();
     for (var i=0, n=files.length; i<n; i++) {
       var f = files[i],
@@ -837,8 +883,8 @@ $(document).ready(function() {
         formData.append('userfile', f, f.name);
       }
     }
-    
-    UploadFilesToServer(formData, function(){
+    */ 
+    UploadFilesToServer(files, function(){
       document.getElementById('progress_bar').className = 'uploading...';
     },function(){
       // Ensure that the progress bar displays 100% at the end.
@@ -924,9 +970,9 @@ $(document).ready(function() {
         ready = true;
       }
       if ( ready ) {
-        $('#divDownload').show();
+        $('#divUpload').show();
         $.get("../upload/", params).done( function(data) {
-          $('#divDownload').hide();
+          $('#divUpload').hide();
           InitDialogs(data);
           //SaveMapThumbnail(layer_uuid, containerID);
         });

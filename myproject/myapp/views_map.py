@@ -6,6 +6,10 @@ from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.core.files import File
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
 from django.contrib.auth.decorators import login_required
 
 import sys
