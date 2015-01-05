@@ -1,6 +1,6 @@
 
 var carto_uid, carto_key, carto_layer,
-    foreground, lmap, uuid,  
+    lmap, uuid,  
     gProjSwitchOn = true,
     gHasProj     =false, 
     gShowLeaflet =false, 
@@ -87,7 +87,6 @@ var SetupLeafletMap = function() {
   }
   CleanLeafletMap();
   gViz = new d3viz($('#map-container')); 
-  gViz.canvas = $('#foreground');
   gViz.SetupBrushLink();
   if (gShowLeaflet) {
     lmap = new L.Map('map');
@@ -101,14 +100,72 @@ var SetupLeafletMap = function() {
   }
 };
 
-var ShowExistMap = function(uuid, json_path) {
+ 
+  var ProcessDropZipFile = function(f, callback) {
+    var bShp=0;
+    zip.createReader(new zip.BlobReader(f), function(zipReader) {
+      zipReader.getEntries(function(entries) {
+        entries.forEach(function(entry) {
+          var suffix = getSuffix(entry.filename);
+          var writer;
+          if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
+            writer = new zip.TextWriter();
+          } else {
+            writer = new zip.BlobWriter();
+          }
+          entry.getData(writer, function(o) {
+            if (entry.filename[0] === '_') 
+              return;
+            if (suffix === 'geojson' || suffix === 'json') {
+              o = JSON.parse(o);
+              ShowNewMap(o, 'geojson');
+              $('#progress_bar_openfile').hide();
+              if (callback) callback();
+              return;
+            } else if (suffix === "shp") {
+              bShp += 1;
+              shpFile = o;
+            } else if (suffix === "shx") {
+              bShp += 1;
+            } else if (suffix === "dbf") {
+              bShp += 1;
+            } else if (suffix === "prj") {
+              gHasProj = true;
+              gPrj = proj4(o, proj4.defs('WGS84'));
+            }
+            if (bShp >= 3) {
+              ShowNewMap(shpFile, 'shapefile');
+              $('#progress_bar_openfile').hide();
+              if (callback) callback();
+            }
+          });
+        });
+      });
+    });  
+  };
+var AddExistMap = function(uuid, json_path) {
+  if (!gPrj) gPrj = proj4(proj4.defs('WGS84'), proj4.defs('WGS84'));
   SetupLeafletMap();
-  gViz.ShowMap(json_path, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
-  if (uuid) {
-    var params = {'csrfmiddlewaretoken':  csrftoken};
-    params['layer_uuid'] = uuid;
-    $.get('../get_metadata/', params).done(function(data){
-      gPrj = proj4(proj4.defs('WGS84'), proj4.defs('WGS84'));
+  
+  if (json_path.endsWith('zip')) {
+    $('#divDownload').show();
+    var xhr = new XMLHttpRequest();
+    xhr.responseType="blob";
+    xhr.open("GET", json_path, true);
+    xhr.onload = function(e) {
+      $('#divDownload').hide();
+      if(this.status == 200) {
+        ProcessDropZipFile(this.response, function(){
+          $.get('../get_metadata/', {'layer_uuid':uuid}).done(function(data){
+            InitDialogs(data);
+          });
+        });
+      }
+    }
+    xhr.send();
+  } else if (json_path.endsWith('json')) {
+    gViz.AddMap(json_path, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
+    $.get('../get_metadata/', {'layer_uuid':uuid}).done(function(data){
       InitDialogs(data);
     });
   }
@@ -127,9 +184,9 @@ var ShowNewMap = function(o, type, noForeground, recall) {
       noForeground = false;
     }
     if (gShowLeaflet) {
-      gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown,L, lmap, gPrj);
+      gViz.AddMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown,L, lmap, gPrj);
     } else {
-      gViz.ShowMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown);
+      gViz.AddMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown);
     }
   }
 };
@@ -155,20 +212,20 @@ var OnMapShown = function(map) {
   if (gAddLayer==false) {
     if (gShowLeaflet == true) {
       lmap.on('zoomstart', function() {
-        gViz.mapCanvas.clean();
+        //gViz.mapCanvas.clean();
       });
       lmap.on('zoomend', function() {
-        gViz.mapCanvas.update();
+        //gViz.mapCanvas.update();
       });
       lmap.on('movestart', function(e) {
-        gViz.mapCanvas.clean();
+        //gViz.mapCanvas.clean();
       });
       lmap.on('moveend', function(e) {
         var op = e.target.getPixelOrigin();
         var np = e.target._getTopLeftPoint();
         var offsetX = -np.x + op.x;
         var offsetY = -np.y + op.y;
-        gViz.mapCanvas.update({"offsetX":offsetX, "offsetY":offsetY});
+        //gViz.mapCanvas.update({"offsetX":offsetX, "offsetY":offsetY});
       });
     } else {
       $('#map').hide();
@@ -491,6 +548,13 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   LoadMapNames();
   
+  $( "#sortable-layers" ).sortable();
+  $( "#sortable-layers" ).selectable(); 
+  $('#layer-tree').position({
+    my: "left bottom+18",
+    at: "left top",
+    of: '#bottombar'
+  }).hide();
   jQuery.fn.popupDiv = function (divToPop, text) {
     var pos=$(this).offset();
     var h=$(this).height();
@@ -517,6 +581,7 @@ $(document).ready(function() {
   }).hide();
   
   $('#btnOpenData').click(function(){
+    $('#layer-tree').toggle('slide', {direction: 'down'});
     if (gProjectOpen == false) {
       gAddLayer = false;
       $('#img-open-dlg').attr('src',url_prefix+"/media/img/add-file.png");
@@ -643,7 +708,7 @@ $(document).ready(function() {
       var n = data.n,
           zip = false,
           url = data.json_path;
-      if ( n > 1000 ) {
+      if ( n > 4000 ) {
         zip = true;
         url = data.json_path + ".zip";
       }
@@ -653,10 +718,13 @@ $(document).ready(function() {
       xhr.onload = function(e) {
         $('#divDownload').hide();
         if(this.status == 200) {
-          var blob = this.response;
-          ProcessDropZipFile(blob, function(){
-            InitDialogs(data);
-          });
+          if (zip) {
+            ProcessDropZipFile(this.response, function(){
+              InitDialogs(data);
+            });
+          } else {
+            AddExistMap(data.layer_uuid, url);
+          }
         }
       }
       xhr.send();
@@ -753,49 +821,6 @@ $(document).ready(function() {
     xhr.upload.onprogress = UpdateProgress;
     xhr.send(formData);
     */
-  };
- 
-  var ProcessDropZipFile = function(f, callback) {
-    var bShp=0;
-    zip.createReader(new zip.BlobReader(f), function(zipReader) {
-      zipReader.getEntries(function(entries) {
-        entries.forEach(function(entry) {
-          var suffix = getSuffix(entry.filename);
-          var writer;
-          if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
-            writer = new zip.TextWriter();
-          } else {
-            writer = new zip.BlobWriter();
-          }
-          entry.getData(writer, function(o) {
-            if (entry.filename[0] === '_') 
-              return;
-            if (suffix === 'geojson' || suffix === 'json') {
-              o = JSON.parse(o);
-              ShowNewMap(o, 'geojson');
-              $('#progress_bar_openfile').hide();
-              if (callback) callback();
-              return;
-            } else if (suffix === "shp") {
-              bShp += 1;
-              shpFile = o;
-            } else if (suffix === "shx") {
-              bShp += 1;
-            } else if (suffix === "dbf") {
-              bShp += 1;
-            } else if (suffix === "prj") {
-              gHasProj = true;
-              gPrj = proj4(o, proj4.defs('WGS84'));
-            }
-            if (bShp >= 3) {
-              ShowNewMap(shpFile, 'shapefile');
-              $('#progress_bar_openfile').hide();
-              if (callback) callback();
-            }
-          });
-        });
-      });
-    });  
   };
   
   dropZone.ondragover = function(evt) {
@@ -924,7 +949,7 @@ $(document).ready(function() {
       var params = {'csrfmiddlewaretoken':  csrftoken};
       if ( suffix === 'geojson' || suffix === 'json') {
         ShowNewMap(fileLink, 'geojson');
-        //gViz.ShowMap(fileLink, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
+        //gViz.AddMap(fileLink, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
         params['json'] = fileLink;
         ready = true;
       } else if ($.inArray( suffix, ['shp', 'dbf','shx','prj']) >= 0) {

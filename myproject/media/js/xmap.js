@@ -606,7 +606,8 @@
   GeoVizMap.prototype.removeMap = function(mapIndex) {
     this.mapContainer.find('#mapIndex').remove();
     // clean memory TODO
-    this.mapList[mapIndex] = null;
+    this.mapList[mapIndex].destroy();
+    this.mapList[mapIndex]= null;
     this.mapList = this.mapList.splice(mapIndex, 1);
     this.numMaps -= 1;
   }; 
@@ -624,6 +625,8 @@
   }; 
   
   GeoVizMap.prototype.getMap = function(index) {
+    if (!index) index = this.numMaps - 1;
+    return this.mapList[index];
   }; 
   
   var MapCanvas = function(map, canvas, params) {

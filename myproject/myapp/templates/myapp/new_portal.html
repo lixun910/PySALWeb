@@ -97,6 +97,21 @@
   </div>
 </div>
 
+<div id="layer-tree">
+  <div id="add-layer" class="ui-widget-content">
+  <p> + Add a map layer </p>
+  </div>
+  <ul id="sortable-layers">
+    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 1</li>
+    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 2</li>
+    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 3</li>
+    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 4</li>
+    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 5</li>
+    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 6</li>
+    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 7</li>
+  </ul>
+</div>
+
 <!--
 ///////////////////////////////////////////////////////////////////////////////
 // Open Files
@@ -143,7 +158,11 @@
         <div style="text-align: left;">
           {% for i,layer in geodata.iteritems %}
           <p onmouseover="ShowMapTitleTool(this,true);" onmouseout="ShowMapTitleTool(this,false);">
-            <a href='../main/?uuid={{layer.uuid}}'>{{layer.name}}</a>
+	    {% if layer.n > 4000 %}
+	      <a href='#' onclick='AddExistMap("{{layer.uuid}}","../../media/{{layer.jsonpath}}.zip")'>{{layer.name}}</a>
+	    {% else %}
+	      <a href='#' onclick='AddExistMap("{{layer.uuid}}","../../media/{{layer.jsonpath}}")'>{{layer.name}}</a>
+	    {% endif %}
             <img class='novis' onclick="DownloadMap('{{layer.uuid}}');" src="{{url_prefix}}/media/img/download.png">
             <img class='novis' onclick="DeleteMap(this,'{{layer.uuid}}');" src="{{url_prefix}}/media/img/uncheckmark.gif">
           </p>

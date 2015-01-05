@@ -75,7 +75,9 @@ canvas {
   width: 60%;
   padding: 10px;
 }
-
+#add-layer{
+margin: 3px; padding: 0.4em; font-size: 1.4em; height: 18px; width: 220px;
+}
 #drop_zone {
   position: relative;
   z-index: 9999;
@@ -133,6 +135,12 @@ canvas {
   -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
 }
+
+#layer-tree { position: absolute; width: 400px; }
+#sortable-layers { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+#sortable-layers li { margin: 0 3px 0px 3px; padding: 0.4em; padding-left: 1.5em; font-size: 1.4em; height: 18px; }
+#sortable-layers li span { position: absolute; margin-left: -1.3em; }
+
 #toolbar {
   width: 95%;
   height: 100px;

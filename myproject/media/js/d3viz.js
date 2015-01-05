@@ -103,7 +103,7 @@
   };
  
   /**
-   * ShowMap() could be:
+   * AddMap() could be:
    * 1. Drag&Drop local ESRI Shape file
    * 2. Drag&Drop local GeoJson file
    * 3. Dropbox file url of ESRI Shape file
@@ -127,7 +127,7 @@
     }
   };
   
-  d3viz.prototype.ShowMap = function(o, type, isMainMap, precall, callback,L, lmap, prj, colorTheme) {
+  d3viz.prototype.AddMap = function(o, type, isMainMap, precall, callback,L, lmap, prj, colorTheme) {
     if (typeof precall === "function") { precall();}
     
     var map;
