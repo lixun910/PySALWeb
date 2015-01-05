@@ -34,6 +34,11 @@ border: 1px solid #aaa;margin: 1px 10px;
   border-radius: 4px;
   cursor: pointer;
 }
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
 .bubble {
   z-index: 10000;
   position: absolute;

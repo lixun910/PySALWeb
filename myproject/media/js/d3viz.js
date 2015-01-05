@@ -23,6 +23,7 @@
     this.canvas = canvas;
     this.container = container;
     
+    this.geoviz = new GeoVizMap(container);
     // carto db
     this.userid = undefined;
     this.key = undefined;
@@ -109,6 +110,7 @@
    * 4. Dropbox file url of GeoJson file
    */
   d3viz.prototype._setupGeoVizMap = function(isMainMap, map, type, colorTheme, callback) {
+    /*
     if (isMainMap == true) {
       self.mapCanvas = new GeoVizMap(map, self.canvas, {
         "color_theme" : colorTheme
@@ -118,6 +120,8 @@
     } else {
       self.mapCanvas.addLayer(map);
     }
+    */
+    self.geoviz.addMap(map, {'color_theme':colorTheme});
     if (typeof callback === "function") {
       callback(map);
     }

@@ -275,12 +275,12 @@ def GetMetaData(filepath, table_name, drivername=None):
         return None
     
     meta_data = dict()
+    meta_data['n'] = lyr.GetFeatureCount()
     meta_data['bbox'] = lyr.GetExtent()
     meta_data['geom_type'] = lyr.GetLayerDefn().GetGeomType()
     
     # table info
     lyrDefn = lyr.GetLayerDefn()
-    meta_data['n'] = lyrDefn.GetFieldCount()
     
     fields = dict()
     for i in range( lyrDefn.GetFieldCount() ):

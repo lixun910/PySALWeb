@@ -640,10 +640,16 @@ $(document).ready(function() {
     uuid = getParameterByName("uuid");
     $('#divDownload').show();
     $.get('../get_metadata/', {'layer_uuid':uuid}).done(function(data){
-      ///ShowExistMap(undefined, data.json_path);
+      var n = data.n,
+          zip = false,
+          url = data.json_path;
+      if ( n > 1000 ) {
+        zip = true;
+        url = data.json_path + ".zip";
+      }
       var xhr = new XMLHttpRequest();
       xhr.responseType="blob";
-      xhr.open("GET", data.json_path, true);
+      xhr.open("GET", url, true);
       xhr.onload = function(e) {
         $('#divDownload').hide();
         if(this.status == 200) {
