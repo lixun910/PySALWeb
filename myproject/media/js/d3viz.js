@@ -4,14 +4,13 @@
   /***
    * One web page <---> one d3viz
    */
-  var d3viz = function(container, canvas) {
+  var d3viz = function(container) {
   
     this.version = "0.1";
     this.socket = undefined;
     this.name = undefined;
     this.uuid = undefined;
     this.mapCanvas = undefined; // GeoVizMap
-    this.canvasDict = {}; // uuid:map
     this.mapDict = {}; // uuid:map
     this.nameDict = {}; // uuid:name
     this.dataDict = {};  // not used
@@ -20,9 +19,10 @@
     this.prj = undefined;
     this.map = undefined;
     this.mapType = undefined; //shapefile or json
-    this.canvas = canvas;
-    this.container = container;
     
+    
+    this.container = container; 
+    this.uuids = []; 
     this.geoviz = new GeoVizMap(container);
     // carto db
     this.userid = undefined;
@@ -31,24 +31,24 @@
     self = this;
   };
  
+  d3viz.prototype.GetUUID = function() {
+    return this.uuids[this.geoviz.numMaps-1];
+  };
+  
   d3viz.prototype.GetNumMaps = function() {
     return this.geoviz.numMaps;
   };
   
-  d3viz.prototype.Clean = function() {
-    if(this.mapCanvas) {
-      this.mapCanvas.destroy();
-    }
+  d3viz.prototype.GetMap = function(idx) {
+    idx = parseInt(idx);
+    return this.geoviz.getMap(idx);
   };
   
-  d3viz.prototype.SetupMap = function(map, uuid, name, isAddLayer) {
-    if (!isAddLayer) {
-      // main map
-      this.uuid = uuid;
-      this.name = name;
-    }
-    this.nameDict[uuid] = name;
-    this.mapDict[uuid] = map; // add base map to dict for brushing
+  d3viz.prototype.Clean = function() {
+  };
+  
+  d3viz.prototype.SetupMap = function(uuid) {
+    this.uuids.push(uuid);
   };
   
   d3viz.prototype.GetJSON = function(url, successHandler, errorHandler) {
@@ -114,17 +114,6 @@
    * 4. Dropbox file url of GeoJson file
    */
   d3viz.prototype._setupGeoVizMap = function(isMainMap, map, type, colorTheme, callback) {
-    /*
-    if (isMainMap == true) {
-      self.mapCanvas = new GeoVizMap(map, self.canvas, {
-        "color_theme" : colorTheme
-      });
-      self.map = map;
-      self.mapType = type;
-    } else {
-      self.mapCanvas.addLayer(map);
-    }
-    */
     self.geoviz.addMap(map, {'color_theme':colorTheme});
     if (typeof callback === "function") {
       callback(map);

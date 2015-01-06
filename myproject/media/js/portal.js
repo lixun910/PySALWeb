@@ -72,7 +72,7 @@ var ToggleToolbarButtons = function(enable) {
 var CleanLeafletMap = function() {
   if(lmap) {
     lmap.remove();
-    lmap = undefined;
+    lmap = null;
   }
   if (gViz) {
     gViz.Clean();
@@ -81,7 +81,7 @@ var CleanLeafletMap = function() {
 };
 
 var SetupLeafletMap = function() {
-  if (gAddLayer) {
+  if (gViz && gViz.GetNumMaps() > 0) {
     return;
   }
   CleanLeafletMap();
@@ -289,7 +289,8 @@ var InitDialogs = function(data) {
   $('#btnShowTable').attr('href','../get_table/?layer_uuid=' + layer_uuid);
   
   // setup uuid in GeoVizMap
-  gViz.SetupMap(gMap, layer_uuid, layer_name, gAddLayer); 
+  gViz.SetupMap(layer_uuid); 
+  
   LoadMapNames();
   
   if (!gAddLayer) {
@@ -326,8 +327,8 @@ var LoadMapNames = function(){
 };
 
 var LoadFieldNames = function(callback) {
-  if (gViz && gViz.uuid) {
-    var layer_uuid = gViz.uuid;
+  if (gViz && gViz.GetUUID()) {
+    var layer_uuid = gViz.GetUUID();
     $.get("../get_fields/", {"layer_uuid": layer_uuid})
     .done( function(fields) {
       FillFieldsToControls(fields);
@@ -339,8 +340,8 @@ var LoadFieldNames = function(callback) {
 };
 
 var LoadMinPairDist = function() {
-  if (gViz && gViz.uuid) {
-    var layer_uuid = gViz.uuid;
+  if (gViz && gViz.GetUUID()) {
+    var layer_uuid = gViz.GetUUID();
     $.get("../get_minmaxdist/", {"layer_uuid": layer_uuid})
     .done( function(data) {
       if ( data["success"] != 0 ) {
@@ -379,8 +380,8 @@ var LoadSpregP = function() {
 };
 
 var LoadWnames = function() {
-  if (gViz && gViz.uuid){
-    var layer_uuid = gViz.uuid;
+  if (gViz && gViz.GetUUID()){
+    var layer_uuid = gViz.GetUUID();
     // get weights name:uuid
     $.get("../get_weights_names/", {"layer_uuid": layer_uuid},function() {
     }).done(function(data) {
@@ -412,8 +413,8 @@ var LoadWnames = function() {
 };
 
 var LoadModelNames = function() {
-  if (gViz && gViz.uuid){
-    var layer_uuid = gViz.uuid;
+  if (gViz && gViz.GetUUID()){
+    var layer_uuid = gViz.GetUUID();
     $.get("../get_spreg_models/", {"layer_uuid": layer_uuid})
     .done(function(data){
       console.log(data);
@@ -1203,7 +1204,7 @@ $(document).ready(function() {
             $('#progress_bar_road').hide();
             if ( data["success"] == 1 ) {
               ShowMsgBox("","Snapping points to roads done.");
-              if (gViz.uuid == road_uuid) {
+              if (gViz.GetUUID() == road_uuid) {
                 LoadFieldNames();
               }
             } else {
@@ -1228,7 +1229,7 @@ $(document).ready(function() {
             $('#progress_bar_road').hide();
             if ( data["success"] == 1 ) {
               ShowMsgBox("","Create W for roads done.");
-              if (gViz.uuid == road_uuid) {
+              if (gViz.GetUUID() == road_uuid) {
                 LoadWnames();
               }
             } else {
@@ -1295,7 +1296,7 @@ $(document).ready(function() {
   //  Weights creation
   //////////////////////////////////////////////////////////////
   $('#sel-w-files').change( function() {
-    var uuid = gViz.uuid;
+    var uuid = gViz.GetUUID();
     var w_name = $('#sel-w-files').val();
     if ( w_name && uuid ) {
       var w_type = $('#sel-w-type').val();
@@ -1312,8 +1313,8 @@ $(document).ready(function() {
   var checkWname = function() {
     if (!timeoutRef) return;
     timeoutRef = null;
-    if (!gViz || !gViz.uuid) return;
-    var layer_uuid = gViz.uuid,
+    if (!gViz || !gViz.GetUUID()) return;
+    var layer_uuid = gViz.GetUUID(),
         w_name = $("#txt-w-name").val();
     $('#txt-w-name').next().remove();
     if ( layer_uuid && w_name ) { 
@@ -1347,7 +1348,7 @@ $(document).ready(function() {
   
   $('#sel-w-id').prop("selectedIndex", -1);
   $('#sel-w-id').change(function() {
-    var layer_uuid = gViz.uuid;
+    var layer_uuid = gViz.GetUUID();
         id_name = $('#sel-w-id').val();
     $("#img-id-chk, #img-id-nochk, #img-id-spin").hide();          
     if (id_name == "") {
@@ -1388,7 +1389,7 @@ $(document).ready(function() {
       text: "Create",
       id: "btn-create-w",
       click: function() {
-        if ( !gViz || !gViz.uuid) return;
+        if ( !gViz || !gViz.GetUUID()) return;
         var w_name = $('#txt-w-name').val(),
         w_id = $('#sel-w-id').find(":selected").val(),
         active = $('#tabs-dlg-weights').tabs("option","active");
@@ -1401,7 +1402,7 @@ $(document).ready(function() {
           return;
         }
         var post_param = {
-          'layer_uuid': gViz.uuid, 
+          'layer_uuid': gViz.GetUUID(), 
           'w_id': w_id, 
           'w_name': w_name, 
           'csrfmiddlewaretoken': csrftoken,
@@ -1508,7 +1509,7 @@ $(document).ready(function() {
       param["predy" + i] = content;
       count = i;
     });
-    var layer_uuid = gViz.uuid;
+    var layer_uuid = gViz.GetUUID();
     if (param && layer_uuid) {
       param["n"] = count+1;
       param["layer_uuid"] = layer_uuid;
@@ -1649,8 +1650,8 @@ $(document).ready(function() {
     buttons: {
       "Save to pdf": function() {
         //$( this ).dialog( "close" );
-        if (gViz && gViz.uuid) {
-          var layer_uuid = gViz.uuid,
+        if (gViz && gViz.GetUUID()) {
+          var layer_uuid = gViz.GetUUID(),
               txt = $('#txt-spreg-summary').text();
           txt = txt.replace(/"/g, '');
           txt = txt.replace(/<br>/g, '\n');
@@ -1691,8 +1692,8 @@ $(document).ready(function() {
     buttons: {
       "Add": function() {
         var that = $(this);
-        if (gViz && gViz.uuid) {
-          var layer_uuid = gViz.uuid,
+        if (gViz && gViz.GetUUID()) {
+          var layer_uuid = gViz.GetUUID(),
               name = $('#uniqid_name').val(),
               conti = true;
           $.each($('#sel-w-id').children(), function(i,j) { 
@@ -1732,8 +1733,8 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Save": function() {
-        if (gViz && gViz.uuid) {
-          var layer_uuid = gViz.uuid,
+        if (gViz && gViz.GetUUID()) {
+          var layer_uuid = gViz.GetUUID(),
               w_list = $.GetValsFromObjs($('#sel-model-w-files :selected')),
               wk_list = $.GetValsFromObjs($('#sel-kernel-w-files :selected')),
               model_type = $('input:radio[name=model_type]:checked').val(),
@@ -1783,7 +1784,7 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        var layer_uuid = gViz.uuid;
+        var layer_uuid = gViz.GetUUID();
         if (layer_uuid) {
           var model_name = $('#open_spreg_model').val();
           if (model_name) {
@@ -1844,8 +1845,8 @@ $(document).ready(function() {
   });
  $( "#btn_run" ).button({icons: {primary: "ui-icon-circle-triangle-e",}})
   .click(function() {
-    if (!gViz|| !gViz.uuid) return;
-    var layer_uuid = gViz.uuid;
+    if (!gViz|| !gViz.GetUUID()) return;
+    var layer_uuid = gViz.GetUUID();
     var w_list = $.GetValsFromObjs($('#sel-model-w-files :selected'));
     var wk_list = $.GetValsFromObjs($('#sel-kernel-w-files :selected'));
     var model_type = $('input:radio[name=model_type]:checked').val();
@@ -1943,7 +1944,7 @@ $(document).ready(function() {
     modal: false,
     buttons: {
       "Open": function() {
-        if (!gViz && !gViz.uuid) return;
+        if (!gViz && !gViz.GetUUID()) return;
         var sel_method = $('#sel-quan-method').val(),
             sel_var = $('#sel-var').val(),
             sel_cat = $('#quan-cate').val();
@@ -1956,7 +1957,7 @@ $(document).ready(function() {
           return;
         }
         var params = {
-          "layer_uuid": gViz.uuid,
+          "layer_uuid": gViz.GetUUID(),
           "method": sel_method, 
           "var": sel_var, 
           "k": sel_cat
@@ -1991,7 +1992,7 @@ $(document).ready(function() {
           return;
         }
         var params = {
-          "layer_uuid": gViz.uuid,
+          "layer_uuid": gViz.GetUUID(),
           "var": sel_var, 
           "w": sel_w,
         };
@@ -2021,7 +2022,7 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        if (!gViz && !gViz.uuid) return;
+        if (!gViz && !gViz.GetUUID()) return;
         var sel_var = $('#sel-moran-var').val();
             sel_w = $('#sel-moran-w').val();
         if (!sel_w || sel_w.length == 0) {
@@ -2029,7 +2030,7 @@ $(document).ready(function() {
           return;
         }
         var params = {
-          "layer_uuid": gViz.uuid,
+          "layer_uuid": gViz.GetUUID(),
           "var_x": sel_var, 
           "wuuid": sel_w,
         };
@@ -2053,7 +2054,7 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        if (!gViz && !gViz.uuid) return;
+        if (!gViz && !gViz.GetUUID()) return;
         var sel_x = $('#sel-scatter-x').val();
         var sel_y = $('#sel-scatter-y').val();
         if (sel_x == '' || sel_y == '') {
@@ -2061,7 +2062,7 @@ $(document).ready(function() {
           return;
         }
         var params = {
-          "layer_uuid": gViz.uuid,
+          "layer_uuid": gViz.GetUUID(),
           "var_x": sel_x, 
           "var_y": sel_y
         };
@@ -2086,14 +2087,14 @@ $(document).ready(function() {
     modal: true,
     buttons: {
       "Open": function() {
-        if (!gViz && !gViz.uuid) return;
+        if (!gViz && !gViz.GetUUID()) return;
         var sel_x = $('#sel-histogram-x').val();
         if (sel_x == '') {
           ShowMsgBox("Info", "Please select variable for histogram plot.")
           return;
         }
         var params = {
-          "layer_uuid": gViz.uuid,
+          "layer_uuid": gViz.GetUUID(),
           "var_x": sel_x, 
         };
         $.get('../histogram/', params, function(){

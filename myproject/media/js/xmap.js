@@ -232,6 +232,7 @@
     this.LL = LL; 
     this.Lmap = Lmap;
     if ( this.Lmap) {
+      console.log([[this.mapBottom,this.mapLeft],[this.mapTop,this.mapRight]]);
       this.Lmap.fitBounds([[this.mapBottom,this.mapLeft],[this.mapTop,this.mapRight]]);
     }
   };
@@ -459,7 +460,7 @@
   JsonMap.prototype.mapToScreen = function(x, y) {
     var px, py;
     if (this.LL) {
-      var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
+      var pt = this.Lmap.latLngToContainerPoint(new this.LL.LatLng(y,x));
       px = pt.x + this.moveX;
       py = pt.y + this.moveY;
     } else {
@@ -492,15 +493,15 @@
   };
   
   LeafletMap.prototype.screenToMap = function(px, py) {
-    px = px - _self.offsetX;
-    py = py - _self.offsetY;
+    px = px - this.offsetX;
+    py = py - this.offsetY;
     var pt = this.Lmap.layerPointToLatLng(new this.LL.point(px,py));
     return [pt.lng, pt.lat];
   };
   
   LeafletMap.prototype.mapToScreen = function(x, y) {
     var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
-    return [pt.x + _self.offsetX, pt.y + _self.offsetY];
+    return [pt.x + this.offsetX, pt.y + this.offsetY];
   };
   */ 
   
@@ -670,7 +671,6 @@
     this.map = map;
     this.shpType = this.map.shpType; 
     this.layerColors = ['#FFCC33','#CC6699','#95CAE4','#993333','#279B61'];
-    _self = this;
     
     this.selected = [];
     this.brushRect = undefined;
@@ -732,10 +732,10 @@
     },
     
     buffer2Screen: function() {
-      var context = _self.canvas.getContext("2d");
+      var context = this.canvas.getContext("2d");
       context.imageSmoothingEnabled= false;
-      context.clearRect(0, 0, _self.canvas.width, _self.canvas.height);
-      context.drawImage(_self.buffer, 0, 0);
+      context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      context.drawImage(this.buffer, 0, 0);
       return context;
     },
     // create buffer canvas
@@ -746,9 +746,9 @@
       return _buffer;
     },
     destroy: function() {
-      var context = _self.canvas.getContext("2d");
+      var context = this.canvas.getContext("2d");
       context.imageSmoothingEnabled= false;
-      context.clearRect(0, 0, _self.canvas.width, _self.canvas.height);
+      context.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.canvas.removeEventListener('mousemove', this.OnMouseMove, false);
       this.canvas.removeEventListener('mousedown', this.OnMouseDown, false);
       this.canvas.removeEventListener('mouseup', this.OnMouseUp, false);
@@ -760,21 +760,21 @@
       if ( ids == undefined ) 
         return;
       if ( context == undefined) { 
-        context = _self.canvas.getContext("2d");
+        context = this.canvas.getContext("2d");
         context.lineWidth = 0.3;
         context.imageSmoothingEnabled= false;
-        context.clearRect(0, 0, _self.canvas.width, _self.canvas.height);
-        if (!_self.noForeground) {
+        context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if (!this.noForeground) {
           if ( ids && ids.length > 0 ) {
-            context.globalAlpha = _self.HL_ALPHA;
+            context.globalAlpha = this.HL_ALPHA;
           }
-          context.drawImage( _self.buffer, 0, 0);
+          context.drawImage( this.buffer, 0, 0);
           context.globalAlpha = 1;
         }
       } 
     
       if (ids.length > 0) {
-        var screenObjs = _self.map.screenObjects; 
+        var screenObjs = this.map.screenObjects; 
         var colors = {};
         //colors["rgba(255,255,0,0.7)"] = ids;
         var imageObj = new Image();
@@ -784,21 +784,21 @@
           context.lineWidth = 1;
           var colors = {};
           colors['dummy'] = ids;
-          if (_self.shpType == "Polygon" || _self.shpType == "MultiPolygon") {
+          if (this.shpType == "Polygon" || this.shpType == "MultiPolygon") {
             context.fillStyle = fillPattern;
-            _self.drawPolygons( context, screenObjs, colors);
-          } else if (_self.shpType == "Point" || _self.shpType == "MultiPoint") {
+            this.drawPolygons( context, screenObjs, colors);
+          } else if (this.shpType == "Point" || this.shpType == "MultiPoint") {
             context.fillStyle = fillPattern;
-            _self.drawPoints( context, screenObjs, colors );
-          } else if (_self.shpType == "LineString" || _self.shpType == "Line") {
+            this.drawPoints( context, screenObjs, colors );
+          } else if (this.shpType == "LineString" || this.shpType == "Line") {
             context.strokeStyle = fillPattern;
-            _self.drawLines( context, screenObjs, colors );
+            this.drawLines( context, screenObjs, colors );
           }
-          context.strokeStyle = _self.STROKE_CLR;
+          context.strokeStyle = this.STROKE_CLR;
           context.lineWidth = 0.3;
-          _self.selected = ids;
+          this.selected = ids;
           if ( nolinking ) {
-            _self.triggerLink(ids);
+            this.triggerLink(ids);
           }
         };
         imageObj.src='http://127.0.0.1:8000/img/cross.png';
@@ -809,15 +809,15 @@
       if ( ids == undefined ) 
         return;
       if ( context == undefined) { 
-        context = _self.canvas.getContext("2d");
+        context = this.canvas.getContext("2d");
         context.lineWidth = 0.3;
         context.imageSmoothingEnabled= false;
-        context.clearRect(0, 0, _self.canvas.width, _self.canvas.height);
-        if (!_self.noForeground) {
+        context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if (!this.noForeground) {
           if ( ids && ids.length > 0 ) {
-            context.globalAlpha = _self.HL_ALPHA;
+            context.globalAlpha = this.HL_ALPHA;
           }
-          context.drawImage( _self.buffer, 0, 0);
+          context.drawImage( this.buffer, 0, 0);
           context.globalAlpha = 1;
         }
       } 
@@ -825,13 +825,13 @@
       if (ids.length > 0) {
         //context.lineWidth = 2;
         context.strokeStyle = "#000000";
-        _self.drawSelect( ids, context );
+        this.drawSelect( ids, context );
         //context.lineWidth = 0.3;
-        context.strokeStyle = _self.STROKE_CLR;
+        context.strokeStyle = this.STROKE_CLR;
        
-        _self.selected = ids;
+        this.selected = ids;
         if ( nolinking == false) {
-          _self.triggerLink(ids);
+          this.triggerLink(ids);
         }
       }
       return context;
@@ -842,29 +842,29 @@
         return;
       }
       var x0 = extent[0], y0 = extent[1], x1 = extent[2], y1 = extent[3];
-      var pt0 = _self.map.mapToScreen(x0, y0),
-          pt1 = _self.map.mapToScreen(x1, y1);
+      var pt0 = this.map.mapToScreen(x0, y0),
+          pt1 = this.map.mapToScreen(x1, y1);
       var startX = pt0[0], startY = pt0[1], 
           w = pt1[0] - startX, 
           h = pt1[1] - startY;
       if (w == 0 && h == 0) 
         return;
-      _self.selected = []; 
+      this.selected = []; 
       var hdraw = [], ddraw = []; 
       var minPX = Math.min( pt0[0], pt1[0]),
           maxPX = Math.max( pt0[0], pt1[0]),
           minPY = Math.min( pt0[1], pt1[1]),
           maxPY = Math.max( pt0[1], pt1[1]);
-      for ( var i=0, n=_self.map.centroids.length; i<n; ++i) {
-        var pt = _self.map.centroids[i],
+      for ( var i=0, n=this.map.centroids.length; i<n; ++i) {
+        var pt = this.map.centroids[i],
             inside = false;
         if ( pt[0] >= x0 && pt[0] <= x1 && 
              pt[1] >= y0 && pt[1] <= y1 ) {
-          _self.selected.push(i);
+          this.selected.push(i);
           inside = true;
         }
         // fine polygons on border of rect
-        var bx = _self.map.bbox[i]; 
+        var bx = this.map.bbox[i]; 
         if (bx[0] > x1 || bx[1] < x0 || bx[2] > y1 || bx[3] < y0) {
         } else if (x0 < bx[0] && bx[1] < x1 && y0 < bx[2] && bx[3] < y1) {
         } else {
@@ -878,17 +878,17 @@
       if ( hdraw.length + ddraw.length == 0) {
         return false;
       }
-      if (_self.noForeground) {
-        _self.old_highlight(_self.selected, undefined, true);
+      if (this.noForeground) {
+        this.old_highlight(this.selected, undefined, true);
         return;
       }
-      context = _self.canvas.getContext("2d");
+      context = this.canvas.getContext("2d");
       context.imageSmoothingEnabled= false;
       context.lineWidth = 0.3;
-      context.clearRect(0, 0, _self.canvas.width, _self.canvas.height);
-      context.globalAlpha = _self.HL_ALPHA;
-      if (!_self.noForeground) {
-        context.drawImage( _self.buffer, 0, 0);
+      context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      context.globalAlpha = this.HL_ALPHA;
+      if (!this.noForeground) {
+        context.drawImage( this.buffer, 0, 0);
       }
       context.globalAlpha = 1;
       context.save(); // save for clipping
@@ -897,17 +897,17 @@
       context.closePath();
       context.clip(); // do clipping
       // change stroke color to match transparent color
-      var old_stroke_c = new GColor(_self.STROKE_CLR);
-      old_stroke_c.a = _self.HL_ALPHA;
+      var old_stroke_c = new GColor(this.STROKE_CLR);
+      old_stroke_c.a = this.HL_ALPHA;
       var new_stroke_c = old_stroke_c.toRGB();
       context.strokeStyle = new_stroke_c;
-      context.drawImage( _self.buffer, 0, 0);
-      _self.drawSelect(ddraw, context, "unhighligh");
+      context.drawImage( this.buffer, 0, 0);
+      this.drawSelect(ddraw, context, "unhighligh");
       context.restore(); // restore from clipping, and draw reset
-      context.globalAlpha = _self.ALPHA;
+      context.globalAlpha = this.ALPHA;
       context.strokeStyle = new_stroke_c;
-      //_self.highlight(hdraw, context);
-      _self.drawSelect(hdraw, context);
+      //this.highlight(hdraw, context);
+      this.drawSelect(hdraw, context);
       
       context.beginPath();
       context.strokeStyle = "#000000";
@@ -915,10 +915,10 @@
       //context.fillStyle = "rgba(255,255,255,0)";
       context.stroke();
       context.closePath();
-      context.strokeStyle = _self.STROKE_CLR;
+      context.strokeStyle = this.STROKE_CLR;
       if (linking) {
         var hl_range = [x0, y0, x1, y1];
-        _self.triggerLink(_self.selected, hl_range);
+        this.triggerLink(this.selected, hl_range);
       }
       return true;
     },
@@ -929,14 +929,14 @@
       if ( localStorage["HL_IDS"] ){ 
         hl = JSON.parse(localStorage["HL_IDS"]);
       }
-      hl[_self.canvas.id] = select_ids;//_self.selected;
+      hl[this.canvas.id] = select_ids;//this.selected;
       localStorage["HL_IDS"] = JSON.stringify(hl);
     
       var hl_map = {}; 
       if ( localStorage["HL_MAP"] ){ 
         hl_map = JSON.parse(localStorage["HL_MAP"]);
       }
-      hl_map[_self.canvas.id] = highlight_range;
+      hl_map[this.canvas.id] = highlight_range;
       localStorage["HL_MAP"] = JSON.stringify(hl_map);
     },
     
@@ -1094,42 +1094,23 @@
       context.imageSmoothingEnabled= false;
       context.lineWidth = 0.3;
       context.globalAlpha = this.ALPHA;
-      if (_self.shpType == "LineString" || _self.shpType == "Line") {
-        context.strokeStyle = fillColor ? fillColor : _self.FILL_CLR;
-        context.lineWidth = lineWidth ? lineWidth: _self.LINE_WIDTH;
-      } else if (_self.shpType == "Polygon" || _self.shpType == "MultiPolygon") {
-        context.strokeStyle = strokeColor ? strokeColor : _self.STROKE_CLR;
-        context.fillStyle = fillColor ? fillColor : _self.FILL_CLR;
+      if (this.shpType == "LineString" || this.shpType == "Line") {
+        context.strokeStyle = fillColor ? fillColor : this.FILL_CLR;
+        context.lineWidth = lineWidth ? lineWidth: this.LINE_WIDTH;
+      } else if (this.shpType == "Polygon" || this.shpType == "MultiPolygon") {
+        context.strokeStyle = strokeColor ? strokeColor : this.STROKE_CLR;
+        context.fillStyle = fillColor ? fillColor : this.FILL_CLR;
       } else {
-        context.strokeStyle = strokeColor ? strokeColor : _self.STROKE_CLR;
+        context.strokeStyle = strokeColor ? strokeColor : this.STROKE_CLR;
         context.fillStyle = fillColor ? fillColor : '#FF6600';
       }
       
-      if (_self.shpType == "Polygon" || _self.shpType == "MultiPolygon" ) {
-        _self.drawPolygons( context, _self.map.screenObjects, colors) ;
-      } else if (_self.shpType == "Point" || _self.shpType == "MultiPoint") {
-        _self.drawPoints( context, _self.map.screenObjects, colors) ;
-      } else if (_self.shpType == "Line" || _self.shpType == "LineString") {
-        _self.drawLines( context, _self.map.screenObjects, colors) ;
-      }
-      var i=0;
-      for ( var j in _self.layers ) {
-        var subMap = _self.layers[j];
-        if (subMap.shpType == "LineString" || subMap.shpType == "Line") {
-          context.strokeStyle = _self.layerColors[i];
-          context.lineWidth = lineWidth ? lineWidth: _self.LINE_WIDTH;
-        } else {
-          context.strokeStyle = strokeColor ? strokeColor : _self.STROKE_CLR;
-          context.fillStyle = _self.layerColors[i];
-        }
-        if (subMap.shpType == "Polygon" || subMap.shpType == "MultiPolygon" ) {
-          _self.drawPolygons( context, subMap.screenObjects, colors) ;
-        } else if (subMap.shpType == "Point" || subMap.shpType == "MultiPoint") {
-          _self.drawPoints( context, subMap.screenObjects, colors) ;
-        } else if (subMap.shpType == "Line" || subMap.shpType == "LineString") {
-          _self.drawLines( context, subMap.screenObjects, colors) ;
-        }
-        i += 1;
+      if (this.shpType == "Polygon" || this.shpType == "MultiPolygon" ) {
+        this.drawPolygons( context, this.map.screenObjects, colors) ;
+      } else if (this.shpType == "Point" || this.shpType == "MultiPoint") {
+        this.drawPoints( context, this.map.screenObjects, colors) ;
+      } else if (this.shpType == "Line" || this.shpType == "LineString") {
+        this.drawLines( context, this.map.screenObjects, colors) ;
       }
       context.globalAlpha = 1;
     }, 
@@ -1139,11 +1120,11 @@
       for ( var i=0, n=ids.length; i<n; i++ ) {
         ids_dict[ids[i]] = 1;
       }
-      var screenObjs = _self.map.screenObjects; 
+      var screenObjs = this.map.screenObjects; 
       var colors = {}; 
-      if ( _self.color_theme ) {
-        for ( var c in _self.color_theme ) {
-          var orig_ids = _self.color_theme[c];
+      if ( this.color_theme ) {
+        for ( var c in this.color_theme ) {
+          var orig_ids = this.color_theme[c];
           var new_ids = [];
           for (var i in orig_ids ) {
             var oid = orig_ids[i];
@@ -1153,17 +1134,17 @@
           }
           if (invisible == "unhighligh") {
             var old_c = new GColor(c);
-            old_c.a = _self.HL_ALPHA;
+            old_c.a = this.HL_ALPHA;
             var new_c = old_c.toRGB(); 
             c = new_c.toString();
           }
           colors[c] = new_ids;
         }
       } else {
-        var c = _self.FILL_CLR;
+        var c = this.FILL_CLR;
         if (invisible == "unhighligh") {
           var old_c = new GColor(c);
-          old_c.a = _self.HL_ALPHA;
+          old_c.a = this.HL_ALPHA;
           var new_c = old_c.toRGB(); 
           c = new_c.toString();
         }
@@ -1173,12 +1154,12 @@
         colors = {};
         colors["rgba(255,255,255,0)"] = ids;
       }
-      if (_self.shpType == "Polygon" || _self.shpType == "MultiPolygon") {
-        _self.drawPolygons( context, screenObjs, colors);
-      } else if (_self.shpType == "Point" || _self.shpType == "MultiPoint") {
-        _self.drawPoints( context, screenObjs, colors );
-      } else if (_self.shpType == "LineString" || _self.shpType == "Line") {
-        _self.drawLines( context, screenObjs, colors );
+      if (this.shpType == "Polygon" || this.shpType == "MultiPolygon") {
+        this.drawPolygons( context, screenObjs, colors);
+      } else if (this.shpType == "Point" || this.shpType == "MultiPoint") {
+        this.drawPoints( context, screenObjs, colors );
+      } else if (this.shpType == "LineString" || this.shpType == "Line") {
+        this.drawLines( context, screenObjs, colors );
       }
     },
     update: function(params) {
@@ -1187,139 +1168,147 @@
         this.offsetX = params['offsetX'] ? params['offsetX'] : 0;
         this.offsetY = params['offsetY'] ? params['offsetY'] : 0;
       }
-      var newWidth = _self.canvas.parentNode.clientWidth;
-      var newHeight = _self.canvas.parentNode.clientHeight;
-      _self.canvas.width = newWidth;
-      _self.canvas.height = newHeight;
-      marginLeft = newWidth * (1-_self.hratio)/2.0;
-      marginTop = newHeight * (1-_self.vratio)/2.0;
-      _self.margin_left = marginLeft;
-      _self.margin_top = marginTop;
-      _self.map.fitScreen(newWidth, newHeight,marginLeft, marginTop, this.offsetX, this.offsetY);
-      for (var i in _self.layers) {
-        var subMap = _self.layers[i];
-        subMap.fitScreen(newWidth, newHeight,marginLeft,marginTop, this.offsetX, this.offsetY);
-      }
-      _self.buffer = _self.createBuffer();
-      _self.draw(_self.buffer.getContext("2d"), _self.color_theme);
+      var newWidth = this.canvas.parentNode.clientWidth;
+      var newHeight = this.canvas.parentNode.clientHeight;
+      this.canvas.width = newWidth;
+      this.canvas.height = newHeight;
+      marginLeft = newWidth * (1-this.hratio)/2.0;
+      marginTop = newHeight * (1-this.vratio)/2.0;
+      this.margin_left = marginLeft;
+      this.margin_top = marginTop;
+      this.map.fitScreen(newWidth, newHeight,marginLeft, marginTop, this.offsetX, this.offsetY);
+      this.buffer = null; // gc
+      this.buffer = this.createBuffer();
+      this.draw(this.buffer.getContext("2d"), this.color_theme);
       
-      if ( !_self.noForeground ) {
-        _self.buffer2Screen();
+      if ( !this.noForeground ) {
+        this.buffer2Screen();
       }   
      
     },
     clean: function(){
-        var context = _self.canvas.getContext("2d");
-        context.clearRect(0, 0, _self.canvas.width, _self.canvas.height);
+        var context = this.canvas.getContext("2d");
+        context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     },
     resetDraw: function(e) {
-        var context = _self.canvas.getContext("2d");
+        var context = this.canvas.getContext("2d");
         context.lineWidth = 0.3;
         context.imageSmoothingEnabled= false;
         context.globalAlpha = 1;
-        context.clearRect(0, 0, _self.canvas.width, _self.canvas.height);
-        if ( !_self.noForeground) {
-          context.drawImage( _self.buffer, 0, 0);
+        context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if ( !this.noForeground) {
+          context.drawImage( this.buffer, 0, 0);
         }
     },
     // register mouse events of canvas
-    OnResize: function( e) {
-      _self.update();
-      console.log("OnResize");
+    OnResize: function( evt ) {
+      var canvas_id = evt.target.id;
+      var self = window.gViz.GetMap(canvas_id);
+      self.update();
     },
-    OnKeyDown: function( e ) {
-      if ( e.keyCode == 83 ) {
-        _self.isKeyDown = true;
-      } else if ( e.keyCode = 77 ) {
-        _self.canvas.style.pointerEvents= 'none';  
+    OnKeyDown: function( evt ) {
+      var canvas_id = evt.target.id;
+      var self = window.gViz.GetMap(canvas_id);
+      if ( evt.keyCode == 83 ) {
+        self.isKeyDown = true;
+      } else if ( evt.keyCode = 77 ) {
+        self.canvas.style.pointerEvents= 'none';  
       }
     },
-    OnKeyUp: function( e ) {
-      if ( e.keyCode = 77 ) {
-        _self.canvas.style.pointerEvents= 'auto';  
+    OnKeyUp: function( evt ) {
+      var canvas_id = evt.target.id;
+      var self = window.gViz.GetMap(canvas_id);
+      if ( evt.keyCode = 77 ) {
+        self.canvas.style.pointerEvents= 'auto';  
       }
     },
     OnMouseDown: function( evt ) {
+      var canvas_id = evt.target.id;
+      var self = window.gViz.GetMap(canvas_id);
       //var x = evt.pageX, y = evt.pageY;
       var x = evt.offsetX, y = evt.offsetY;
-      _self.isMouseDown = true;
-      _self.startX = x;
-      _self.startY = y;
-      if ( _self.isKeyDown == true ) {
-        if (_self.brushRect && _self.brushRect.Contains(new GPoint(x, y)) ) {
+      self.isMouseDown = true;
+      self.startX = x;
+      self.startY = y;
+      if ( self.isKeyDown == true ) {
+        if (self.brushRect && self.brushRect.Contains(new GPoint(x, y)) ) {
           console.log("brushing");
-          _self.isBrushing = true;
+          self.isBrushing = true;
         }
       }
-      if (_self.brushRect == undefined ||
-          _self.brushRect && !_self.brushRect.Contains(new GPoint(x, y)) ) {
-        _self.brushRect = undefined;
-        _self.isBrushing = false;
-        //context.globalAlpha = this.ALPHA;
+      if (self.brushRect == undefined ||
+          self.brushRect && !self.brushRect.Contains(new GPoint(x, y)) ) {
+        self.brushRect = undefined;
+        self.isBrushing = false;
+        //context.globalAlpha = self.ALPHA;
       }
     },
     OnMouseMove: function(evt) {
-      if ( _self.isMouseDown == true ) {
+      var canvas_id = evt.target.id;
+      var self = window.gViz.GetMap(canvas_id);
+      if ( self.isMouseDown == true ) {
         var currentX = evt.offsetX, 
             currentY = evt.offsetY,
-            startX = _self.startX,
-            startY = _self.startY;
+            startX = self.startX,
+            startY = self.startY;
         
         var x0 = startX >= currentX ? currentX : startX;
         var x1 = startX < currentX ? currentX : startX;
         var y0 = startY >= currentY ? currentY : startY;
         var y1 = startY < currentY ? currentY : startY;
         
-        if ( _self.isBrushing == true ) {
+        if ( self.isBrushing == true ) {
           var offsetX = currentX - startX,
               offsetY = currentY - startY;
-          x0 = _self.brushRect.x0 + offsetX;
-          x1 = _self.brushRect.x1 + offsetX;
-          y0 = _self.brushRect.y0 + offsetY;
-          y1 = _self.brushRect.y1 + offsetY;
+          x0 = self.brushRect.x0 + offsetX;
+          x1 = self.brushRect.x1 + offsetX;
+          y0 = self.brushRect.y0 + offsetY;
+          y1 = self.brushRect.y1 + offsetY;
         } 
-        var pt0 = _self.map.screenToMap(x0, y0), 
-            pt1 = _self.map.screenToMap(x1, y1);
+        var pt0 = self.map.screenToMap(x0, y0), 
+            pt1 = self.map.screenToMap(x1, y1);
             
         x0 = pt0[0] <= pt1[0] ? pt0[0] : pt1[0];
         x1 = pt0[0] > pt1[0] ? pt0[0] : pt1[0];
         y0 = pt0[1] <= pt1[1] ? pt0[1] : pt1[1];
         y1 = pt0[1] > pt1[1] ? pt0[1] : pt1[1];
         
-        _self.highlightExt([], [x0,y0,x1,y1], true);
+        self.highlightExt([], [x0,y0,x1,y1], true);
       }
     },
     OnMouseUp: function(evt) {
+      var canvas_id = evt.target.id;
+      var self = window.gViz.GetMap(canvas_id);
       //var x = evt.pageX, y = evt.pageY;
       var x = evt.offsetX, y = evt.offsetY;
-      if ( _self.isMouseDown == true) {
-        if ( _self.startX == x && _self.startY == y ) {
+      if ( self.isMouseDown == true) {
+        if ( self.startX == x && self.startY == y ) {
           // point select
-          var pt = _self.map.screenToMap(x, y);
+          var pt = self.map.screenToMap(x, y);
           x = pt[0];
           y = pt[1];
-          for ( var i=0, n=_self.map.bbox.length; i<n; i++ ) {
-            var box = _self.map.bbox[i];
+          for ( var i=0, n=self.map.bbox.length; i<n; i++ ) {
+            var box = self.map.bbox[i];
             if ( x > box[0] && x < box[1] && 
                  y > box[2] && y < box[3] ) {
-              _self.isKeyDown = false;
-              _self.isBrushing = false;
-              _self.brushRect = undefined;
-              _self.highlight([i]);
-              _self.isMouseDown = false;
+              self.isKeyDown = false;
+              self.isBrushing = false;
+              self.brushRect = undefined;
+              self.highlight([i]);
+              self.isMouseDown = false;
               return;
             }
           }
-          _self.resetDraw();
-          _self.triggerLink([], undefined);
+          self.resetDraw();
+          self.triggerLink([], undefined);
           
-        } else if ( _self.isKeyDown == true &&  _self.isBrushing == false) {
+        } else if ( self.isKeyDown == true &&  self.isBrushing == false) {
           // setup brushing box
-          _self.brushRect = new GRect( _self.startX, _self.startY, x, y);
-          console.log(_self.brushRect.x0,_self.brushRect.x1,_self.brushRect.y0,_self.brushRect.y1);
+          self.brushRect = new GRect( self.startX, self.startY, x, y);
+          console.log(self.brushRect.x0,self.brushRect.x1,self.brushRect.y0,self.brushRect.y1);
         }
       }
-      _self.isMouseDown = false;
+      self.isMouseDown = false;
     },
     
   };
