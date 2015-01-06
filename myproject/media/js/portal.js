@@ -208,6 +208,10 @@ var PositionLayerTree = function() {
   return $('#layer-tree').css({ left: 10, bottom: 40});
 };
 
+var PositionToolMenu = function(elm) {
+  return $(elm).css({ left: 0, bottom: 40});
+};
+
 var AddMapToLayerTree = function(name) {
   var nMaps = gViz.GetNumMaps();
   var elm = '<li id="' +nMaps+ '" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>' + name + '</li>';
@@ -543,7 +547,7 @@ $(document).ready(function() {
   ToggleToolbarButtons(false);
 
   $(window).resize(function() {
-    $('#layer-tree').hide();
+    $('#layer-tree, .tool-menu').hide();
   });
   
   $('#btn_logout').click(function(){
@@ -579,27 +583,7 @@ $(document).ready(function() {
   //  Init UI
   //////////////////////////////////////////////////////////////
   LoadMapNames();
-  
-  $( "#sortable-layers" ).sortable({
-    start: function(event, ui) {
-      var start_pos = ui.item.index();
-      ui.item.data('start_pos', start_pos);
-    },
-    change: function(event, ui) {
-      var start_pos = ui.item.data('start_pos');
-      var index = ui.placeholder.index() -1;
-      ui.item.data('end_pos', index);
-    },
-    update: function(event, ui) {
-      var start_pos = ui.item.data('start_pos');
-      var end_pos = ui.item.data('end_pos');
-      console.log(start_pos, end_pos);
-    }
-  });
-  $( "#sortable-layers" ).selectable(); 
-  PositionLayerTree().hide();
-  
-  jQuery.fn.popupDiv = function (divToPop, text) {
+   jQuery.fn.popupDiv = function (divToPop, text) {
     var pos=$(this).offset();
     var h=$(this).height();
     var w=$(this).width();
@@ -623,9 +607,30 @@ $(document).ready(function() {
     width: 400, height: 200, autoOpen: false, modal: true,
     buttons: {OK: function() {$( this ).dialog( "close" );}}
   }).hide();
- 
+
+  $( "#sortable-layers" ).sortable({
+    start: function(event, ui) {
+      var start_pos = ui.item.index();
+      ui.item.data('start_pos', start_pos);
+    },
+    change: function(event, ui) {
+      var start_pos = ui.item.data('start_pos');
+      var index = ui.placeholder.index() -1;
+      ui.item.data('end_pos', index);
+    },
+    update: function(event, ui) {
+      var start_pos = ui.item.data('start_pos');
+      var end_pos = ui.item.data('end_pos');
+      console.log(start_pos, end_pos);
+    }
+  });
+  
+  $( "#sortable-layers" ).selectable(); 
+  PositionLayerTree().hide();
+  PositionToolMenu('#map-menu').hide();
+  
   var OnMenuItem = function(elm)  {
-    $(elm).parent().css('background-color', 'rgb(204,229,229)');
+    $(elm).parent().css('background-color', '#FFF');
     $(elm).parent().css('color', '#038D98');
   };
   var OffMenuItem = function(elm)  {
@@ -659,6 +664,19 @@ $(document).ready(function() {
     HideSubMenu('#layer-tree', '#btnOpenData');
   })
   
+  $('#btnNewMap').mouseenter(function(){
+    if (gViz && gViz.GetNumMaps() > 0) {
+      ShowSubMenu('#map-menu');
+      OnMenuItem(this);
+    }
+  }).mouseleave(function(){
+    if (gViz && gViz.GetNumMaps() > 0) {
+      HideSubMenu('#map-menu', this);
+    }
+  });
+  //$('#btnNewMap').click(function(){
+    //if (gViz) { $('#dlg-quantile-map').dialog('open');}
+  //});
   
   $('#btnCartoDB').click(function(){
     if (gViz) {
@@ -678,9 +696,6 @@ $(document).ready(function() {
   });
   $('#btnSpreg').click(function(){
     if (gViz) { $('#dialog-regression').dialog('open');}
-  });
-  $('#btnNewMap').click(function(){
-    if (gViz) { $('#dlg-quantile-map').dialog('open');}
   });
   $('#btnScatterPlot').click(function(){
     if (gViz) { $('#dlg-scatter-plot').dialog('open');}

@@ -132,18 +132,33 @@ canvas {
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
 }
 
-#layer-tree { position: absolute; width: 300px; background-color: #CCC; opacity: 0.8;
-  background-color: #CCEBEB;padding-bottom: 13px;
+.tool-menu {
+  background-image: url("../img/menu-bg.png");
+  position: absolute; width: 100%; height: 100px; opacity: 0.9;
+  background-color: white;padding-bottom: 13px;
+  -webkit-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
+  -moz-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
+  box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
+}
+#layer-tree { 
+  background-image: url("../img/menu-bg.png");
+  position: absolute; width: 300px; opacity: 0.8;
+  background-color: white;padding-bottom: 13px;
   cursor:pointer;
-  }
+  -webkit-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
+  -moz-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
+  box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
+}
 #add-layer { 
   border-radius:5px; 
   margin: 3px; 
   padding: 0.4em; 
-  font-size: 1.4em; 
+  font-size: 1.0em; 
   height: 18px; 
   width: 93%;
-  border: 1px dotted #CCC;
+  border-top: 2px dashed #bbb;
+  border-left: 2px dashed #bbb;
+  border-right: 2px dashed #bbb;
   z-index: 10000;
 }
 #sortable-layers { list-style-type: none; margin: 0; padding: 0; width: 95%; }
