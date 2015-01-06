@@ -40,7 +40,6 @@ var local_map_names_sel = {
 
 var toolbar_buttons = [
   '#btnOpenData',
-  '#btnAddLayer',
   '#btnCartoDB',
   '#btnRoadNetwork',
   '#btnSpaceTime',
@@ -100,49 +99,52 @@ var SetupLeafletMap = function() {
   }
 };
 
- 
-  var ProcessDropZipFile = function(f, callback) {
-    var bShp=0;
-    zip.createReader(new zip.BlobReader(f), function(zipReader) {
-      zipReader.getEntries(function(entries) {
-        entries.forEach(function(entry) {
-          var suffix = getSuffix(entry.filename);
-          var writer;
-          if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
-            writer = new zip.TextWriter();
-          } else {
-            writer = new zip.BlobWriter();
+// Read zip file 
+var ProcessDropZipFile = function(f, callback) {
+  var bShp=0;
+  zip.createReader(new zip.BlobReader(f), function(zipReader) {
+    zipReader.getEntries(function(entries) {
+      entries.forEach(function(entry) {
+        var suffix = getSuffix(entry.filename);
+        var writer;
+        if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
+          writer = new zip.TextWriter();
+        } else {
+          writer = new zip.BlobWriter();
+        }
+        entry.getData(writer, function(o) {
+          if (entry.filename[0] === '_') 
+            return;
+          if (suffix === 'geojson' || suffix === 'json') {
+            o = JSON.parse(o);
+            ShowNewMap(o, 'geojson'. entry.filename);
+            $('#progress_bar_openfile').hide();
+            if (callback) callback();
+            return;
+          } else if (suffix === "shp") {
+            bShp += 1;
+            shpFile = o;
+          } else if (suffix === "shx") {
+            bShp += 1;
+          } else if (suffix === "dbf") {
+            bShp += 1;
+          } else if (suffix === "prj") {
+            gHasProj = true;
+            gPrj = proj4(o, proj4.defs('WGS84'));
           }
-          entry.getData(writer, function(o) {
-            if (entry.filename[0] === '_') 
-              return;
-            if (suffix === 'geojson' || suffix === 'json') {
-              o = JSON.parse(o);
-              ShowNewMap(o, 'geojson');
-              $('#progress_bar_openfile').hide();
-              if (callback) callback();
-              return;
-            } else if (suffix === "shp") {
-              bShp += 1;
-              shpFile = o;
-            } else if (suffix === "shx") {
-              bShp += 1;
-            } else if (suffix === "dbf") {
-              bShp += 1;
-            } else if (suffix === "prj") {
-              gHasProj = true;
-              gPrj = proj4(o, proj4.defs('WGS84'));
-            }
-            if (bShp >= 3) {
-              ShowNewMap(shpFile, 'shapefile');
-              $('#progress_bar_openfile').hide();
-              if (callback) callback();
-            }
-          });
+          if (bShp >= 3) {
+            ShowNewMap(shpFile, 'shapefile', entry.filename);
+            $('#progress_bar_openfile').hide();
+            if (callback) callback();
+          }
         });
       });
-    });  
-  };
+    });
+  });  
+};
+
+
+
 var AddExistMap = function(uuid, json_path) {
   if (!gPrj) gPrj = proj4(proj4.defs('WGS84'), proj4.defs('WGS84'));
   SetupLeafletMap();
@@ -164,29 +166,29 @@ var AddExistMap = function(uuid, json_path) {
     }
     xhr.send();
   } else if (json_path.endsWith('json')) {
-    gViz.AddMap(json_path, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
+    gViz.AddMap(getFileName(json_path), json_path, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
     $.get('../get_metadata/', {'layer_uuid':uuid}).done(function(data){
       InitDialogs(data);
     });
   }
 };
   
-var ShowNewMap = function(o, type, noForeground, recall) {
+var ShowNewMap = function(o, type, name, noForeground, recall) {
   if (recall == undefined) {
     SetupLeafletMap();
   }
   if ( gHasProj && gPrj == undefined) {
     // wait for reading *.prj file 
-    setTimeout(function(){ShowNewMap(o, type, noForeground, true);}, 10);  
+    setTimeout(function(){ShowNewMap(o, type, name, noForeground, true);}, 10);  
   } else {
     $('#map').show();
     if (noForeground==undefined) {
       noForeground = false;
     }
     if (gShowLeaflet) {
-      gViz.AddMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown,L, lmap, gPrj);
+      gViz.AddMap(name, o, type, !gAddLayer, BeforeMapShown, OnMapShown,L, lmap, gPrj);
     } else {
-      gViz.AddMap(o, type, !gAddLayer, BeforeMapShown, OnMapShown);
+      gViz.AddMap(name, o, type, !gAddLayer, BeforeMapShown, OnMapShown);
     }
   }
 };
@@ -202,11 +204,23 @@ var ShowMapTitleTool = function(obj, flag) {
   }
 };
 
+var PositionLayerTree = function() {
+  return $('#layer-tree').css({ left: 10, bottom: 40});
+};
+
+var AddMapToLayerTree = function(name) {
+  var nMaps = gViz.GetNumMaps();
+  var elm = '<li id="' +nMaps+ '" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>' + name + '</li>';
+  $(elm).prependTo($('#sortable-layers'));
+  PositionLayerTree();
+};
+
 var BeforeMapShown = function() {
+  $('#loading').show();
 };
 
 var OnMapShown = function(map) {
-  $('#loading').remove();
+  $('#loading').hide();
   $('#dialog-open-file').dialog('close');
   gMap = map;
   if (gAddLayer==false) {
@@ -230,9 +244,11 @@ var OnMapShown = function(map) {
     } else {
       $('#map').hide();
     }
-    $('#btnOpenData').css('background-image','url(../../media/img/close-project.png)');
     gProjectOpen = true;
   }
+ 
+  // add name to layer-tree 
+  AddMapToLayerTree(map.name);
 };
 
 var FillFieldsToControls = function(fields) {
@@ -511,8 +527,23 @@ var DeleteMap = function(obj, layer_uuid) {
   });
 };
 
+/*
+      // close current project 
+      $('#btnOpenData').css('background-image','url(../../media/img/add-file.png)');
+      gProjectOpen = false;
+      CleanLeafletMap();
+      ToggleToolbarButtons(false);
+      gAddLayer = false;
+      $('#img-open-dlg').attr('src',url_prefix+"/media/img/add-file.png");
+      $('#dialog-open-file').dialog('option','title',"Let's get started");
+      $('#dialog-open-file').dialog('open');
+*/
 $(document).ready(function() {
   ToggleToolbarButtons(false);
+
+  $(window).resize(function() {
+    $('#layer-tree').hide();
+  });
   
   $('#btn_logout').click(function(){
     $.post("../logout/", {'csrfmiddlewaretoken' : csrftoken})
@@ -532,13 +563,13 @@ $(document).ready(function() {
     on_callback: function() {
       gShowLeaflet = true;
       if (gViz) {
-        ShowNewMap(gViz.o, gViz.mapType);
+        ShowNewMap(gViz.o, gViz.mapType, "");
       }
     },
     off_callback: function() {
       gShowLeaflet = false;
       if (gViz) {
-        ShowNewMap(gViz.o, gViz.mapType, true);
+        ShowNewMap(gViz.o, gViz.mapType, "", true);
       }
     },
   });
@@ -548,13 +579,25 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   LoadMapNames();
   
-  $( "#sortable-layers" ).sortable();
+  $( "#sortable-layers" ).sortable({
+    start: function(event, ui) {
+      var start_pos = ui.item.index();
+      ui.item.data('start_pos', start_pos);
+    },
+    change: function(event, ui) {
+      var start_pos = ui.item.data('start_pos');
+      var index = ui.placeholder.index() -1;
+      ui.item.data('end_pos', index);
+    },
+    update: function(event, ui) {
+      var start_pos = ui.item.data('start_pos');
+      var end_pos = ui.item.data('end_pos');
+      console.log(start_pos, end_pos);
+    }
+  });
   $( "#sortable-layers" ).selectable(); 
-  $('#layer-tree').position({
-    my: "left bottom+18",
-    at: "left top",
-    of: '#bottombar'
-  }).hide();
+  PositionLayerTree().hide();
+  
   jQuery.fn.popupDiv = function (divToPop, text) {
     var pos=$(this).offset();
     var h=$(this).height();
@@ -579,34 +622,43 @@ $(document).ready(function() {
     width: 400, height: 200, autoOpen: false, modal: true,
     buttons: {OK: function() {$( this ).dialog( "close" );}}
   }).hide();
+ 
+  var OnMenuItem = function(elm)  {
+    $(elm).parent().css('background-color', 'rgb(204,229,229)');
+    $(elm).parent().css('color', '#038D98');
+  };
+  var OffMenuItem = function(elm)  {
+    $(elm).parent().css('background-color', '#038D98');
+    $(elm).parent().css('color', '#FFF');
+  };
+  var ShowSubMenu = function(elm) {
+    $(elm).show('slide', {direction: 'down'});
+  };
+  var HideSubMenu = function(elm, btn) {
+    $(elm).delay(500).hide('slide', {direction:'down'},function(){
+      OffMenuItem(btn);
+    });
+  };
   
   $('#btnOpenData').click(function(){
-    $('#layer-tree').toggle('slide', {direction: 'down'});
-    if (gProjectOpen == false) {
-      gAddLayer = false;
-      $('#img-open-dlg').attr('src',url_prefix+"/media/img/add-file.png");
-      $('#dialog-open-file').dialog('option','title',"Let's get started");
-      $('#dialog-open-file').dialog('open');
-    } else {
-      // close current project 
-      $('#btnOpenData').css('background-image','url(../../media/img/add-file.png)');
-      gProjectOpen = false;
-      CleanLeafletMap();
-      ToggleToolbarButtons(false);
-      gAddLayer = false;
-      $('#img-open-dlg').attr('src',url_prefix+"/media/img/add-file.png");
-      $('#dialog-open-file').dialog('option','title',"Let's get started");
-      $('#dialog-open-file').dialog('open');
+    $('#dialog-open-file').dialog('open');
+  }).mouseenter(function(){
+    if (gViz && gViz.GetNumMaps() > 0) {
+      ShowSubMenu('#layer-tree');
+      OnMenuItem(this);
+    }
+  }).mouseleave(function(){
+    if (gViz && gViz.GetNumMaps() > 0) {
+      HideSubMenu('#layer-tree', '#btnOpenData');
     }
   });
-  $('#btnAddLayer').click(function(){
-    if (gViz) {
-      gAddLayer = true;
-      $('#img-open-dlg').attr('src',url_prefix+"/media/img/addlayer_large.png");
-      $('#dialog-open-file').dialog('option','title','Add a layer to current map');
-      $('#dialog-open-file').dialog('open');
-    }
-  });
+  $('#layer-tree').mouseenter(function(){
+    $(this).stop(true, true);
+  }).mouseleave(function(){
+    HideSubMenu('#layer-tree', '#btnOpenData');
+  })
+  
+  
   $('#btnCartoDB').click(function(){
     if (gViz) {
       $('#dialog-cartodb').dialog('open');
@@ -645,13 +697,6 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Open File 
   //////////////////////////////////////////////////////////////
-  $( "#dialog-pre-open-file" ).dialog({
-    height: 400,
-    width: 800,
-    autoOpen: false,
-    modal: true,
-    dialogClass: "dialogWithDropShadow",
-  });
   $('#tabs-dlg-open-file').tabs();
   if($('#tabs-1').text().indexOf('a') > 0) {
     $('#tabs-dlg-open-file').tabs('option','active', 0);
@@ -685,7 +730,7 @@ $(document).ready(function() {
               var prj_url = meta_data.shp_url.slice(0,-3) + "prj";
               $.get(prj_url).done(function(prj_data){
                 gPrj = proj4(prj_data, proj4.defs('WGS84'));
-                ShowNewMap(meta_data.shp_url, 'shapefile');
+                ShowNewMap(meta_data.shp_url, 'shapefile', table_name);
                 InitDialogs(meta_data);
               });
             });
@@ -800,27 +845,6 @@ $(document).ready(function() {
       zipWriter = writer;
       addFile(files[0], OnAddFile);
     });
-    /*
-    // upload files to server
-    formData.append('csrfmiddlewaretoken', csrftoken);
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '../upload/');
-    xhr.onload = function() {
-      console.log("[Upload]", this.responseText);
-      try{
-        var metadata = JSON.parse(this.responseText);
-        InitDialogs(metadata);
-      } catch(e){
-        console.log("[Error][Upload Files]", e);
-      }
-      if (typeof callback === "function") {
-        $('#divUpload').hide();
-        callback();
-      }
-    }; 
-    xhr.upload.onprogress = UpdateProgress;
-    xhr.send(formData);
-    */
   };
   
   dropZone.ondragover = function(evt) {
@@ -857,10 +881,6 @@ $(document).ready(function() {
           suffix = getSuffix(name);
       if (suffix === "zip") { // extract zip file
         ProcessDropZipFile(f);
-        
-        //var formData = new FormData();
-        //formData.append('userfile', f, f.name);
-        
         UploadFilesToServer([f], function(){
           document.getElementById('progress_bar').className = 'uploading...';
         },function(){
@@ -902,19 +922,6 @@ $(document).ready(function() {
     }
     // compress the file to zip? no, let users to zip the files if they want 
     // to upload fast
-     
-    // upload file
-    /*
-    var formData = new FormData();
-    for (var i=0, n=files.length; i<n; i++) {
-      var f = files[i],
-          suffix = getSuffix(name);
-      // compress and then append to formData
-      if (['json','geojson','shp','shx','dbf', 'prj'].indexOf(suffix) >=0) {
-        formData.append('userfile', f, f.name);
-      }
-    }
-    */ 
     UploadFilesToServer(files, function(){
       document.getElementById('progress_bar').className = 'uploading...';
     },function(){
@@ -929,9 +936,9 @@ $(document).ready(function() {
     
     // display map directly
     if (shpFile) {
-      ShowNewMap(shpFile, 'shapefile');
+      ShowNewMap(shpFile, 'shapefile', shpFile.name);
     } else if (jsonFile) {
-      ShowNewMap(jsonFile, 'json');
+      ShowNewMap(jsonFile, 'json', jsonFile.name);
     }
   };
   
@@ -948,8 +955,7 @@ $(document).ready(function() {
       var suffix = getSuffix(fileLink);
       var params = {'csrfmiddlewaretoken':  csrftoken};
       if ( suffix === 'geojson' || suffix === 'json') {
-        ShowNewMap(fileLink, 'geojson');
-        //gViz.AddMap(fileLink, 'json', !gAddLayer, BeforeMapShown, OnMapShown, L, lmap, gPrj);
+        ShowNewMap(fileLink, 'geojson', getFileName(fileLink));
         params['json'] = fileLink;
         ready = true;
       } else if ($.inArray( suffix, ['shp', 'dbf','shx','prj']) >= 0) {
@@ -976,10 +982,10 @@ $(document).ready(function() {
             $.get(prjUrl, function(data) {
               var ip = data;
               gPrj = proj4(ip, proj4.defs('WGS84'));
-              ShowNewMap(shpUrl, 'shapefile');
+              ShowNewMap(shpUrl, 'shapefile', getFileName(shpUrl));
             });
           } else {
-            ShowNewMap(shpUrl, 'shapefile');
+            ShowNewMap(shpUrl, 'shapefile', getFileName(shpUrl));
           } 
           ready = true;
         } else {

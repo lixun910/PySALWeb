@@ -75,9 +75,6 @@ canvas {
   width: 60%;
   padding: 10px;
 }
-#add-layer{
-margin: 3px; padding: 0.4em; font-size: 1.4em; height: 18px; width: 220px;
-}
 #drop_zone {
   position: relative;
   z-index: 9999;
@@ -130,20 +127,32 @@ margin: 3px; padding: 0.4em; font-size: 1.4em; height: 18px; width: 220px;
   height: 48px;
   z-index: 9999;
   opacity: 0.9;
-  background-image: url("http://i1087.photobucket.com/albums/j480/jinjah/snowmist.png");
   -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
 }
 
-#layer-tree { position: absolute; width: 400px; }
-#sortable-layers { list-style-type: none; margin: 0; padding: 0; width: 60%; }
-#sortable-layers li { margin: 0 3px 0px 3px; padding: 0.4em; padding-left: 1.5em; font-size: 1.4em; height: 18px; }
+#layer-tree { position: absolute; width: 300px; background-color: #CCC; opacity: 0.8;
+  background-color: #CCEBEB;padding-bottom: 13px;
+  cursor:pointer;
+  }
+#add-layer { 
+  border-radius:5px; 
+  margin: 3px; 
+  padding: 0.4em; 
+  font-size: 1.4em; 
+  height: 18px; 
+  width: 93%;
+  border: 1px dotted #CCC;
+  z-index: 10000;
+}
+#sortable-layers { list-style-type: none; margin: 0; padding: 0; width: 95%; }
+#sortable-layers li { margin: 0 3px 0px 10px; padding: 0.4em; padding-left: 1.5em; font-size: 1.4em; height: 18px; text-align: left; }
 #sortable-layers li span { position: absolute; margin-left: -1.3em; }
 
 #toolbar {
   width: 95%;
-  height: 100px;
+  height: 100%;
   margin-top: 2px;
   margin:0 auto;
 }
@@ -155,13 +164,16 @@ margin: 3px; padding: 0.4em; font-size: 1.4em; height: 18px; width: 220px;
   padding-top: 2px; 
 }
 .toolbar_tbl {
-  margin-top: 4px; 
   width: 98%;
+  height: 100%;
 }
 .toolbar_tbl td {
   font-size: 160%;
   font-family: Verdana,Helvetica,Arial,sans-serif;
-  color: white;
+  color: #EEE;
+  vertical-align: middle;
+  padding-left: 8px;
+  cursor:pointer;
 }
 .title_link{
   color: #FFFFFF;
@@ -179,9 +191,11 @@ margin: 3px; padding: 0.4em; font-size: 1.4em; height: 18px; width: 220px;
   width: 100%;
   height: 40px;
   background-color: #038D98;
+  /*
   -webkit-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
   -moz-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
   box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
+  */
 }
 .round_div {
   border-radius:5px; 
@@ -189,36 +203,13 @@ margin: 3px; padding: 0.4em; font-size: 1.4em; height: 18px; width: 220px;
   padding: 25px;
   width: 50%;
 }
-.block_button {
-  border-radius: 5px;
-  padding: 25px;
-  opacity: 0.8;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-#btnOpenData {background-image: url(../img/add-file.png);}
-#btnAddLayer {background-image: url(../img/addLayer.png);}
-#btnCartoDB {background-image: url(../img/cartodb.png);}
-#btnRoadNetwork {background-image: url(../img/network.png);}
-#btnSpaceTime {background-image: url(../img/st.png);}
-#btnSave {background-image: url(../img/save.png);}
-#btnShowTable {background-image: url(../img/table.png);}
-#btnCreateW {background-image: url(../img/newW.png);}
-#btnWHistogram{background-image: url(../img/wHist.png);}
-#btnKDE{background-image: url(../img/density.png);}
-#btnNewMap{background-image: url(../img/nmap.png);}
-#btnScatterPlot{background-image: url(../img/scatter.png);}
-#btnHist{background-image: url(../img/hist.png);}
-#btnPCP{background-image: url(../img/pcp.png);}
-#btnLISA{background-image: url(../img/lisa.png);}
-#btnMoran{background-image: url(../img/moran.png);}
-#btnSpreg{background-image: url(../img/spreg.png);}
-#btnAbout {background-image: url(../img/about.png);}
 #map-container {
   position: relative; 
   border: 0px solid red;
-  height: 100%;
   width: 100%;
+  height: -moz-calc(100% - 48px); /* Firefox */
+  height: -webkit-calc(100% - 48px); /* Chrome, Safari */
+  height: calc(100% - 48px); /* IE9+ and future browsers */
 }
 #map {
   align:center; margin-top:0px;border: 0px solid red;width: 100%;height:100%;

@@ -36,21 +36,6 @@
   <table class="toolbar_tbl" align="left" >
     <tr>
       <td width=160"><img id="logo" src="{{url_prefix}}/media/img/pysalweb-logo.png"></td>
-      <td width=160>
-	      <a class="title_link" href="../main/"> <font color="#ffaf4b">Spatial Analysis</font></a>
-      </td>
-      <td width=120>
-	      <a class="title_link" href="../open_data/" target="_blank">Open Data</a>
-      </td>
-      <td width=70>
-	      <a class="title_link" class="" href="../open_data/" target="_blank">APIs</a>
-      </td>
-      <td width=120>
-	      <a class="title_link" href="../open_data/" target="_blank">Documents</a>
-      </td>
-      <td width=100>
-	      <a class="title_link" href="../open_data/" target="_blank">My Account</a>
-      </td>
       <td class="righttd">
         <img id="account" src="{{url_prefix}}/media/img/user.png" align="">
         <font size="2" style="margin-top:-2px">{{userid}}</font>
@@ -64,52 +49,56 @@
 // Main Body
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div style="padding-top:48px"></div>
-<div id="map-container">
-  <div id="map"></div>
-</div>
-<div id="map-uuid" style="width:300px;align:center;"></div>
-
-<div id="bottombar">
-  <div id="toolbar">
-      <div style="clear: left;"></div>
-      <table class="toolbar_tbl" align="left" style="margin-top:-5px;">
-        <tr>
-        <td><div class="block_button" id="btnOpenData"></div></td>
-        <td><div class="block_button" id="btnAddLayer"></div></td> 
-        <!--<td><div class="block_button" id="btnCartoDB"></div></td> -->
-        <td><div class="block_button" id="btnRoadNetwork"></div></td> 
-        <td><div class="block_button" id="btnSpaceTime"></div></td> 
-        <td><div class="block_button" id="btnKDE"></div></td> 
-        <td><div class="block_button" id="btnCreateW"></div></td>
-        <td><div class="block_button" id="btnWHistogram"></div></td> 
-        <td><div class="block_button" id="btnSpreg"></div></td>
-        <td><a class="block_button" target="_blank" id="btnShowTable"></div></td> 
-        <td><div class="block_button" id="btnNewMap"></div></td> 
-        <td><div class="block_button" id="btnScatterPlot"></div></td> 
-        <td><div class="block_button" id="btnHist"></div></td> 
-        <td><div class="block_button" id="btnPCP"></div></td> 
-        <td><div class="block_button" id="btnMoran"></div></td> 
-        <td><div class="block_button" id="btnLISA"></div></td> 
-        <td class="righttd"><img src="https://geodacenter.asu.edu/drupal_files/geoda_logo.png" style="margin-left:30px;opacity:0.6;" height=22></td>
-        </tr>
-      </table>
+  <div style="padding-top:48px"></div>
+  <div id="map-container">
+	<div id="map"></div>
   </div>
-</div>
+  
+  <div id="bottombar">
+	<div id="toolbar">
+		<div style="clear: left;"></div>
+		<table class="toolbar_tbl" align="left"> 
+		  <tr>
+		  <td>
+			<div id="btnOpenData"><img src="../../media/img/addLayer.png"/><span>Load data</span></div>
+		  </td>
+		  <td>
+			<div id="btnShowTable"><img src="../../media/img/table.png"/> Table </div>
+		  </td>
+		  <td>
+			<div id="btnNewMap"><img src="../../media/img/nmap.png"/> Map </div>
+		  </td>
+		  <td>
+			<div id="btnExplore"><img src="../../media/img/scatter.png"/> Explore </div>
+		  </td>
+		  <td>
+			<div id="btnSpace"><img src="../../media/img/moran.png"/> Space </div>
+		  </td>
+		  <td>
+			<div id="btnSpreg"><img src="../../media/img/spreg.png"/> Regression </div>
+		  </td>
+		  <td><div class="block_button" id="btnRoadNetwork"></div></td> 
+		  <td><div class="block_button" id="btnSpaceTime"></div></td> 
+		  <td><div class="block_button" id="btnKDE"></div></td> 
+		  <td><div class="block_button" id="btnCreateW"></div></td>
+		  <td><div class="block_button" id="btnWHistogram"></div></td> 
+		  <td><div class="block_button" id="btnSpreg"></div></td>
+		  <td><a class="block_button" target="_blank" id="btnShowTable"></div></td> 
+		  <td><div class="block_button" id="btnNewMap"></div></td> 
+		  <td><div class="block_button" id="btnScatterPlot"></div></td> 
+		  <td><div class="block_button" id="btnHist"></div></td> 
+		  <td><div class="block_button" id="btnPCP"></div></td> 
+		  <td><div class="block_button" id="btnMoran"></div></td> 
+		  <td><div class="block_button" id="btnLISA"></div></td> 
+		  <td class="righttd"><img src="https://geodacenter.asu.edu/drupal_files/geoda_logo.png" style="margin-left:30px;opacity:0.6;" height=22></td>
+		  </tr>
+		</table>
+	</div>
+  </div>
 
 <div id="layer-tree">
-  <div id="add-layer" class="ui-widget-content">
-  <p> + Add a map layer </p>
-  </div>
-  <ul id="sortable-layers">
-    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 1</li>
-    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 2</li>
-    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 3</li>
-    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 4</li>
-    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 5</li>
-    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 6</li>
-    <li class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>Item 7</li>
-  </ul>
+  <div id="add-layer"><p>Drag&drop to reorder map layers</p></div>
+  <ul id="sortable-layers"></ul>
 </div>
 
 <!--
@@ -131,7 +120,7 @@
       </tr>
       <tr>
         <td style="text-align:center;">Open a base map</td>
-        <td style="text-align:center;">Add a new map laye</td>
+        <td style="text-align:center;">Add a new map layer</td>
       </tr>
     </table>
   </div>

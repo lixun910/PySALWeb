@@ -31,6 +31,10 @@
     self = this;
   };
  
+  d3viz.prototype.GetNumMaps = function() {
+    return this.geoviz.numMaps;
+  };
+  
   d3viz.prototype.Clean = function() {
     if(this.mapCanvas) {
       this.mapCanvas.destroy();
@@ -127,7 +131,7 @@
     }
   };
   
-  d3viz.prototype.AddMap = function(o, type, isMainMap, precall, callback,L, lmap, prj, colorTheme) {
+  d3viz.prototype.AddMap = function(name, o, type, isMainMap, precall, callback,L, lmap, prj, colorTheme) {
     if (typeof precall === "function") { precall();}
     
     var map;
@@ -140,14 +144,14 @@
         xhr.open("GET", o, true);
         xhr.responseType = 'arraybuffer';
         xhr.onload = function(evt) {
-          map = new ShpMap(new ShpReader(xhr.response), L, lmap, prj);
+          map = new ShpMap(name, new ShpReader(xhr.response), L, lmap, prj);
           self._setupGeoVizMap(isMainMap, map, type, colorTheme, callback);
         };
         xhr.send(null);
       } else if (type == 'geojson' || type == 'json') {
         var json_url = o;
         this.GetJSON( json_url, function(json) {
-          map = new JsonMap(json, L, lmap, prj); 
+          map = new JsonMap(name, json, L, lmap, prj); 
           self._setupGeoVizMap(isMainMap, map, type, colorTheme, callback);
         });
       }
@@ -157,10 +161,10 @@
       var reader = new FileReader();
       reader.onload = function(e) {
         if (type == 'shapefile') {
-          map = new ShpMap(new ShpReader(reader.result), L, lmap, prj);
+          map = new ShpMap(name, new ShpReader(reader.result), L, lmap, prj);
         } else if (type == 'geojson' || type == 'json') {
           var json = JSON.parse(reader.result);
-          map = new JsonMap(json, L, lmap, prj);
+          map = new JsonMap(name, json, L, lmap, prj);
         }
         self._setupGeoVizMap(isMainMap, map, type, colorTheme, callback);
       };
@@ -173,10 +177,10 @@
     } else if (typeof o == 'object'){
       if (o instanceof ShpReader || o.constructor.name == 'ShpReader') {
         // ShpReader object 
-        map = new ShpMap(o, L, lmap, prj); 
+        map = new ShpMap(name, o, L, lmap, prj); 
       } else {
         // JSON object 
-        map = new JsonMap(o, L, lmap, prj); 
+        map = new JsonMap(name, o, L, lmap, prj); 
       }
       self._setupGeoVizMap(isMainMap, map, type, colorTheme, callback);
     } 

@@ -38,7 +38,8 @@
   MULTIPATCH: 31 // not supported
   };
 
-  var ShpMap = function(shpReader, LL, Lmap, prj) {
+  var ShpMap = function(name, shpReader, LL, Lmap, prj) {
+    this.name = name;
     this.shpReader = shpReader;
     var shpType = shpReader.type();
     if (shpType == 1 || shpType == 11 || shpType == 21 || shpType == 28){
@@ -209,7 +210,8 @@
   //////////////////////////////////////////////////////////////
   // JsonMap
   //////////////////////////////////////////////////////////////
-  var JsonMap = function(geoJson, LL, Lmap, prj) {
+  var JsonMap = function(name, geoJson, LL, Lmap, prj) {
+    this.name = name;
     this.geojson = geoJson;
     this.prj = prj;
     this.shpType = this.geojson.features[0].geometry.type;
@@ -470,6 +472,7 @@
   //////////////////////////////////////////////////////////////
   // LeaftletMap inherited from JsonMap
   //////////////////////////////////////////////////////////////
+  /*
   LeafletMap = function(geojson, LL, Lmap, prj) {
     extent = undefined;
     JsonMap.call(this, geojson, extent, prj);
@@ -499,7 +502,7 @@
     var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
     return [pt.x + _self.offsetX, pt.y + _self.offsetY];
   };
-  
+  */ 
   
   //////////////////////////////////////////////////////////////
   // GeoVizMap
@@ -598,6 +601,10 @@
     }).width(this.width).height(this.height);
     this.mapContainer.append(canvas);
     var mapCanvas = new MapCanvas(map, canvas, params);
+    
+    for (var i=0; i<this.mapList.length; i++) {
+      this.mapList[i].updateExtent(map);
+    }
     
     this.mapList.push(mapCanvas);
     this.numMaps += 1;
@@ -708,6 +715,11 @@
   // member functions
   MapCanvas.prototype = {
   
+    updateExtent: function(map) {
+      this.map.updateExtent(map);
+      this.update(); 
+    },
+    
     updateColor: function(color_theme) {
       if ( !this.noForeground ) {
         this.color_theme  = color_theme;
@@ -1314,7 +1326,7 @@
   
   window["ShpMap"] = ShpMap;
   window["JsonMap"] = JsonMap;
-  window["LeafletMap"] = LeafletMap;
+  //window["LeafletMap"] = LeafletMap;
   window["MapCanvas"] = MapCanvas;
   window["GeoVizMap"] = GeoVizMap;
 })(self);
