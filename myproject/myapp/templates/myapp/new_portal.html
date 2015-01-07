@@ -36,11 +36,15 @@
   <table class="toolbar_tbl" align="left" >
     <tr>
       <td width=160"><img id="logo" src="{{url_prefix}}/media/img/pysalweb-logo.png"></td>
+	  <td style="max-width: 300px;min-width: 300px;"></td>
       <td class="righttd">
         <img id="account" src="{{url_prefix}}/media/img/user.png" align="">
-        <font size="2" style="margin-top:-2px">{{userid}}</font>
-        <button id="btn_logout">logout</button>
+       {{userid}}
+        <button id="btn_logout">logout</button> &nbsp;&nbsp;
       </td>
+      <td width=100 class="righttd">
+		<div id="basemap">Basemap</div>
+	  </td>
     </tr>
   </table>
 </div>
@@ -80,19 +84,6 @@
 		  <td>
 			<div class="blockBtn" id="btnSpreg"><img src="../../media/img/spreg.png"/><span>Regression</span></div>
 		  </td>
-		  <td><div class="block_button" id="btnRoadNetwork"></div></td> 
-		  <td><div class="block_button" id="btnSpaceTime"></div></td> 
-		  <td><div class="block_button" id="btnKDE"></div></td> 
-		  <td><div class="block_button" id="btnCreateW"></div></td>
-		  <td><div class="block_button" id="btnWHistogram"></div></td> 
-		  <td><div class="block_button" id="btnSpreg"></div></td>
-		  <td><a class="block_button" target="_blank" id="btnShowTable"></div></td> 
-		  <td><div class="block_button" id="btnNewMap"></div></td> 
-		  <td><div class="block_button" id="btnScatterPlot"></div></td> 
-		  <td><div class="block_button" id="btnHist"></div></td> 
-		  <td><div class="block_button" id="btnPCP"></div></td> 
-		  <td><div class="block_button" id="btnMoran"></div></td> 
-		  <td><div class="block_button" id="btnLISA"></div></td> 
 		  </tr>
 		</table>
 	</div>
@@ -104,11 +95,41 @@
 </div>
 
 <div class="tool-menu" id="map-menu">
-	<div class="image-wrap" style="background-image: url(../../media/img/wiz-sim-poly.png);width:92px;height:82px;">
+	<div class="image-wrap" style="background-image: url(../../media/img/wiz-sim-poly.png);width: 92px; height: 82px;">
 	  <span>Simple Map</span>
 	</div>
-	<div class="image-wrap" style="background-image: url(../../media/img/wiz-cat-poly.png);width:92px;height:82px;">
+	<div class="image-wrap" style="background-image: url(../../media/img/wiz-cat-poly.png);">
 	  <span>Choropthleth Map</span>
+	</div>
+</div>
+
+<div class="tool-menu" id="explore-menu">
+	<div class="image-wrap" style="background-image: url(../../media/img/wiz-hist.png);">
+	  <span>Histogram</span>
+	</div>
+	<div class="image-wrap" style="background-image: url(../../media/img/wiz-scatter.png);">
+	  <span>Scatter Plot</span>
+	</div>
+	<div class="image-wrap" style="background-image: url(../../media/img/wiz-pcp.png);">
+	  <span>Parallel Coordinates</span>
+	</div>
+	<div class="image-wrap" style="background-image: url(../../media/img/wiz-chord.png);">
+	  <span>Chord Diagram</span>
+	</div>
+</div>
+
+<div class="tool-menu" id="space-menu">
+	<div class="image-wrap" style="background-image: url(../../media/img/newW.png);">
+	  <span>Create Weights</span>
+	</div>
+	<div class="image-wrap" style="background-image: url(../../media/img/wHist.png);">
+	  <span>Weights Histogram</span>
+	</div>
+	<div class="image-wrap" style="background-image: url(../../media/img/moran.png);">
+	  <span>Moran Scatter Plot</span>
+	</div>
+	<div class="image-wrap" style="background-image: url(../../media/img/lisa.png)">
+	  <span>LISA Map</span>
 	</div>
 </div>
 
@@ -976,17 +997,22 @@
   </div>
 </div>
 
-<div id="divPop" class="bubble">This is Popup Div.</div>
-<div id="mapInfo">
+<div id="mapInfo" class='info-div'>
   <div class="switch-wrapper" id="divSwitchLeaflet"><input type="checkbox" id="switch" value="1" checked></div>
-  <div id="divUpload" style="margin-top:5px;">
+  <br/>
+  <div id="mapproviders">
+	<img id="0" src="../../media/img/b0.png">
+	<img id="1" src="../../media/img/b1.png">
+	<img id="2" src="../../media/img/b2.png">
+	<img id="3" src="../../media/img/b3.png">
+	<img id="4" src="../../media/img/b4.png">
+	<img id="5" src="../../media/img/b5.png">
+  </div>
+</div>
+
+<div id="prgInfo" class="info-div" style="left: 0px; right: none;">
   <span>Uploading data ...</span><br/>
   <span><img src="{{url_prefix}}/media/img/progress-bar.gif"></span>
-  </div>
-  <div id="divDownload" style="margin-top:5px;">
-  <span>Downloading data ...</span><br/>
-  <span><img src="{{url_prefix}}/media/img/progress-bar.gif"></span>
-  </div>
 </div>
 
 <div id="divPop" class="bubble">This is Popup Div.</div>

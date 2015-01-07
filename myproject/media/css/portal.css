@@ -54,11 +54,10 @@ canvas {
   -moz-box-shadow: 0px 0 3px rgba(0,0,0,0.25);
   box-shadow: 0px 0 3px rgba(0,0,0,0.25); 
 }
-#mapInfo{
+.info-div {
   z-index: 10000;
   position: fixed;
   background-color: #CCC;
-  opacity: 0.8;
   margin: 0;
   right: 0px;
   top: 70px;
@@ -159,14 +158,18 @@ canvas {
 }
 .tool-menu .image-wrap {
   float: left;
+  width: 92px;
+  height: 82px;
   margin:38px 20px 0 30px;
-	-webkit-border-radius: 60em;
-	-moz-border-radius: 60em;
-	border-radius: 60em;
+  -webkit-border-radius: 60em;
+  -moz-border-radius: 60em;
+  border-radius: 60em;
   -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
-  opacity: 0.6;
+  opacity: 0.8;
+  background-repeat: no-repeat;
+  background-position: center; 
 }
 .tool-menu .image-wrap:hover {
   opacity: 1.0;
@@ -256,6 +259,14 @@ canvas {
 }
 .toolbar_tbl td.righttd{
   text-align: right;
+  font-size: 1.2em; 
+}
+#basemap {
+  background-repeat: no-repeat;
+  background-image: url("../img/basemap.png");
+  width: 80px;
+  height: 25px;
+  margin-top: 13px;
 }
 #bottombar {
   z-index: 9999;

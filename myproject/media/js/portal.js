@@ -6,6 +6,27 @@ var carto_uid, carto_key, carto_layer,
     gShowLeaflet =false, 
     gAddLayer    =false,
     gProjectOpen = false;
+  
+var cartodb_att = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+    esri_att = 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    nokia_att = 'Map &copy; 1987-2014 <a href="http://developer.here.com">HERE</a>',
+
+    tileUrls = [
+      'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      'http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      'http://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+      'http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+      'http://{s}.{base}.maps.cit.api.here.com/maptile/2.1/maptile/{mapID}/hybrid.day/{z}/{x}/{y}/256/png8?app_id=DXEWcinCPybfIS9yHKbM&app_code=vPBKeXjNk_iROosIzNNNRg',
+      'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    ];
+  var tileProviders = {};
+  tileProviders[tileUrls[0]] = cartodb_att;
+  tileProviders[tileUrls[1]] = esri_att;
+  tileProviders[tileUrls[2]] = cartodb_att;
+  tileProviders[tileUrls[3]] = cartodb_att;
+  tileProviders[tileUrls[4]] = nokia_att;
+  tileProviders[tileUrls[5]] = esri_att;
+var currentTileUrl = tileUrls[0];
 
 var fields_combobox= {
   '#sel-var' : ['Integer','Real'], 
@@ -39,32 +60,20 @@ var local_map_names_sel = {
   };
 
 var toolbar_buttons = [
-  '#btnOpenData',
-  '#btnCartoDB',
-  '#btnRoadNetwork',
-  '#btnSpaceTime',
-  '#btnKDE',
-  '#btnCreateW',
-  '#btnWHistogram',
-  '#btnSpreg',
   '#btnShowTable',
   '#btnNewMap',
-  '#btnScatterPlot',
-  '#btnHist',
-  '#btnPCP',
-  '#btnMoran',
-  '#btnLISA' ,
+  '#btnExplore',
+  '#btnSpace',
+  '#btnSpreg',
 ];
 
 var ToggleToolbarButtons = function(enable) {
   for( var i=0; i<toolbar_buttons.length; i++) {
     var btn = toolbar_buttons[i];
     if (enable) {
-      $(btn).css('opacity', 1);
-      $('#btnOpenData').css('opacity', 1.0);
+      $(btn).show('slide');
     } else {
-      $(btn).css('opacity', 0.5);
-      $('#btnOpenData').css('opacity', 1.0);
+      $(btn).hide();
     }
   }
 };
@@ -80,6 +89,30 @@ var CleanLeafletMap = function() {
   }
 };
 
+var baselayer;
+
+var CreateBaseLayer = function(){
+  if (baselayer) {
+    lmap.removeLayer(baselayer);
+  }
+  var attr = tileProviders[currentTileUrl],
+      options = {
+        attribution: attr,
+        maxZoom: 18,
+        subdomains: 'abcd',
+      };
+  
+  if (attr = nokia_att) {
+    options['app_id'] = 'DXEWcinCPybfIS9yHKbM';
+    options['app_code'] = 'vPBKeXjNk_iROosIzNNNRg';
+    options['base'] = 'aerial';
+    options['mapID'] = 'newest';
+    options['subdomains'] = '1234';
+  }
+  
+  return L.tileLayer(currentTileUrl,options);
+};
+
 var SetupLeafletMap = function() {
   if (gViz && gViz.GetNumMaps() > 0) {
     return;
@@ -88,11 +121,9 @@ var SetupLeafletMap = function() {
   gViz = new d3viz($('#map-container')); 
   gViz.SetupBrushLink();
   if (gShowLeaflet) {
-    lmap = new L.Map('map');
-    L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      id: 'examples.map-20v6611k'
-    }).addTo(lmap);
+    if (!lmap) lmap = new L.Map('map');
+    baselayer = CreateBaseLayer(); 
+    lmap.addLayer(baselayer);
   }
 };
 
@@ -140,17 +171,26 @@ var ProcessDropZipFile = function(f, callback) {
   });  
 };
 
+var ShowPrgDiv = function(msg, visible) {
+  if (visible == true) {
+    $('#prgInfo span').text(msg);
+    $('#prgInfo').show();
+  } else {
+    $('#prgInfo').hide();
+  }
+};
+
 var AddExistMap = function(uuid, json_path) {
   if (!gPrj) gPrj = proj4(proj4.defs('WGS84'), proj4.defs('WGS84'));
   SetupLeafletMap();
   
   if (json_path.endsWith('zip')) {
-    $('#divDownload').show();
+    ShowPrgDiv('downloading...', true);
     var xhr = new XMLHttpRequest();
     xhr.responseType="blob";
     xhr.open("GET", json_path, true);
     xhr.onload = function(e) {
-      $('#divDownload').hide();
+      ShowPrgDiv('downloading...', false);
       if(this.status == 200) {
         ProcessDropZipFile(this.response, function(){
           $.get('../get_metadata/', {'layer_uuid':uuid}).done(function(data){
@@ -222,11 +262,15 @@ var SwitchLayer = function(elm, idx) {
 };
 
 var AddMapToLayerTree = function(name) {
+  // add item in layer-tree
   var nMaps = gViz.GetNumMaps() - 1;
   var elm = '<li id="' +nMaps+ '" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>' + name + '<span class="tree-item-delete"></span><span class="tree-item-eye" onclick="SwitchLayer(this, ' + nMaps +')"></span></li>';
   $(elm).prependTo($('#sortable-layers'));
   PositionLayerTree();
+  // change current layer name
   PlaceLayerName(name);
+  // update current buttons 
+  $('#btnShowTable').attr('href','../get_table/?layer_uuid=' + layer_uuid);
 };
 
 var BeforeMapShown = function() {
@@ -300,7 +344,6 @@ var InitDialogs = function(data) {
       fields = data.fields,
       field_names = [];
   
-  $('#btnShowTable').attr('href','../get_table/?layer_uuid=' + layer_uuid);
   
   // setup uuid in GeoVizMap
   gViz.SetupMap(layer_uuid); 
@@ -563,7 +606,7 @@ $(document).ready(function() {
   $("#switch").switchButton({
     checked: true,
     on_label: 'ON',
-    off_label: 'Leaflet Background? OFF',
+    off_label: 'Using Basemap? OFF',
     on_callback: function() {
       gShowLeaflet = true;
       if (gViz) {
@@ -578,6 +621,19 @@ $(document).ready(function() {
     },
   });
   
+  var mapItems = $('#mapproviders').children();
+  $(mapItems[0]).css({'border':'2px solid orange'});
+  for (var i=0; i< mapItems.length; i++){
+    $(mapItems[i]).click(function(){
+      // update basemap
+      currentTileUrl = tileUrls[parseInt($(this).attr('id'))];
+      baselayer = CreateBaseLayer();
+      if (!lmap) lmap = new L.Map('map');
+      lmap.addLayer(baselayer);
+      $('#mapproviders').children().css({'border':'none'});
+      $(this).css({'border':'2px solid orange'});
+    });
+  }
   //////////////////////////////////////////////////////////////
   //  Init UI
   //////////////////////////////////////////////////////////////
@@ -595,12 +651,12 @@ $(document).ready(function() {
       setTimeout(function(){ $(divToPop).fadeOut('slow');}, 2000);
     });
   };
-  $('#w-dist-loading, #divPop,#divDownload,#divUpload, \
+  $('#w-dist-loading, #divPop, \
     #img-id-chk, #img-id-spin, #img-id-nochk, \
     .dlg-loading, #progress_bar_openfile, \
     #progress_bar_cartodb,#progress_bar_road,\
     #progress_bar_spacetime, #btnMultiLayer, \
-    #progress_bar_lisa, .tool-menu-arrow').hide();
+    #progress_bar_lisa, .tool-menu-arrow, #mapInfo, #prgInfo').hide();
     
   $( "#dlg-msg" ).dialog({
     dialogClass: "dialogWithDropShadow",
@@ -608,6 +664,10 @@ $(document).ready(function() {
     buttons: {OK: function() {$( this ).dialog( "close" );}}
   }).hide();
 
+  $('#basemap').click(function(){
+    $('#mapInfo').toggle();
+  });
+  
   $( "#sortable-layers" ).sortable({
     start: function(event, ui) {
       var start_pos = ui.item.index();
@@ -674,10 +734,10 @@ $(document).ready(function() {
   var toolMenu = {
     '#btnMultiLayer':'#layer-tree', 
     '#btnNewMap':'#map-menu', 
-    '#btnShowTable':'#map-menu', 
-    '#btnExplore':'#map-menu', 
-    '#btnSpace':'#map-menu', 
-    '#btnSpreg':'#map-menu'
+    //'#btnShowTable':'#map-menu', 
+    '#btnExplore':'#explore-menu', 
+    '#btnSpace':'#space-menu', 
+    //'#btnSpreg':'#spreg-menu'
   };
   for (var btn in toolMenu) {
     var menu = toolMenu[btn];
@@ -770,7 +830,7 @@ $(document).ready(function() {
   });
   if (getParameterByName("uuid")) {
     uuid = getParameterByName("uuid");
-    $('#divDownload').show();
+    ShowPrgDiv('downloading...', true);
     $.get('../get_metadata/', {'layer_uuid':uuid}).done(function(data){
       var n = data.n,
           zip = false,
@@ -783,7 +843,7 @@ $(document).ready(function() {
       xhr.responseType="blob";
       xhr.open("GET", url, true);
       xhr.onload = function(e) {
-        $('#divDownload').hide();
+        ShowPrgDiv('', false);
         if(this.status == 200) {
           if (zip) {
             ProcessDropZipFile(this.response, function(){
@@ -823,7 +883,7 @@ $(document).ready(function() {
   
   var UploadFilesToServer = function(files, precall, callback) {
     if (typeof precall === "function") {
-      $('#divUpload').show();
+      ShowPrgDiv('uploading...', true);
       precall();
     }
     // zip files
@@ -853,7 +913,7 @@ $(document).ready(function() {
               console.log("[Error][Upload Files]", e);
             }
             if (typeof callback === "function") {
-              $('#divUpload').hide();
+              ShowPrgDiv('', false);
               callback();
             }
           }; 
@@ -1029,9 +1089,9 @@ $(document).ready(function() {
         ready = true;
       }
       if ( ready ) {
-        $('#divUpload').show();
+        ShowPrgDiv('uploading...', true);
         $.get("../upload/", params).done( function(data) {
-          $('#divUpload').hide();
+          ShowPrgDiv('', false);
           InitDialogs(data);
           //SaveMapThumbnail(layer_uuid, containerID);
         });
