@@ -212,8 +212,13 @@ var PlaceLayerName = function(name) {
 };
 
 var SwitchLayer = function(elm, idx) {
-  // hide canvas(idx)
-  $(elm).css({'background-image':'url("../../media/img/switch-off.png")'})
+  if ($(elm).css('background-image').indexOf('off')>0) {
+    $($('canvas')[idx]).show();
+    $(elm).css({'background-image':'url("../../media/img/switch-on.png")'})
+  } else {
+    $($('canvas')[idx]).hide();
+    $(elm).css({'background-image':'url("../../media/img/switch-off.png")'})
+  }
 };
 
 var AddMapToLayerTree = function(name) {
