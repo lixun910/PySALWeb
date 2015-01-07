@@ -644,7 +644,7 @@ $(document).ready(function() {
         $('div.tool-menu-arrow').hide();
     }
   });
-
+  
   $('#btnOpenData').click(function(){
     $('#dialog-open-file').dialog('open');
   });

@@ -141,6 +141,7 @@ canvas {
   box-shadow: -1px -7px 35px -1px rgba(0,0,0,0.5);
   z-index:10002;
   left: 0;
+  padding: 10px;
 }
 .tool-menu-arrow{
   content: ' ';
@@ -155,6 +156,20 @@ canvas {
   position: absolute;
   bottom: 26px;
   left: 275px;
+}
+.tool-menu .image-wrap {
+  margin-top:18px;
+	-webkit-border-radius: 60em;
+	-moz-border-radius: 60em;
+	border-radius: 60em;
+  -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
+  -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
+  box-shadow: 0 14px 18px rgba(0,0,0,0.5);
+}
+.tool-menu .image-wrap span{
+  top: -18px; 
+  position: relative;
+  text-shadow: 0px 2px 0px rgba(235,235,235,.5); /* 50% white from bottom */
 }
 #layer-tree { 
   width: 300px; 
@@ -207,6 +222,7 @@ canvas {
 #account {
   padding-top: 2px; 
 }
+
 #btnMultiLayer span {
   color: orange;
 }
