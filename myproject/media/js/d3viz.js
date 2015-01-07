@@ -44,68 +44,16 @@
     return this.geoviz.getMap(idx);
   };
   
-  d3viz.prototype.Clean = function() {
-  };
-  
   d3viz.prototype.SetupMap = function(uuid) {
     this.uuids.push(uuid);
   };
   
-  d3viz.prototype.GetJSON = function(url, successHandler, errorHandler) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('get', url, true);
-    xhr.responseType = 'json';
-    xhr.onload = function() {
-      var status = xhr.status;
-      if (status == 200) {
-        var a = xhr.response;
-        if (typeof(a) == 'string') {
-          a = a.replace(/\n/g,"");
-          a = JSON.parse(a);
-        }
-        successHandler && successHandler(a);
-      } else {
-        errorHandler && errorHandler(status);
-      }
-    };
-    xhr.send();
-  };
-
-  /**
-   * Setup Brushing/Linking for base map
-   */
-  d3viz.prototype.SetupBrushLink = function() { 
-    mapDict = this.mapDict;
-    window.addEventListener('storage', function(e) {
-      var hl_ids = JSON.parse(localStorage.getItem('HL_IDS')),
-          hl_ext = JSON.parse(localStorage.getItem('HL_MAP'));
-      for ( var uuid in hl_ids ) {
-        //if ( mapDict && uuid in mapDict ) {
-          var map = self.mapCanvas;//mapDict[uuid];
-          var ids = hl_ids[uuid];
-          if ( hl_ext && uuid in hl_ext ) {
-            map.highlightExt(ids, hl_ext[uuid]);
-          } else if ( hl_ids && uuid in hl_ids ) {
-            var context = undefined;
-            var nolinking = true;
-            map.highlight(hl_ids[uuid], context, nolinking);
-          }
-        //}
-      }
-    }, false);
-  };
-   
-  /**
-   * Setup and function for PopUp window
-   */
-  d3viz.prototype.RandUrl = function(url) {
-    var rnd = Math.random().toString(36).substring(7)
-    if ( url.indexOf('?')  === -1 ) {
-      return url + "?" + rnd;
+  d3viz.prototype.UpdateLayerOrder = function(orders) {
+    for (var i=0; i < orders.length; i++) {
+      $('canvas[id=' + orders[i] + ']').appendTo(this.container);
     }
-    return url + "&" + rnd;
   };
- 
+  
   /**
    * AddMap() could be:
    * 1. Drag&Drop local ESRI Shape file
@@ -176,6 +124,63 @@
     self.o = o;
   };
   
+  d3viz.prototype.Clean = function() {
+  };
+  d3viz.prototype.GetJSON = function(url, successHandler, errorHandler) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', url, true);
+    xhr.responseType = 'json';
+    xhr.onload = function() {
+      var status = xhr.status;
+      if (status == 200) {
+        var a = xhr.response;
+        if (typeof(a) == 'string') {
+          a = a.replace(/\n/g,"");
+          a = JSON.parse(a);
+        }
+        successHandler && successHandler(a);
+      } else {
+        errorHandler && errorHandler(status);
+      }
+    };
+    xhr.send();
+  };
+
+  /**
+   * Setup Brushing/Linking for base map
+   */
+  d3viz.prototype.SetupBrushLink = function() { 
+    mapDict = this.mapDict;
+    window.addEventListener('storage', function(e) {
+      var hl_ids = JSON.parse(localStorage.getItem('HL_IDS')),
+          hl_ext = JSON.parse(localStorage.getItem('HL_MAP'));
+      for ( var uuid in hl_ids ) {
+        //if ( mapDict && uuid in mapDict ) {
+          var map = self.mapCanvas;//mapDict[uuid];
+          var ids = hl_ids[uuid];
+          if ( hl_ext && uuid in hl_ext ) {
+            map.highlightExt(ids, hl_ext[uuid]);
+          } else if ( hl_ids && uuid in hl_ids ) {
+            var context = undefined;
+            var nolinking = true;
+            map.highlight(hl_ids[uuid], context, nolinking);
+          }
+        //}
+      }
+    }, false);
+  };
+   
+  /**
+   * Setup and function for PopUp window
+   */
+  d3viz.prototype.RandUrl = function(url) {
+    var rnd = Math.random().toString(36).substring(7)
+    if ( url.indexOf('?')  === -1 ) {
+      return url + "?" + rnd;
+    }
+    return url + "&" + rnd;
+  };
+ 
   /**
    * Create a new thematic map
    */

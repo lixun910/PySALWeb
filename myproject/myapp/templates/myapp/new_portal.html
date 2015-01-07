@@ -59,23 +59,26 @@
 		<div style="clear: left;"></div>
 		<table class="toolbar_tbl" align="left"> 
 		  <tr>
-		  <td>
-			<div id="btnOpenData"><img src="../../media/img/addLayer.png"/><span>Load data</span></div>
+		  <td width=120>
+			<div class="blockBtn" id="btnOpenData"><img src="../../media/img/addLayer.png"/><span>Load data</span></div>
 		  </td>
 		  <td>
-			<div id="btnShowTable"><img src="../../media/img/table.png"/> Table </div>
+			<div class="blockBtn" id="btnMultiLayer"><img src="../../media/img/multilayer.png"/><span></span></div>
 		  </td>
 		  <td>
-			<div id="btnNewMap"><img src="../../media/img/nmap.png"/> Map </div>
+			<div class="blockBtn" id="btnShowTable"><img src="../../media/img/table.png"/><span>Table</span></div>
 		  </td>
 		  <td>
-			<div id="btnExplore"><img src="../../media/img/scatter.png"/> Explore </div>
+			<div class="blockBtn" id="btnNewMap"><img src="../../media/img/nmap.png"/><span>Map</span></div>
 		  </td>
 		  <td>
-			<div id="btnSpace"><img src="../../media/img/moran.png"/> Space </div>
+			<div class="blockBtn" id="btnExplore"><img src="../../media/img/scatter.png"/><span>Explore</span></div>
 		  </td>
 		  <td>
-			<div id="btnSpreg"><img src="../../media/img/spreg.png"/> Regression </div>
+			<div class="blockBtn" id="btnSpace"><img src="../../media/img/moran.png"/><span>Space</span></div>
+		  </td>
+		  <td>
+			<div class="blockBtn" id="btnSpreg"><img src="../../media/img/spreg.png"/><span>Regression</span></div>
 		  </td>
 		  <td><div class="block_button" id="btnRoadNetwork"></div></td> 
 		  <td><div class="block_button" id="btnSpaceTime"></div></td> 
@@ -90,21 +93,20 @@
 		  <td><div class="block_button" id="btnPCP"></div></td> 
 		  <td><div class="block_button" id="btnMoran"></div></td> 
 		  <td><div class="block_button" id="btnLISA"></div></td> 
-		  <td class="righttd"><img src="https://geodacenter.asu.edu/drupal_files/geoda_logo.png" style="margin-left:30px;opacity:0.6;" height=22></td>
 		  </tr>
 		</table>
 	</div>
   </div>
 
-<div id="layer-tree">
+<div class="tool-menu" id="layer-tree">
   <div id="add-layer"><p>Drag drop to reorder map layers</p></div>
   <ul id="sortable-layers"></ul>
 </div>
-
-<div class="tool-menu" id="map-menu">
-
+<div class="tool-menu" id="map-menu"></div>
+<div class="tool-menu-arrow"></div>
+<div class="asu-geoda">
+  <img src="https://geodacenter.asu.edu/drupal_files/geoda_logo.png" height=20>
 </div>
-
 <!--
 ///////////////////////////////////////////////////////////////////////////////
 // Open Files

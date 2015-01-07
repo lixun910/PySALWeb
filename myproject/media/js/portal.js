@@ -91,9 +91,6 @@ var SetupLeafletMap = function() {
     lmap = new L.Map('map');
     L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
       maxZoom: 18,
-      attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' + 
-      '<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-      'Imagery © <a href="http://mapbox.com">Mapbox</a>',
       id: 'examples.map-20v6611k'
     }).addTo(lmap);
   }
@@ -142,8 +139,6 @@ var ProcessDropZipFile = function(f, callback) {
     });
   });  
 };
-
-
 
 var AddExistMap = function(uuid, json_path) {
   if (!gPrj) gPrj = proj4(proj4.defs('WGS84'), proj4.defs('WGS84'));
@@ -205,18 +200,28 @@ var ShowMapTitleTool = function(obj, flag) {
 };
 
 var PositionLayerTree = function() {
-  return $('#layer-tree').css({ left: 10, bottom: 40});
+  return $('#layer-tree').css({ left: 50, bottom: 40, height: 'auto'});
 };
 
-var PositionToolMenu = function(elm) {
-  return $(elm).css({ left: 0, bottom: 40});
+var PlaceLayerName = function(name) {
+  $('#btnMultiLayer').parent().width(200);
+  $('#btnMultiLayer span').attr('title', name);
+  $('#btnMultiLayer span').attr('title', name);
+  $('#btnMultiLayer span').text(shrinkText(name));
+  $('#btnMultiLayer').show();
+};
+
+var SwitchLayer = function(elm, idx) {
+  // hide canvas(idx)
+  $(elm).css({'background-image':'url("../../media/img/switch-off.png")'})
 };
 
 var AddMapToLayerTree = function(name) {
-  var nMaps = gViz.GetNumMaps();
-  var elm = '<li id="' +nMaps+ '" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>' + name + '</li>';
+  var nMaps = gViz.GetNumMaps() - 1;
+  var elm = '<li id="' +nMaps+ '" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>' + name + '<span class="tree-item-delete"></span><span class="tree-item-eye" onclick="SwitchLayer(this, ' + nMaps +')"></span></li>';
   $(elm).prependTo($('#sortable-layers'));
   PositionLayerTree();
+  PlaceLayerName(name);
 };
 
 var BeforeMapShown = function() {
@@ -421,7 +426,6 @@ var LoadModelNames = function() {
     var layer_uuid = gViz.GetUUID();
     $.get("../get_spreg_models/", {"layer_uuid": layer_uuid})
     .done(function(data){
-      console.log(data);
       if ( data["success"] == 0 ) {
         console.log("ERROR: get_spreg_models()", layer_uuid); 
         return;
@@ -532,20 +536,10 @@ var DeleteMap = function(obj, layer_uuid) {
   });
 };
 
-/*
-      // close current project 
-      $('#btnOpenData').css('background-image','url(../../media/img/add-file.png)');
-      gProjectOpen = false;
-      CleanLeafletMap();
-      ToggleToolbarButtons(false);
-      gAddLayer = false;
-      $('#img-open-dlg').attr('src',url_prefix+"/media/img/add-file.png");
-      $('#dialog-open-file').dialog('option','title',"Let's get started");
-      $('#dialog-open-file').dialog('open');
-*/
 $(document).ready(function() {
   ToggleToolbarButtons(false);
 
+  
   $(window).resize(function() {
     $('#layer-tree, .tool-menu').hide();
   });
@@ -600,8 +594,9 @@ $(document).ready(function() {
     #img-id-chk, #img-id-spin, #img-id-nochk, \
     .dlg-loading, #progress_bar_openfile, \
     #progress_bar_cartodb,#progress_bar_road,\
-    #progress_bar_spacetime,\
-    #progress_bar_lisa').hide();
+    #progress_bar_spacetime, #btnMultiLayer, \
+    #progress_bar_lisa, .tool-menu-arrow').hide();
+    
   $( "#dlg-msg" ).dialog({
     dialogClass: "dialogWithDropShadow",
     width: 400, height: 200, autoOpen: false, modal: true,
@@ -621,62 +616,68 @@ $(document).ready(function() {
     update: function(event, ui) {
       var start_pos = ui.item.data('start_pos');
       var end_pos = ui.item.data('end_pos');
-      console.log(start_pos, end_pos);
+      var layers = $('#sortable-layers').children();
+      var current_layer = layers[0];
+      var layer_name = current_layer.textContent;
+      PlaceLayerName(layer_name);
+     
+      var layer_ids = []; 
+      for (var i=layers.length-1; i>=0; i--) {
+        layer_ids.push(parseInt(layers[i].id));
+      }
+      console.log(layer_ids);
+      gViz.UpdateLayerOrder(layer_ids);
     }
   });
-  
   $( "#sortable-layers" ).selectable(); 
-  PositionLayerTree().hide();
-  PositionToolMenu('#map-menu').hide();
   
-  var OnMenuItem = function(elm)  {
-    $(elm).parent().css('background-color', '#FFF');
-    $(elm).parent().css('color', '#038D98');
-  };
-  var OffMenuItem = function(elm)  {
-    $(elm).parent().css('background-color', '#038D98');
-    $(elm).parent().css('color', '#FFF');
-  };
-  var ShowSubMenu = function(elm) {
-    $(elm).show('slide', {direction: 'down'});
-  };
-  var HideSubMenu = function(elm, btn) {
-    $(elm).delay(500).hide('slide', {direction:'down'},function(){
-      OffMenuItem(btn);
+  PositionLayerTree().hide();
+    
+  $('.tool-menu').css({ left: 0, bottom: 40}).hide();
+  
+  $(document).mouseup(function (e) {
+    var container = $(".tool-menu");
+    if (!container.is(e.target) // if the target of the click isn't the container...
+        && container.has(e.target).length === 0) // ... nor a descendant of the container
+    {
+        container.hide();
+        $('div.tool-menu-arrow').hide();
+    }
+  });
+
+  $('#btnOpenData').click(function(){
+    $('#dialog-open-file').dialog('open');
+  });
+  
+  var OnToolMenuClick = function(btn, menu) {
+    $(btn).click(function(){
+      if (gViz && gViz.GetNumMaps() > 0) {
+        if ($(menu).is(".visible") || $(menu).css('display') == 'block') {
+          $(menu).hide();
+          $('div.tool-menu-arrow').hide();
+        }
+          $('div.tool-menu').hide();
+          $(menu).show();
+          // adjust the pos of arrow
+          var pos = $(btn).offset();
+          $('div.tool-menu-arrow').css({'left':pos.left});
+          $('div.tool-menu-arrow').show();
+      }
     });
   };
   
-  $('#btnOpenData').click(function(){
-    $('#dialog-open-file').dialog('open');
-  }).mouseenter(function(){
-    if (gViz && gViz.GetNumMaps() > 0) {
-      ShowSubMenu('#layer-tree');
-      OnMenuItem(this);
-    }
-  }).mouseleave(function(){
-    if (gViz && gViz.GetNumMaps() > 0) {
-      HideSubMenu('#layer-tree', '#btnOpenData');
-    }
-  });
-  $('#layer-tree').mouseenter(function(){
-    $(this).stop(true, true);
-  }).mouseleave(function(){
-    HideSubMenu('#layer-tree', '#btnOpenData');
-  })
-  
-  $('#btnNewMap').mouseenter(function(){
-    if (gViz && gViz.GetNumMaps() > 0) {
-      ShowSubMenu('#map-menu');
-      OnMenuItem(this);
-    }
-  }).mouseleave(function(){
-    if (gViz && gViz.GetNumMaps() > 0) {
-      HideSubMenu('#map-menu', this);
-    }
-  });
-  //$('#btnNewMap').click(function(){
-    //if (gViz) { $('#dlg-quantile-map').dialog('open');}
-  //});
+  var toolMenu = {
+    '#btnMultiLayer':'#layer-tree', 
+    '#btnNewMap':'#map-menu', 
+    '#btnShowTable':'#map-menu', 
+    '#btnExplore':'#map-menu', 
+    '#btnSpace':'#map-menu', 
+    '#btnSpreg':'#map-menu'
+  };
+  for (var btn in toolMenu) {
+    var menu = toolMenu[btn];
+    OnToolMenuClick(btn, menu);
+  }
   
   $('#btnCartoDB').click(function(){
     if (gViz) {

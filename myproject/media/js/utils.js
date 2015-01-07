@@ -37,6 +37,13 @@ jQuery.GetValsFromObjs = function(objs) {
   return vals;
 }
 
+function shrinkText(text, maxlength) {
+  if (text.length > maxlength) {
+    text = text.slice(0, maxlength -2);
+    return text + "...";
+  } 
+  return text;
+}
 
 function guid() {
   function s4() {
