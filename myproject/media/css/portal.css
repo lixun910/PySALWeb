@@ -134,14 +134,14 @@ canvas {
 
 .tool-menu {
   background-image: url("../img/menu-bg2.png");
-  position: absolute; width: 100%; height: 100px; opacity: 0.9;
+  position: absolute; width: 100%; 
+  height: 140px; opacity: 0.9;
   background-color: white;padding-bottom: 13px;
   -webkit-box-shadow: -1px -7px 35px -1px rgba(0,0,0,0.5);
   -moz-box-shadow: -1px -7px 35px -1px rgba(0,0,0,0.5);
   box-shadow: -1px -7px 35px -1px rgba(0,0,0,0.5);
   z-index:10002;
   left: 0;
-  padding: 10px;
 }
 .tool-menu-arrow{
   content: ' ';
@@ -158,13 +158,19 @@ canvas {
   left: 275px;
 }
 .tool-menu .image-wrap {
-  margin-top:18px;
+  float: left;
+  margin:38px 20px 0 30px;
 	-webkit-border-radius: 60em;
 	-moz-border-radius: 60em;
 	border-radius: 60em;
   -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
+  opacity: 0.6;
+}
+.tool-menu .image-wrap:hover {
+  opacity: 1.0;
+  cursor: pointer;
 }
 .tool-menu .image-wrap span{
   top: -18px; 
