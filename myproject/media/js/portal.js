@@ -656,7 +656,7 @@ $(document).ready(function() {
     .dlg-loading, #progress_bar_openfile, \
     #progress_bar_cartodb,#progress_bar_road,\
     #progress_bar_spacetime, #btnMultiLayer, \
-    #progress_bar_lisa, .tool-menu-arrow, #mapInfo, #prgInfo').hide();
+    #progress_bar_lisa, #tool-menu-arrow, #dialog-arrow, #mapInfo, #prgInfo').hide();
     
   $( "#dlg-msg" ).dialog({
     dialogClass: "dialogWithDropShadow",
@@ -703,10 +703,11 @@ $(document).ready(function() {
   $(document).mouseup(function (e) {
     var container = $(".tool-menu");
     if (!container.is(e.target) // if the target of the click isn't the container...
-        && container.has(e.target).length === 0) // ... nor a descendant of the container
+        && container.has(e.target).length === 0
+        && container.is($('canvas'))) // ... nor a descendant of the container
     {
         container.hide();
-        $('div.tool-menu-arrow').hide();
+        $('#tool-menu-arrow').hide();
     }
   });
   
@@ -719,14 +720,14 @@ $(document).ready(function() {
       if (gViz && gViz.GetNumMaps() > 0) {
         if ($(menu).is(".visible") || $(menu).css('display') == 'block') {
           $(menu).hide();
-          $('div.tool-menu-arrow').hide();
+          $('#tool-menu-arrow').hide();
         }
           $('div.tool-menu').hide();
           $(menu).show();
           // adjust the pos of arrow
           var pos = $(btn).offset();
-          $('div.tool-menu-arrow').css({'left':pos.left});
-          $('div.tool-menu-arrow').show();
+          $('#tool-menu-arrow').css({'left':pos.left});
+          $('#tool-menu-arrow').show();
       }
     });
   };
@@ -743,6 +744,18 @@ $(document).ready(function() {
     var menu = toolMenu[btn];
     OnToolMenuClick(btn, menu);
   }
+ 
+  $('#btnCatMap').click(function(){
+    $('#dlg-quantile-map').dialog('option', "position", {
+      my: "bottom-38",
+      at: "top",
+      of: "#btnCatMap"
+    });
+    $('#dlg-quantile-map').dialog('open');
+    var pos=$(this).offset();
+    $('#dialog-arrow').css({'left':pos.left});
+    $('#dialog-arrow').show();
+  });
   
   $('#btnCartoDB').click(function(){
     if (gViz) {
@@ -2023,6 +2036,9 @@ $(document).ready(function() {
     height: 200,
     autoOpen: false,
     modal: false,
+    beforeClose: function(event,ui){
+        $('#dialog-arrow').hide();
+    },
     buttons: {
       "Open": function() {
         if (!gViz && !gViz.GetUUID()) return;
@@ -2050,7 +2066,8 @@ $(document).ready(function() {
         });
         $(this).dialog("close");
       }, 
-      Cancel: function() {$( this ).dialog( "close" );},
+      Cancel: function() {
+        $( this ).dialog( "close" );},
     },
   });
   //////////////////////////////////////////////////////////////
