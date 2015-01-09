@@ -50,6 +50,18 @@ d3viz.prototype = {
   SetupMap : function(uuid) {
     this.uuids.push(uuid);
   },
+ 
+  MoveMaps : function(offsetX, offsetY) {
+    this.geoviz.moveAllMaps(offsetX, offsetY);
+  },
+  
+  UpdateMaps : function(params) {
+    this.geoviz.updateAllMaps(params);
+  },
+ 
+  CleanMaps  : function() {
+    this.geoviz.cleanAllMaps();
+  },
   
   UpdateLayerOrder : function(orders) {
     for (var i=0; i < orders.length; i++) {

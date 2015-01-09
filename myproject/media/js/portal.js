@@ -284,20 +284,27 @@ var OnMapShown = function(map) {
   if (gAddLayer==false) {
     if (gShowLeaflet == true) {
       lmap.on('zoomstart', function() {
-        gViz.cleanMaps();
+        gViz.CleanMaps();
       });
       lmap.on('zoomend', function() {
-        gViz.updateMaps();
+        gViz.UpdateMaps();
       });
       lmap.on('movestart', function(e) {
-        gViz.cleanMaps();
+        gViz.CleanMaps();
+      });
+      lmap.on('move', function(e) {
+        var op = e.target.getPixelOrigin();
+        var np = e.target._getTopLeftPoint();
+        var offsetX = -np.x + op.x;
+        var offsetY = -np.y + op.y;
+        gViz.MoveMaps(offsetX, offsetY);
       });
       lmap.on('moveend', function(e) {
         var op = e.target.getPixelOrigin();
         var np = e.target._getTopLeftPoint();
         var offsetX = -np.x + op.x;
         var offsetY = -np.y + op.y;
-        gViz.updateMaps({"offsetX":offsetX, "offsetY":offsetY});
+        gViz.UpdateMaps({"offsetX":offsetX, "offsetY":offsetY});
       });
     } else {
       $('#map').hide();

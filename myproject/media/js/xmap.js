@@ -460,7 +460,7 @@
   JsonMap.prototype.mapToScreen = function(x, y) {
     var px, py;
     if (this.LL) {
-      var pt = this.Lmap.latLngToContainerPoint(new this.LL.LatLng(y,x));
+      var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
       px = pt.x + this.moveX;
       py = pt.y + this.moveY;
     } else {
@@ -585,13 +585,28 @@
     this.numMaps -= 1;
   }; 
   
-  GeoVizMap.prototype.drawAllMaps = function() {
+  GeoVizMap.prototype.moveAllMaps = function(offsetX, offsetY) {
+    for (var i=0; i<this.mapList.length; i++) {
+      this.mapList[i].move(offsetX, offsetY);
+    }
+  }; 
+  
+  GeoVizMap.prototype.updateAllMaps = function(params) {
+    for (var i=0; i<this.mapList.length; i++) {
+      this.mapList[i].update(params);
+    }
+  }; 
+  
+  GeoVizMap.prototype.cleanAllMaps = function() {
+    for (var i=0; i<this.mapList.length; i++) {
+      this.mapList[i].clean();
+    }
   }; 
   
   GeoVizMap.prototype.drawMap = function(mapIndex) {
   }; 
  
-  GeoVizMap.prototype.updateMapColor = function(mapIndex) {
+  GeoVizMap.prototype.updateMap = function(index, params) {
   }; 
   
   GeoVizMap.prototype.reorderMaps = function(mapOrders) {
@@ -748,6 +763,13 @@
       this.hlcanvas.removeEventListener('keyup', this.OnKeyUp, true);
     },  
 
+    move : function(offsetX, offsetY) {
+      var context = this.canvas.getContext("2d");
+      context.imageSmoothingEnabled= false;
+      context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      context.drawImage(this.buffer, -this.offsetX + offsetX, -this.offsetY + offsetY);
+    },
+    
     highlight_cartodb: function( ids, context, nolinking ) {
       if ( ids == undefined ) 
         return;
@@ -869,24 +891,27 @@
           this.selected.push(i);
           inside = true;
         }
-        // fine polygons on border of rect
-        var bx = this.map.bbox[i]; 
-        if (bx[0] > x1 || bx[1] < x0 || bx[2] > y1 || bx[3] < y0) {
         
-        } else if (x0 < bx[0] && bx[1] < x1 && y0 < bx[2] && bx[3] < y1) {
-        
-        } else {
-          if (inside) { 
-            // draw it with highligh
-            hdraw.push(i);
-          } else { 
-            // erase draw 
-            ddraw.push(i);
+        if (this.shpType != "Point" && this.shpType != "MultiPoint") {
+          // fine polygons on border of rect
+          var bx = this.map.bbox[i]; 
+          if (bx[0] > x1 || bx[1] < x0 || bx[2] > y1 || bx[3] < y0) {
+          
+          } else if (x0 < bx[0] && bx[1] < x1 && y0 < bx[2] && bx[3] < y1) {
+          
+          } else {
+            if (inside) { 
+              // draw it with highligh
+              hdraw.push(i);
+            } else { 
+              // erase draw 
+              ddraw.push(i);
+            }
           }
         }
       }
-      
-      if ( hdraw.length + ddraw.length == 0) 
+     
+      if ( this.selected.length === 0 )  
         return false;
         
       if (this.noForeground) {
@@ -903,6 +928,7 @@
       if (!this.noForeground) {
         context.drawImage( this.buffer, 0, 0);
       }
+      
       // highlight ext area
       context = this.hlcanvas.getContext("2d");
       context.clearRect(0, 0, this.hlcanvas.width, this.hlcanvas.height);
@@ -915,17 +941,22 @@
       context.drawImage( this.buffer, 0, 0);
       context.restore(); // restore from clipping, and draw reset
       
-      // erase those out of highlight area
-      context.lineWidth = this.STROKE_WIDTH;
-      context.fillStyle = "rgba(0,0,0,1)";
-      context.globalCompositeOperation = "destination-out";
-      this.drawSelect(ddraw, context);
-     
-      // draw those not completed objects 
-      context.globalCompositeOperation = "source-over";
-      context.globalAlpha = this.ALPHA;
-      context.strokeStyle = this.STROKE_CLR;
-      this.drawSelect(hdraw, context);
+      if (this.shpType != "Point" && this.shpType != "MultiPoint") {
+        // for polygons and lines
+        if ( hdraw.length + ddraw.length == 0) 
+          return false;
+        // erase those out of highlight area
+        context.lineWidth = this.STROKE_WIDTH;
+        context.fillStyle = "rgba(0,0,0,1)";
+        context.globalCompositeOperation = "destination-out";
+        this.drawSelect(ddraw, context);
+       
+        // draw those not completed objects 
+        context.globalCompositeOperation = "source-over";
+        context.globalAlpha = this.ALPHA;
+        context.strokeStyle = this.STROKE_CLR;
+        this.drawSelect(hdraw, context);
+      } 
       
       // draw selection rectangle
       context.beginPath();
@@ -1178,7 +1209,7 @@
     },
     
     update: function(params) {
-      updateParameters(params);
+      this.updateParameters(params);
       
       var newWidth = this.canvas.parentNode.clientWidth,
           newHeight = this.canvas.parentNode.clientHeight;
@@ -1186,9 +1217,9 @@
       this.canvas.height = newHeight;
       this.hlcanvas.width = newWidth;
       this.hlcanvas.height = newHeight;
-      
-      clearCanvas(this.hlcanvas);
-      
+    
+      this.clearCanvas(this.hlcanvas);
+     
       this.margin_left = newWidth * (1-this.hratio)/2.0;
       this.margin_top = newHeight * (1-this.vratio)/2.0;
       
@@ -1197,7 +1228,7 @@
       this.buffer = null; // gc
       this.buffer = this.createBuffer();
       this.draw(this.buffer.getContext("2d"), this.color_theme);
-      
+      console.log('update buffer');
       if ( !this.noForeground ) {
         this.buffer2Screen();
       }   
@@ -1205,8 +1236,8 @@
     
     clean: function(){
       // called when zoom/move leafletmap
-      clearCanvas(this.canvas);
-      clearCanvas(this.hlcanvas);
+      this.clearCanvas(this.canvas);
+      this.clearCanvas(this.hlcanvas);
     },
     
     resetDraw: function(e) {
@@ -1300,6 +1331,7 @@
       if ( self.isMouseDown == true) {
         if ( self.startX == x && self.startY == y ) {
           // point select
+          self.clearCanvas(self.hlcanvas);
           var pt = self.map.screenToMap(x, y);
           x = pt[0];
           y = pt[1];
