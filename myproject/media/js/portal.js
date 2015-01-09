@@ -118,7 +118,7 @@ var SetupLeafletMap = function() {
     return;
   }
   CleanLeafletMap();
-  gViz = new d3viz($('#map-container')); 
+  gViz = new d3viz($('#map-container'), $('.hl-canvas')); 
   gViz.SetupBrushLink();
   if (gShowLeaflet) {
     if (!lmap) lmap = new L.Map('map');
@@ -284,20 +284,20 @@ var OnMapShown = function(map) {
   if (gAddLayer==false) {
     if (gShowLeaflet == true) {
       lmap.on('zoomstart', function() {
-        //gViz.mapCanvas.clean();
+        gViz.cleanMaps();
       });
       lmap.on('zoomend', function() {
-        //gViz.mapCanvas.update();
+        gViz.updateMaps();
       });
       lmap.on('movestart', function(e) {
-        //gViz.mapCanvas.clean();
+        gViz.cleanMaps();
       });
       lmap.on('moveend', function(e) {
         var op = e.target.getPixelOrigin();
         var np = e.target._getTopLeftPoint();
         var offsetX = -np.x + op.x;
         var offsetY = -np.y + op.y;
-        //gViz.mapCanvas.update({"offsetX":offsetX, "offsetY":offsetY});
+        gViz.updateMaps({"offsetX":offsetX, "offsetY":offsetY});
       });
     } else {
       $('#map').hide();

@@ -470,40 +470,6 @@
     return [px, py];
   };
   
-  //////////////////////////////////////////////////////////////
-  // LeaftletMap inherited from JsonMap
-  //////////////////////////////////////////////////////////////
-  /*
-  LeafletMap = function(geojson, LL, Lmap, prj) {
-    extent = undefined;
-    JsonMap.call(this, geojson, extent, prj);
-   
-    this.LL = LL; 
-    this.Lmap = Lmap;
-    this.Lmap.fitBounds([[this.mapBottom,this.mapLeft],[this.mapTop,this.mapRight]]);
-  };
-  
-  LeafletMap.prototype = Object.create(JsonMap.prototype);
-  
-  LeafletMap.prototype.constructor = LeafletMap; // prepare for own constructor
-  
-  LeafletMap.prototype.fitScreen = function(screenWidth, screenHeight) {
-    this.screenObjects = [];
-    this.latlon2Points(); 
-  };
-  
-  LeafletMap.prototype.screenToMap = function(px, py) {
-    px = px - this.offsetX;
-    py = py - this.offsetY;
-    var pt = this.Lmap.layerPointToLatLng(new this.LL.point(px,py));
-    return [pt.lng, pt.lat];
-  };
-  
-  LeafletMap.prototype.mapToScreen = function(x, y) {
-    var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
-    return [pt.x + this.offsetX, pt.y + this.offsetY];
-  };
-  */ 
   
   //////////////////////////////////////////////////////////////
   // GeoVizMap
@@ -586,9 +552,10 @@
   };
 
 
-  var GeoVizMap = function(mapContainer) {
+  var GeoVizMap = function(mapContainer, hlcanvas) {
     // shoule be an instanceof jQuery 
     this.mapContainer = mapContainer; 
+    this.hlcanvas = hlcanvas;
     this.width = this.mapContainer.width();
     this.height = this.mapContainer.height();
     this.numMaps = 0;
@@ -597,11 +564,9 @@
   
   GeoVizMap.prototype.addMap = function(map, params) {
     // create a HTML5 canvas object for this map
-    var canvas = $('<canvas/>', {'id':this.numMaps, 
-      'css': {'position':'absolute','top':0, 'left': 0}
-    }).width(this.width).height(this.height);
+    var canvas = $('<canvas/>', {'id':this.numMaps}).attr('class','paint-canvas');
     this.mapContainer.append(canvas);
-    var mapCanvas = new MapCanvas(map, canvas, params);
+    var mapCanvas = new MapCanvas(map, canvas, this.hlcanvas, params);
     
     for (var i=0; i<this.mapList.length; i++) {
       this.mapList[i].updateExtent(map);
@@ -637,36 +602,40 @@
     return this.mapList[index];
   }; 
   
-  var MapCanvas = function(map, canvas, params) {
-    // noForeground: don't draw the map , only for highlight
-    this.noForeground = params ? params["noforeground"] : false;
-    if (!this.noForeground) this.noForeground = false;
+  var MapCanvas = function(map, canvas, hlcanvas, params) {
     // color scheme
-    this.color_theme = params ? params["color_theme"] : undefined;
-    // hratio: horizontal ratio of map width / screen width
-    this.hratio = params ? params["hratio"] : 0.8;
-    if (!this.hratio) this.hratio = 0.8;
-    // vratio: verticle ratio of map height / screen height
-    this.vratio = params ? params["vratio"] : 0.8;
-    if (!this.vratio) this.vratio = 0.8;
+    this.color_theme = undefined;
     // alpha: draw the map with transparency
-    this.ALPHA = params ? params['alpha'] : 0.9;
-    if (!this.ALPHA) this.ALPHA = 0.9;
+    this.ALPHA = 0.9;
     // highlight alpha: when highlight, the alpha of background map
     this.HL_ALPHA = 0.4;
+    // stroke width 
+    this.STROKE_WIDTH = 0.3;
+    // stroke color
+    this.STROKE_CLR = '#CCCCCC';
+    // fill color
+    this.FILL_CLR = '#006400';
+    // hratio: horizontal ratio of map width / screen width
+    this.hratio = 0.8;
+    // vratio: verticle ratio of map height / screen height
+    this.vratio = 0.8;
+    // noForeground: don't draw the map , only for highlight
+    this.noForeground = false;
+    // highlight stroke color 
+    //this.HL_STROKE_CLR = '#CCCCCC';
+    // highlight fill color
+    //this.HL_FILL_CLR = '#FFFF00';
     
-    // private members
-    this.HLT_BRD_CLR = "#CCCCCC";
-    this.HLT_CLR = "#FFFF00";
-    this.STROKE_CLR = "#CCCCCC";
-    this.FILL_CLR = "#006400";
-    this.LINE_WIDTH = 1;
-  
+    this.updateParameters(params);
+    
     this.canvas = canvas instanceof jQuery ? canvas[0] : canvas;
     this.canvas.width = this.canvas.parentNode.clientWidth;
     this.canvas.height = this.canvas.parentNode.clientHeight;
     this.margin_left = this.canvas.width * (1-this.hratio)/2.0;
     this.margin_top = this.canvas.height * (1-this.vratio)/2.0;
+    this.hlcanvas =  hlcanvas instanceof jQuery ? hlcanvas[0] : hlcanvas;
+    this.hlcanvas.width = this.canvas.width;
+    this.hlcanvas.height = this.canvas.height;
     
     this.map = map;
     this.shpType = this.map.shpType; 
@@ -687,11 +656,11 @@
     this.offsetX = 0;
     this.offsetY = 0;
     
-    this.canvas.addEventListener('mousemove', this.OnMouseMove, false);
-    this.canvas.addEventListener('mousedown', this.OnMouseDown, false);
-    this.canvas.addEventListener('mouseup', this.OnMouseUp, false);
-    this.canvas.addEventListener('keydown', this.OnKeyDown, true);
-    this.canvas.addEventListener('keyup', this.OnKeyUp, true);
+    this.hlcanvas.addEventListener('mousemove', this.OnMouseMove, false);
+    this.hlcanvas.addEventListener('mousedown', this.OnMouseDown, false);
+    this.hlcanvas.addEventListener('mouseup', this.OnMouseUp, false);
+    this.hlcanvas.addEventListener('keydown', this.OnKeyDown, true);
+    this.hlcanvas.addEventListener('keyup', this.OnKeyUp, true);
     window.addEventListener('keydown', this.OnKeyDown, true);
     window.addEventListener('keyup', this.OnKeyUp, true);
     window.addEventListener('resize', this.OnResize, true);
@@ -715,6 +684,23 @@
   // member functions
   MapCanvas.prototype = {
   
+    updateParameters: function(params) {
+      if (params == undefined) 
+        return;
+        
+      if ('color_theme' in params) this.color_theme = params['color_theme'];
+      if ('transparency' in params) this.ALPHA = params['transparency'];
+      if ('stroke_width' in params) this.STROKE_WIDTH= params['stroke_width'];
+      if ('stroke_color' in params) this.STROKE_CLR = params['stroke_color'];
+      if ('fill_color' in params) this.FILL_CLR = params['fill_color'];
+      if ('horizontal_ratio' in params) this.hratio = params['horizontal_ratio'];
+      if ('vertical_ratio' in params) this.vratio = params['vertical_ratio'];
+      if ('noForeground' in params) this.ALPHA = params['noForeground'];
+      
+      if ('offsetX' in params) this.offsetX = params['offsetX'];
+      if ('offsetY' in params) this.offsetY = params['offsetY'];
+    },
+    
     updateExtent: function(map) {
       this.map.updateExtent(map);
       this.update(); 
@@ -723,7 +709,7 @@
     updateColor: function(color_theme) {
       if ( !this.noForeground ) {
         this.color_theme  = color_theme;
-        this.buffer = this.createBuffer(this.canvas);
+        this.buffer = this.createBuffer();
         this.draw(this.buffer.getContext("2d"), this.color_theme);
         if ( !this.noForeground ) {
           this.buffer2Screen();
@@ -738,6 +724,12 @@
       context.drawImage(this.buffer, 0, 0);
       return context;
     },
+   
+    clearCanvas: function(canvas) {
+      var context = canvas.getContext("2d");
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    } ,
+    
     // create buffer canvas
     createBuffer: function() {
       var _buffer = document.createElement("canvas");
@@ -749,19 +741,20 @@
       var context = this.canvas.getContext("2d");
       context.imageSmoothingEnabled= false;
       context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.canvas.removeEventListener('mousemove', this.OnMouseMove, false);
-      this.canvas.removeEventListener('mousedown', this.OnMouseDown, false);
-      this.canvas.removeEventListener('mouseup', this.OnMouseUp, false);
-      this.canvas.removeEventListener('keydown', this.OnKeyDown, true);
-      this.canvas.removeEventListener('keyup', this.OnKeyUp, true);
+      this.hlcanvas.removeEventListener('mousemove', this.OnMouseMove, false);
+      this.hlcanvas.removeEventListener('mousedown', this.OnMouseDown, false);
+      this.hlcanvas.removeEventListener('mouseup', this.OnMouseUp, false);
+      this.hlcanvas.removeEventListener('keydown', this.OnKeyDown, true);
+      this.hlcanvas.removeEventListener('keyup', this.OnKeyUp, true);
     },  
 
-    old_highlight: function( ids, context, nolinking ) {
+    highlight_cartodb: function( ids, context, nolinking ) {
       if ( ids == undefined ) 
         return;
+        
       if ( context == undefined) { 
         context = this.canvas.getContext("2d");
-        context.lineWidth = 0.3;
+        context.lineWidth = this.STROKE_WIDTH;
         context.imageSmoothingEnabled= false;
         context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         if (!this.noForeground) {
@@ -795,7 +788,7 @@
             this.drawLines( context, screenObjs, colors );
           }
           context.strokeStyle = this.STROKE_CLR;
-          context.lineWidth = 0.3;
+          context.lineWidth = this.STROKE_WIDTH;
           this.selected = ids;
           if ( nolinking ) {
             this.triggerLink(ids);
@@ -808,6 +801,7 @@
     highlight: function( ids, context, nolinking ) {
       if ( ids == undefined ) 
         return;
+        
       if ( context == undefined) { 
         context = this.canvas.getContext("2d");
         context.lineWidth = 0.3;
@@ -838,51 +832,70 @@
     },
     
     highlightExt: function( ids, extent, linking) {
-      if ( ids.length == 0 && extent == undefined ) {
+      if ( ids.length == 0 && extent == undefined ) 
         return;
-      }
-      var x0 = extent[0], y0 = extent[1], x1 = extent[2], y1 = extent[3];
+        
+      var x0 = extent[0], 
+          y0 = extent[1], 
+          x1 = extent[2], 
+          y1 = extent[3];
+          
       var pt0 = this.map.mapToScreen(x0, y0),
           pt1 = this.map.mapToScreen(x1, y1);
-      var startX = pt0[0], startY = pt0[1], 
+          
+      var startX = pt0[0], 
+          startY = pt0[1], 
           w = pt1[0] - startX, 
           h = pt1[1] - startY;
+          
       if (w == 0 && h == 0) 
         return;
+        
       this.selected = []; 
-      var hdraw = [], ddraw = []; 
+      
+      var hdraw = [], 
+          ddraw = []; 
+          
       var minPX = Math.min( pt0[0], pt1[0]),
           maxPX = Math.max( pt0[0], pt1[0]),
           minPY = Math.min( pt0[1], pt1[1]),
           maxPY = Math.max( pt0[1], pt1[1]);
+          
       for ( var i=0, n=this.map.centroids.length; i<n; ++i) {
         var pt = this.map.centroids[i],
             inside = false;
-        if ( pt[0] >= x0 && pt[0] <= x1 && 
-             pt[1] >= y0 && pt[1] <= y1 ) {
+        if ( pt[0] >= x0 && pt[0] <= x1
+             && pt[1] >= y0 && pt[1] <= y1 ) {
           this.selected.push(i);
           inside = true;
         }
         // fine polygons on border of rect
         var bx = this.map.bbox[i]; 
         if (bx[0] > x1 || bx[1] < x0 || bx[2] > y1 || bx[3] < y0) {
+        
         } else if (x0 < bx[0] && bx[1] < x1 && y0 < bx[2] && bx[3] < y1) {
+        
         } else {
-          if (inside) { // draw it with highligh
+          if (inside) { 
+            // draw it with highligh
             hdraw.push(i);
-          } else { // draw it with default
+          } else { 
+            // erase draw 
             ddraw.push(i);
           }
         }
       }
-      if ( hdraw.length + ddraw.length == 0) {
+      
+      if ( hdraw.length + ddraw.length == 0) 
         return false;
-      }
+        
       if (this.noForeground) {
-        this.old_highlight(this.selected, undefined, true);
+        this.highlight_cartodb(this.selected, undefined, true);
         return;
       }
-      context = this.canvas.getContext("2d");
+     
+      // fade the current canvas 
+      var context = this.canvas.getContext("2d");
       context.imageSmoothingEnabled= false;
       context.lineWidth = 0.3;
       context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -890,32 +903,40 @@
       if (!this.noForeground) {
         context.drawImage( this.buffer, 0, 0);
       }
+      // highlight ext area
+      context = this.hlcanvas.getContext("2d");
+      context.clearRect(0, 0, this.hlcanvas.width, this.hlcanvas.height);
       context.globalAlpha = 1;
       context.save(); // save for clipping
       context.beginPath(); // specify area for clipping
       context.rect( startX, startY, w, h);
       context.closePath();
       context.clip(); // do clipping
-      // change stroke color to match transparent color
-      var old_stroke_c = new GColor(this.STROKE_CLR);
-      old_stroke_c.a = this.HL_ALPHA;
-      var new_stroke_c = old_stroke_c.toRGB();
-      context.strokeStyle = new_stroke_c;
       context.drawImage( this.buffer, 0, 0);
-      this.drawSelect(ddraw, context, "unhighligh");
       context.restore(); // restore from clipping, and draw reset
+      
+      // erase those out of highlight area
+      context.lineWidth = this.STROKE_WIDTH;
+      context.fillStyle = "rgba(0,0,0,1)";
+      context.globalCompositeOperation = "destination-out";
+      this.drawSelect(ddraw, context);
+     
+      // draw those not completed objects 
+      context.globalCompositeOperation = "source-over";
       context.globalAlpha = this.ALPHA;
-      context.strokeStyle = new_stroke_c;
-      //this.highlight(hdraw, context);
+      context.strokeStyle = this.STROKE_CLR;
       this.drawSelect(hdraw, context);
       
+      // draw selection rectangle
       context.beginPath();
       context.strokeStyle = "#000000";
-      context.rect( startX, startY, w, h);
-      //context.fillStyle = "rgba(255,255,255,0)";
+      context.rect(startX, startY, w, h);
       context.stroke();
       context.closePath();
+      // restore stroke color
       context.strokeStyle = this.STROKE_CLR;
+      
+      
       if (linking) {
         var hl_range = [x0, y0, x1, y1];
         this.triggerLink(this.selected, hl_range);
@@ -1092,37 +1113,44 @@
     
     draw: function(context,  colors, fillColor, strokeColor, lineWidth) {
       context.imageSmoothingEnabled= false;
-      context.lineWidth = 0.3;
+      context.lineWidth = this.STROKE_WIDTH;
       context.globalAlpha = this.ALPHA;
+      
       if (this.shpType == "LineString" || this.shpType == "Line") {
         context.strokeStyle = fillColor ? fillColor : this.FILL_CLR;
-        context.lineWidth = lineWidth ? lineWidth: this.LINE_WIDTH;
+        context.lineWidth = lineWidth ? lineWidth: this.STROKE_WIDTH;
+        
       } else if (this.shpType == "Polygon" || this.shpType == "MultiPolygon") {
         context.strokeStyle = strokeColor ? strokeColor : this.STROKE_CLR;
         context.fillStyle = fillColor ? fillColor : this.FILL_CLR;
+        
       } else {
         context.strokeStyle = strokeColor ? strokeColor : this.STROKE_CLR;
-        context.fillStyle = fillColor ? fillColor : '#FF6600';
+        context.fillStyle = fillColor ? fillColor : this.FILL_CLR;
+        
       }
       
       if (this.shpType == "Polygon" || this.shpType == "MultiPolygon" ) {
         this.drawPolygons( context, this.map.screenObjects, colors) ;
+        
       } else if (this.shpType == "Point" || this.shpType == "MultiPoint") {
         this.drawPoints( context, this.map.screenObjects, colors) ;
+        
       } else if (this.shpType == "Line" || this.shpType == "LineString") {
         this.drawLines( context, this.map.screenObjects, colors) ;
+        
       }
       context.globalAlpha = 1;
     }, 
     
-    drawSelect: function( ids, context, invisible) {
-      var ids_dict = {};     
-      for ( var i=0, n=ids.length; i<n; i++ ) {
-        ids_dict[ids[i]] = 1;
-      }
-      var screenObjs = this.map.screenObjects; 
+    drawSelect: function( ids, context, invisible ) {
       var colors = {}; 
       if ( this.color_theme ) {
+        // filter: remove dup ids
+        var ids_dict = {};     
+        for ( var i=0, n=ids.length; i<n; i++ ) {
+          ids_dict[ids[i]] = 1;
+        }
         for ( var c in this.color_theme ) {
           var orig_ids = this.color_theme[c];
           var new_ids = [];
@@ -1132,28 +1160,14 @@
               new_ids.push(oid);
             }
           }
-          if (invisible == "unhighligh") {
-            var old_c = new GColor(c);
-            old_c.a = this.HL_ALPHA;
-            var new_c = old_c.toRGB(); 
-            c = new_c.toString();
-          }
           colors[c] = new_ids;
         }
       } else {
+        // draw all ids using default uniform fill color
         var c = this.FILL_CLR;
-        if (invisible == "unhighligh") {
-          var old_c = new GColor(c);
-          old_c.a = this.HL_ALPHA;
-          var new_c = old_c.toRGB(); 
-          c = new_c.toString();
-        }
         colors[c] = ids;
       }
-      if (invisible == "invisible") {
-        colors = {};
-        colors["rgba(255,255,255,0)"] = ids;
-      }
+      var screenObjs = this.map.screenObjects; 
       if (this.shpType == "Polygon" || this.shpType == "MultiPolygon") {
         this.drawPolygons( context, screenObjs, colors);
       } else if (this.shpType == "Point" || this.shpType == "MultiPoint") {
@@ -1162,21 +1176,24 @@
         this.drawLines( context, screenObjs, colors );
       }
     },
+    
     update: function(params) {
-      if (params) {
-        if (params['alpha']) this.ALPHA = alpha;
-        this.offsetX = params['offsetX'] ? params['offsetX'] : 0;
-        this.offsetY = params['offsetY'] ? params['offsetY'] : 0;
-      }
-      var newWidth = this.canvas.parentNode.clientWidth;
-      var newHeight = this.canvas.parentNode.clientHeight;
+      updateParameters(params);
+      
+      var newWidth = this.canvas.parentNode.clientWidth,
+          newHeight = this.canvas.parentNode.clientHeight;
       this.canvas.width = newWidth;
       this.canvas.height = newHeight;
-      marginLeft = newWidth * (1-this.hratio)/2.0;
-      marginTop = newHeight * (1-this.vratio)/2.0;
-      this.margin_left = marginLeft;
-      this.margin_top = marginTop;
-      this.map.fitScreen(newWidth, newHeight,marginLeft, marginTop, this.offsetX, this.offsetY);
+      this.hlcanvas.width = newWidth;
+      this.hlcanvas.height = newHeight;
+      
+      clearCanvas(this.hlcanvas);
+      
+      this.margin_left = newWidth * (1-this.hratio)/2.0;
+      this.margin_top = newHeight * (1-this.vratio)/2.0;
+      
+      this.map.fitScreen(newWidth, newHeight, this.margin_left, this.margin_top, this.offsetX, this.offsetY);
+      
       this.buffer = null; // gc
       this.buffer = this.createBuffer();
       this.draw(this.buffer.getContext("2d"), this.color_theme);
@@ -1184,15 +1201,17 @@
       if ( !this.noForeground ) {
         this.buffer2Screen();
       }   
-     
     },
+    
     clean: function(){
-        var context = this.canvas.getContext("2d");
-        context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      // called when zoom/move leafletmap
+      clearCanvas(this.canvas);
+      clearCanvas(this.hlcanvas);
     },
+    
     resetDraw: function(e) {
         var context = this.canvas.getContext("2d");
-        context.lineWidth = 0.3;
+        context.lineWidth = this.STROKE_WIDTH;
         context.imageSmoothingEnabled= false;
         context.globalAlpha = 1;
         context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -1200,31 +1219,30 @@
           context.drawImage( this.buffer, 0, 0);
         }
     },
+    
     // register mouse events of canvas
     OnResize: function( evt ) {
-      var canvas_id = evt.target.id;
-      var self = window.gViz.GetMap(canvas_id);
-      self.update();
+      var n = window.gViz.GetNumMaps();
+      for (var i=0; i < n; i++) {
+        var self = window.gViz.GetMap(i);
+        self.update();
+      }
     },
+    
     OnKeyDown: function( evt ) {
-      var canvas_id = evt.target.id;
-      var self = window.gViz.GetMap(canvas_id);
-      if ( evt.keyCode == 83 ) {
-        self.isKeyDown = true;
-      } else if ( evt.keyCode = 77 ) {
-        self.canvas.style.pointerEvents= 'none';  
+      if ( evt.keyCode = 77 ) {
+        var self = window.gViz.GetMap();
+        self.hlcanvas.style.pointerEvents= 'none';  
       }
     },
     OnKeyUp: function( evt ) {
-      var canvas_id = evt.target.id;
-      var self = window.gViz.GetMap(canvas_id);
       if ( evt.keyCode = 77 ) {
-        self.canvas.style.pointerEvents= 'auto';  
+        var self = window.gViz.GetMap();
+        self.hlcanvas.style.pointerEvents= 'auto';  
       }
     },
     OnMouseDown: function( evt ) {
-      var canvas_id = evt.target.id;
-      var self = window.gViz.GetMap(canvas_id);
+      var self = window.gViz.GetMap();
       //var x = evt.pageX, y = evt.pageY;
       var x = evt.offsetX, y = evt.offsetY;
       self.isMouseDown = true;
@@ -1244,8 +1262,7 @@
       }
     },
     OnMouseMove: function(evt) {
-      var canvas_id = evt.target.id;
-      var self = window.gViz.GetMap(canvas_id);
+      var self = window.gViz.GetMap();
       if ( self.isMouseDown == true ) {
         var currentX = evt.offsetX, 
             currentY = evt.offsetY,
@@ -1277,8 +1294,7 @@
       }
     },
     OnMouseUp: function(evt) {
-      var canvas_id = evt.target.id;
-      var self = window.gViz.GetMap(canvas_id);
+      var self = window.gViz.GetMap();
       //var x = evt.pageX, y = evt.pageY;
       var x = evt.offsetX, y = evt.offsetY;
       if ( self.isMouseDown == true) {
@@ -1315,7 +1331,6 @@
   
   window["ShpMap"] = ShpMap;
   window["JsonMap"] = JsonMap;
-  //window["LeafletMap"] = LeafletMap;
   window["MapCanvas"] = MapCanvas;
   window["GeoVizMap"] = GeoVizMap;
 })(self);

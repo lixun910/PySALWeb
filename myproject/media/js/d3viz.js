@@ -1,58 +1,61 @@
 
 (function(window,undefined){
 
-  /***
-   * One web page <---> one d3viz
-   */
-  var d3viz = function(container) {
+/***
+ * One web page <---> one d3viz
+ */
+var d3viz = function(container, hlcanvas) {
+
+  this.version = "0.1";
+  this.socket = undefined;
+  this.name = undefined;
+  this.uuid = undefined;
+  this.mapCanvas = undefined; // GeoVizMap
+  this.mapDict = {}; // uuid:map
+  this.nameDict = {}; // uuid:name
+  this.dataDict = {};  // not used
   
-    this.version = "0.1";
-    this.socket = undefined;
-    this.name = undefined;
-    this.uuid = undefined;
-    this.mapCanvas = undefined; // GeoVizMap
-    this.mapDict = {}; // uuid:map
-    this.nameDict = {}; // uuid:name
-    this.dataDict = {};  // not used
-    
-    this.o = undefined;
-    this.prj = undefined;
-    this.map = undefined;
-    this.mapType = undefined; //shapefile or json
-    
-    
-    this.container = container; 
-    this.uuids = []; 
-    this.geoviz = new GeoVizMap(container);
-    // carto db
-    this.userid = undefined;
-    this.key = undefined;
-    
-    self = this;
-  };
- 
-  d3viz.prototype.GetUUID = function() {
+  this.o = undefined;
+  this.prj = undefined;
+  this.map = undefined;
+  this.mapType = undefined; //shapefile or json
+  
+  
+  this.container = container; 
+  this.hlcanvas = hlcanvas;
+  this.uuids = []; 
+  this.geoviz = new GeoVizMap(container, hlcanvas);
+  // carto db
+  this.userid = undefined;
+  this.key = undefined;
+  
+  self = this;
+};
+
+d3viz.prototype = {
+
+  GetUUID : function() {
     return this.uuids[this.geoviz.numMaps-1];
-  };
+  },
   
-  d3viz.prototype.GetNumMaps = function() {
+  GetNumMaps : function() {
     return this.geoviz.numMaps;
-  };
+  },
   
-  d3viz.prototype.GetMap = function(idx) {
-    idx = parseInt(idx);
+  GetMap : function(idx) {
+    idx = idx ? parseInt(idx) : this.geoviz.numMaps - 1;
     return this.geoviz.getMap(idx);
-  };
+  },
   
-  d3viz.prototype.SetupMap = function(uuid) {
+  SetupMap : function(uuid) {
     this.uuids.push(uuid);
-  };
+  },
   
-  d3viz.prototype.UpdateLayerOrder = function(orders) {
+  UpdateLayerOrder : function(orders) {
     for (var i=0; i < orders.length; i++) {
       $('canvas[id=' + orders[i] + ']').appendTo(this.container);
     }
-  };
+  },
   
   /**
    * AddMap() could be:
@@ -61,14 +64,14 @@
    * 3. Dropbox file url of ESRI Shape file
    * 4. Dropbox file url of GeoJson file
    */
-  d3viz.prototype._setupGeoVizMap = function(isMainMap, map, type, colorTheme, callback) {
+  _setupGeoVizMap : function(isMainMap, map, type, colorTheme, callback) {
     self.geoviz.addMap(map, {'color_theme':colorTheme});
     if (typeof callback === "function") {
       callback(map);
     }
-  };
+  },
   
-  d3viz.prototype.AddMap = function(name, o, type, isMainMap, precall, callback,L, lmap, prj, colorTheme) {
+  AddMap : function(name, o, type, isMainMap, precall, callback,L, lmap, prj, colorTheme) {
     if (typeof precall === "function") { precall();}
     
     var map;
@@ -122,11 +125,12 @@
       self._setupGeoVizMap(isMainMap, map, type, colorTheme, callback);
     } 
     self.o = o;
-  };
+  },
   
-  d3viz.prototype.Clean = function() {
-  };
-  d3viz.prototype.GetJSON = function(url, successHandler, errorHandler) {
+  Clean : function() {
+  },
+  
+  GetJSON : function(url, successHandler, errorHandler) {
     var xhr = new XMLHttpRequest();
     xhr.open('get', url, true);
     xhr.responseType = 'json';
@@ -144,12 +148,12 @@
       }
     };
     xhr.send();
-  };
+  },
 
   /**
    * Setup Brushing/Linking for base map
    */
-  d3viz.prototype.SetupBrushLink = function() { 
+  SetupBrushLink : function() { 
     mapDict = this.mapDict;
     window.addEventListener('storage', function(e) {
       var hl_ids = JSON.parse(localStorage.getItem('HL_IDS')),
@@ -168,102 +172,102 @@
         //}
       }
     }, false);
-  };
+  },
    
   /**
    * Setup and function for PopUp window
    */
-  d3viz.prototype.RandUrl = function(url) {
+  RandUrl : function(url) {
     var rnd = Math.random().toString(36).substring(7)
     if ( url.indexOf('?')  === -1 ) {
       return url + "?" + rnd;
     }
     return url + "&" + rnd;
-  };
+  },
  
   /**
    * Create a new thematic map
    */
-  d3viz.prototype.ShowThematicMap = function(map, colorTheme, callback) {
+  ShowThematicMap : function(map, colorTheme, callback) {
     self.mapCanvas = new GeoVizMap(map, self.canvas, {
       "color_theme" : colorTheme
     });
     if (typeof callback === "function") {
       callback();
     }
-  };
+  },
   
-  d3viz.prototype.UpdateThematicMap = function(uuid, newColorTheme, callback) {
+  UpdateThematicMap : function(uuid, newColorTheme, callback) {
     var map = self.mapDict[uuid];
     self.mapCanvas.updateColor(newColorTheme);
     if (typeof callback === "function") {
       callback();
     }
-  };
+  },
  
   /**
    * Create a new Leaftlet map
    */
-  d3viz.prototype.PopupThematicMap = function() {
+  PopupThematicMap : function() {
     var w = window.open(
       this.RandUrl('../../static/thematicmap.html'), // quantile, lisa,
       "_blank",
       "titlebar=no,toolbar=no,location=no,width=900, height=700, scrollbars=yes"
     );
-  };
+  },
   /**
    * Create a new Leaftlet map
    */
-  d3viz.prototype.PopupScatterPlot = function() {
+  PopupScatterPlot : function() {
     var w = window.open(
       this.RandUrl('../../static/scatterplot.html'), // quantile, lisa,
       "_blank",
       "titlebar=no,toolbar=no,location=no,width=900, height=700, scrollbars=yes"
     );
-  };
+  },
   
   /**
    * Create a new Moran Scatter Plot
    */
-  d3viz.prototype.PopupMoranScatterPlot = function() {
+  PopupMoranScatterPlot : function() {
     var w = window.open(
       this.RandUrl('../../static/moran_scatterplot.html'), // quantile, lisa,
       "_blank",
       "titlebar=no,toolbar=no,location=no,width=900, height=700, scrollbars=yes"
     );
-  };
+  },
 
   /**
    * Create a new Moran Scatter Plot
    */
-  d3viz.prototype.PopupHistogram = function() {
+  PopupHistogram : function() {
     var w = window.open(
       this.RandUrl('../../static/histogram.html'),
       "_blank",
       "titlebar=no,toolbar=no,location=no,width=900, height=700, scrollbars=yes"
     );
-  };
+  },
   /**
    * Create a new Cartodb map
    */
-  d3viz.prototype.ShowCartodbMap= function(msg) {
+  ShowCartodbMap: function(msg) {
     var w = window.open(
       this.RandUrl('cartodb_map.html'), // quantile, lisa,
       "_blank",
       "width=900, height=700, scrollbars=yes"
     );
-  };
+  },
   
   /**
    * Close all PopUp windows
    */
-  d3viz.prototype.CloseAllPopUps = function() {
-  };
+  CloseAllPopUps : function() {
+  },
  
   /**
    * Get selected ids from map
    */
-  d3viz.prototype.GetSelected = function(msg) {
+  GetSelected : function(msg) {
     var uuid = msg["uuid"];
     var select_ids = "";
     if (localStorage.getItem('HL_IDS')) {
@@ -277,9 +281,9 @@
     }
     var rsp = {"uuid":uuid,"ids":select_ids};
     return rsp;
-  };
+  },
    
-  d3viz.prototype.SelectOnMap = function(msg) {
+  SelectOnMap : function(msg) {
     var hl_ids = JSON.parse(localStorage.getItem('HL_IDS')),
         hl_ext = JSON.parse(localStorage.getItem('HL_MAP'));
     if (!hl_ids) hl_ids = {};
@@ -297,9 +301,9 @@
       hl_ids[uuid] = ids;
     }
     localStorage['HL_IDS'] = JSON.stringify(hl_ids);
-  };
+  },
   
-  d3viz.prototype.CartoGetAllTables = function(uid, key, successHandler) {
+  CartoGetAllTables : function(uid, key, successHandler) {
     var msg = {"command":"cartodb_get_all_tables"};
     if (uid) msg["uid"] = uid;
     if (key) msg["key"] = key;
@@ -309,9 +313,9 @@
     } else {
       setTimeout(function(){self.CartoGetAllTables(uid, key, successHandler)}, 10);
     }
-  };
+  },
   
-  d3viz.prototype.CartoDownloadTable = function(uid, key, table_name, successHandler) {
+  CartoDownloadTable : function(uid, key, table_name, successHandler) {
     var msg = {"command":"cartodb_download_table"};
     if (uid) msg["uid"] = uid;
     if (key) msg["key"] = key;
@@ -322,9 +326,9 @@
     } else {
       setTimeout(function(){self.CartoDownloadTable(uid, key, table_name,successHandler)}, 10);
     }
-  };
+  },
   
-  d3viz.prototype.CartoUploadTable = function(uid, key, uuid, successHandler) {
+  CartoUploadTable : function(uid, key, uuid, successHandler) {
     var msg = {"command":"cartodb_upload_table"};
     if (uid) msg["uid"] = uid;
     if (key) msg["key"] = key;
@@ -335,9 +339,9 @@
     } else {
       setTimeout(function(){self.CartoUploadTable(uid, key, uuid, successHandler)}, 10);
     }
-  };  
+  },
   
-  d3viz.prototype.CartoSpatialCount = function(uid, key, first_layer, second_layer, count_col_name, successHandler) {
+  CartoSpatialCount : function(uid, key, first_layer, second_layer, count_col_name, successHandler) {
     var msg = {"command":"cartodb_spatial_count"};
     if (uid) msg["uid"] = uid;
     if (key) msg["key"] = key;
@@ -350,8 +354,10 @@
     } else {
       setTimeout(function(){self.CartoSpatialCount(uid, key, first_layer, second_layer, count_col_name, successHandler)}, 10);
     }
-  };  
-  
-  // End and expose d3viz to 'window'
-  window["d3viz"] = d3viz;
+  },
+}; 
+
+// End and expose d3viz to 'window'
+window["d3viz"] = d3viz;
+
 })(self);
