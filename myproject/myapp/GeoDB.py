@@ -114,7 +114,7 @@ def ExportToJSON(shp_path):
     if sys.platform == 'win32':
         script += "& 7za a %s %s" % (json_path + ".zip", json_path)
     else:
-        script += "; zip %s %s" % (json_path + ".zip", json_path)
+        script += "; zip -j %s %s" % (json_path + ".zip", json_path)
     proc = subprocess.Popen(script, shell=True, stdin=None, 
                             stdout=None, stderr=None, close_fds=True)
     

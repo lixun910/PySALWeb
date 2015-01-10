@@ -90,6 +90,21 @@ ShpMap.prototype = {
     return this.shpReader;
   },
   
+  setExtent : function() {
+    this.mapLeft = this.extent[0];
+    this.mapRight = this.extent[1];
+    this.mapBottom = this.extent[2];
+    this.mapTop = this.extent[3];
+    this.mapWidth = this.extent[1] - this.extent[0];
+    this.mapHeight = this.extent[3] - this.extent[2];
+    return this.extent;
+  },
+  
+  setLmapExtent : function(extent)  {
+    if ( this.Lmap) {
+      this.Lmap.fitBounds([[extent[2], extent[0]],[extent[3], extent[1]]]);
+    }
+  },
   updateExtent : function(basemap) {
     // when overlay this map on top of a base map, the extent of this map
     // should be changed to the extent of the base map
@@ -138,13 +153,13 @@ ShpMap.prototype = {
         var xy = shp.readPoints()[0];
         x = xy[0];
         y = xy[1];
-        this.centroids.push(xy);
-        this.bbox.push([x,y,x,y]);
         if ( this.prj) {
           pt = this.prj.forward(xy);
           x = pt[0];
           y = pt[1];
         }
+        this.centroids.push([x,y]);
+        this.bbox.push([x,y,x,y]);
         pt = this.mapToScreen(x,y);
         this.screenObjects.push(pt);
         
@@ -174,8 +189,16 @@ ShpMap.prototype = {
         this.screenObjects.push(screenPart);
         if (this.bbox.length <  this.n)  {
           var bounds = shp.readBounds();
+          if ( this.prj) {
+            var ll = this.prj.forward([bounds[0], bounds[1]]);
+            bounds[0] = ll[0];
+            bounds[1] = ll[1];
+            ll = this.prj.forward([bounds[2], bounds[3]]);
+            bounds[2] = ll[0];
+            bounds[3] = ll[1];
+          }
           this.bbox.push([bounds[0], bounds[2], bounds[1], bounds[3]]);
-          this.centroids.push([(bounds[2]-bounds[0])/2.0, (bounds[3]-bounds[1])/2.0]);
+          this.centroids.push([ (bounds[2]+bounds[0])/2.0, (bounds[3]+bounds[1])/2.0]);
         }
       }
     }
@@ -948,48 +971,46 @@ MapCanvas.prototype = {
       }
     }
    
-    if ( this.selected.length === 0 )  
-      return false;
-      
-    if (this.noForeground) {
-      this.highlight_cartodb(this.selected, undefined, true);
-      return;
-    }
-   
-    // fade the current canvas-es 
-    var nMaps = window.gViz.GetNumMaps();
-    this.fadeCanvas(nMaps, true);
-    
-    // highlight ext area
     var context = this.hlcanvas.getContext("2d");
     context.clearRect(0, 0, this.hlcanvas.width, this.hlcanvas.height);
-    context.globalAlpha = 1;
-    context.save(); // save for clipping
-    context.beginPath(); // specify area for clipping
-    context.rect( startX, startY, w, h);
-    context.closePath();
-    context.clip(); // do clipping
-    context.drawImage( this.buffer, 0, 0);
-    context.restore(); // restore from clipping, and draw reset
-    
-    if (this.shpType != "Point" && this.shpType != "MultiPoint") {
-      // for polygons and lines
-      if ( hdraw.length + ddraw.length == 0) 
-        return false;
-      // erase those out of highlight area
-      context.lineWidth = this.STROKE_WIDTH;
-      context.fillStyle = "rgba(0,0,0,1)";
-      context.globalCompositeOperation = "destination-out";
-      this.drawSelect(ddraw, context);
-      this.drawSelect(hdraw, context);
-     
-      // draw those not completed objects 
-      context.globalCompositeOperation = "source-over";
-      context.globalAlpha = this.ALPHA;
-      context.strokeStyle = this.STROKE_CLR;
-      this.drawSelect(hdraw, context);
+    if ( this.selected.length > 0 ) {
+      if (this.noForeground) {
+        this.highlight_cartodb(this.selected, undefined, true);
+      } else {
+       
+        // fade the current canvas-es 
+        var nMaps = window.gViz.GetNumMaps();
+        this.fadeCanvas(nMaps, true);
+        
+        // highlight ext area
+        context.globalAlpha = 1;
+        context.save(); // save for clipping
+        context.beginPath(); // specify area for clipping
+        context.rect( startX, startY, w, h);
+        context.closePath();
+        context.clip(); // do clipping
+        context.drawImage( this.buffer, 0, 0);
+        context.restore(); // restore from clipping, and draw reset
+        
+        if (this.shpType != "Point" && this.shpType != "MultiPoint") {
+          // for polygons and lines
+          if ( hdraw.length + ddraw.length == 0) 
+            return false;
+          // erase those out of highlight area
+          context.lineWidth = this.STROKE_WIDTH;
+          context.fillStyle = "rgba(0,0,0,1)";
+          context.globalCompositeOperation = "destination-out";
+          this.drawSelect(ddraw, context);
+          this.drawSelect(hdraw, context);
+         
+          // draw those not completed objects 
+          context.globalCompositeOperation = "source-over";
+          context.globalAlpha = this.ALPHA;
+          context.strokeStyle = this.STROKE_CLR;
+          this.drawSelect(hdraw, context);
+        } 
+      }
     } 
-    
     // draw selection rectangle
     context.beginPath();
     context.strokeStyle = "#000000";
@@ -1251,6 +1272,7 @@ MapCanvas.prototype = {
     this.hlcanvas.height = newHeight;
   
     this.clearCanvas(this.hlcanvas);
+    this.clearCanvas(this.canvas);
    
     this.margin_left = newWidth * (1-this.hratio)/2.0;
     this.margin_top = newHeight * (1-this.vratio)/2.0;

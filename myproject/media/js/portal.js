@@ -143,7 +143,7 @@ var ProcessDropZipFile = function(f, callback) {
             return;
           if (suffix === 'geojson' || suffix === 'json') {
             o = JSON.parse(o);
-            ShowNewMap(o, 'geojson'. entry.filename);
+            ShowNewMap(o, 'geojson', entry.filename);
             $('#progress_bar_openfile').hide();
             if (callback) callback();
             return;
@@ -268,7 +268,7 @@ var AddMapToLayerTree = function(name) {
   // change current layer name
   PlaceLayerName(name);
   // update current buttons 
-  $('#btnShowTable').attr('href','../get_table/?layer_uuid=' + layer_uuid);
+  //$('#btnShowTable').attr('href','../get_table/?layer_uuid=' + layer_uuid);
 };
 
 var BeforeMapShown = function() {
@@ -296,6 +296,12 @@ var OnMapShown = function(map) {
       });
       lmap.on('move', function(e) {
         gLmapMove = e.target._getTopLeftPoint();
+        if (gLmapMoveStart == undefined) {
+          // resize window
+          gLmapMoveStart = e.target.getPixelOrigin();
+          gViz.CleanMaps();
+          return;
+        }
         var offsetX = gLmapMove.x - gLmapMoveStart.x,
             offsetY = gLmapMove.y - gLmapMoveStart.y;
         if (Math.abs(offsetX) > 0 && Math.abs(offsetY) > 0) {
