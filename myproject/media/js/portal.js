@@ -275,6 +275,8 @@ var BeforeMapShown = function() {
   $('#loading').show();
 };
 
+var gLmapMoveStart, gLmapMove, gLmapMoveEnd, gOffsetX, gOffsetY;
+
 var OnMapShown = function(map) {
   $('#loading').hide();
   $('#dialog-open-file').dialog('close');
@@ -289,28 +291,28 @@ var OnMapShown = function(map) {
         // already taken care by moveend
       });
       lmap.on('movestart', function(e) {
+        gLmapMoveStart = e.target._getTopLeftPoint();
         gViz.CleanMaps();
       });
       lmap.on('move', function(e) {
-        console.log(e);
-        var op = e.target.getPixelOrigin();
-        var np = e.target._getTopLeftPoint();
-        var offsetX = -np.x + op.x;
-        var offsetY = -np.y + op.y;
+        gLmapMove = e.target._getTopLeftPoint();
+        var offsetX = gLmapMove.x - gLmapMoveStart.x,
+            offsetY = gLmapMove.y - gLmapMoveStart.y;
         if (Math.abs(offsetX) > 0 && Math.abs(offsetY) > 0) {
-          gViz.PanMaps(offsetX, offsetY);
+          gViz.PanMaps(-offsetX, -offsetY);
         }
       });
       lmap.on('moveend', function(e) {
-        console.log(e);
-        var op = e.target.getPixelOrigin();
-        var np = e.target._getTopLeftPoint();
-        var offsetX = -np.x + op.x;
-        var offsetY = -np.y + op.y;
-        console.log(offsetX, offsetY);
-        //if (e.hard == true || (Math.abs(offsetX) > 0 && Math.abs(offsetY) > 0)) {
-          gViz.UpdateMaps({"offsetX":offsetX, "offsetY":offsetY});
-        //}
+        gLmapMoveEnd = e.target._getTopLeftPoint();
+        var offsetX = gLmapMoveEnd.x - gLmapMoveStart.x,
+            offsetY = gLmapMoveEnd.y - gLmapMoveStart.y;
+        if (Math.abs(offsetX) > 0 || Math.abs(offsetY) > 0) {
+          if (gOffsetX != offsetX || gOffsetY != offsetY) {
+            gOffsetX = offsetX;
+            gOffsetY = offsetY;
+            gViz.UpdateMaps();
+          }
+        }
       });
     } else {
       $('#map').hide();

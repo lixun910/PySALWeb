@@ -184,9 +184,9 @@ ShpMap.prototype = {
   screenToMap : function(px, py) {
     var x, y;
     if (this.LL) {
-      px = px - this.moveX;
-      py = py - this.moveY;
-      var pt = this.Lmap.layerPointToLatLng(new this.LL.point(px,py));
+      px = px;
+      py = py;
+      var pt = this.Lmap.containerPointToLatLng(new this.LL.point(px,py));
       x = pt.lng;
       y = pt.lat;
     } else {
@@ -199,9 +199,9 @@ ShpMap.prototype = {
   mapToScreen : function(x, y) {
     var px, py;
     if (this.LL) {
-      var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
-      px = pt.x + this.moveX;
-      py = pt.y + this.moveY;
+      var pt = this.Lmap.latLngToContainerPoint(new this.LL.LatLng(y,x));
+      px = pt.x;
+      py = pt.y;
     } else {
       px = this.scaleX * (x - this.mapLeft) + this.offsetX;
       py = this.scaleY * (this.mapTop - y) + this.offsetY;
@@ -456,9 +456,9 @@ JsonMap.prototype = {
   screenToMap : function(px, py) {
     var x, y;
     if (this.LL) {
-      px = px - this.moveX;
-      py = py - this.moveY;
-      var pt = this.Lmap.layerPointToLatLng(new this.LL.point(px,py));
+      px = px;
+      py = py;
+      var pt = this.Lmap.containerPointToLatLng(new this.LL.point(px,py));
       x = pt.lng;
       y = pt.lat;
     } else {
@@ -471,9 +471,9 @@ JsonMap.prototype = {
   mapToScreen : function(x, y) {
     var px, py;
     if (this.LL) {
-      var pt = this.Lmap.latLngToLayerPoint(new this.LL.LatLng(y,x));
-      px = pt.x + this.moveX;
-      py = pt.y + this.moveY;
+      var pt = this.Lmap.latLngToContainerPoint(new this.LL.LatLng(y,x));
+      px = pt.x;
+      py = pt.y;
     } else {
       px = this.scaleX * (x - this.mapLeft) + this.offsetX;
       py = this.scaleY * (this.mapTop - y) + this.offsetY;
@@ -572,6 +572,7 @@ var GeoVizMap = function(mapContainer, hlcanvas) {
   this.numMaps = 0;
   this.mapList = [];
   this.mapOrder = [];
+  this.layerColors = ['#006400','#FFCC33','#CC6699','#95CAE4','#993333','#279B61'];
 };
 
 GeoVizMap.prototype = {
@@ -579,6 +580,9 @@ GeoVizMap.prototype = {
     // create a HTML5 canvas object for this map
     var canvas = $('<canvas/>', {'id':this.numMaps}).attr('class','paint-canvas');
     this.mapContainer.append(canvas);
+    if (!('fill_color' in params) || params['fill_color'] == undefined) {
+      params['fill_color'] = this.layerColors[this.numMaps % 6];
+    }
     var mapCanvas = new MapCanvas(map, canvas, this.hlcanvas, params);
     
     for (var i=0; i<this.mapList.length; i++) {
@@ -643,13 +647,13 @@ var MapCanvas = function(map, canvas, hlcanvas, params) {
   // color scheme
   this.color_theme = undefined;
   // alpha: draw the map with transparency
-  this.ALPHA = 0.9;
+  this.ALPHA = 0.8;
   // highlight alpha: when highlight, the alpha of background map
   this.HL_ALPHA = 0.4;
   // stroke width 
   this.STROKE_WIDTH = 0.3;
   // stroke color
-  this.STROKE_CLR = '#CCCCCC';
+  this.STROKE_CLR = '#FFFFFF';
   // fill color
   this.FILL_CLR = '#006400';
   // hratio: horizontal ratio of map width / screen width
@@ -676,7 +680,6 @@ var MapCanvas = function(map, canvas, hlcanvas, params) {
   
   this.map = map;
   this.shpType = this.map.shpType; 
-  this.layerColors = ['#FFCC33','#CC6699','#95CAE4','#993333','#279B61'];
   
   this.selected = [];
   this.brushRect = undefined;
@@ -734,8 +737,8 @@ MapCanvas.prototype = {
     if ('vertical_ratio' in params) this.vratio = params['vertical_ratio'];
     if ('noForeground' in params) this.ALPHA = params['noForeground'];
     
-    if ('offsetX' in params) this.offsetX = params['offsetX'];
-    if ('offsetY' in params) this.offsetY = params['offsetY'];
+    if ('offsetX' in params) this.offsetX = params.offsetX;
+    if ('offsetY' in params) this.offsetY = params.offsetY;
   },
   
   updateExtent: function(map) {
@@ -800,12 +803,10 @@ MapCanvas.prototype = {
   },  
 
   move : function(offsetX, offsetY) {
-    this.offsetX -= offsetX;
-    this.offsetY -= offsetY;
     var context = this.canvas.getContext("2d");
     context.imageSmoothingEnabled= false;
     context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    context.drawImage(this.buffer, this.offsetX, this.offsetY);
+    context.drawImage(this.buffer, offsetX, offsetY);
   },
   
   highlight_cartodb: function( ids, context, nolinking ) {
@@ -1259,10 +1260,12 @@ MapCanvas.prototype = {
     this.buffer = null; // gc
     this.buffer = this.createBuffer();
     this.draw(this.buffer.getContext("2d"), this.color_theme);
-    console.log('update buffer');
     if ( !this.noForeground ) {
       this.buffer2Screen();
     }   
+    console.log('update buffer');
+    this.offsetX = 0;
+    this.offsetY = 0;
   },
   
   clean: function(){
