@@ -43,15 +43,28 @@ d3viz.prototype = {
   },
   
   GetMap : function(idx) {
-    idx = idx ? parseInt(idx) : this.geoviz.numMaps - 1;
+    idx = typeof(idx) == "undefined" ? this.geoviz.numMaps - 1 : parseInt(idx);
     return this.geoviz.getMap(idx);
   },
   
-  SetupMap : function(uuid) {
+  RemoveMap : function(idx) {
+    var n = this.geoviz.numMaps;
+    idx = typeof(idx) == "undefined" ? n - 1 : parseInt(idx);
+    $('canvas[id=' + idx + ']').remove();
+    
+    // update canvas ids
+    for (var i =0; i < n; i++) {
+      if ( i > idx ) {
+        $('canvas[id=' + i + ']').attr('id', i - 1);
+      }
+    }
+  },
+  
+  SetupMapUUID : function(uuid) {
     this.uuids.push(uuid);
   },
  
-  MoveMaps : function(offsetX, offsetY) {
+  PanMaps : function(offsetX, offsetY) {
     this.geoviz.moveAllMaps(offsetX, offsetY);
   },
   
@@ -64,9 +77,12 @@ d3viz.prototype = {
   },
   
   UpdateLayerOrder : function(orders) {
+    var newOrders = [];
     for (var i=0; i < orders.length; i++) {
       $('canvas[id=' + orders[i] + ']').appendTo(this.container);
+      newOrders.push(orders[i]);
     }
+    this.geoviz.reorderMaps(newOrders);
   },
   
   /**

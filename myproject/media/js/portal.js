@@ -10,7 +10,6 @@ var carto_uid, carto_key, carto_layer,
 var cartodb_att = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
     esri_att = 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
     nokia_att = 'Map &copy; 1987-2014 <a href="http://developer.here.com">HERE</a>',
-
     tileUrls = [
       'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
       'http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
@@ -26,7 +25,7 @@ var cartodb_att = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenS
   tileProviders[tileUrls[3]] = cartodb_att;
   tileProviders[tileUrls[4]] = nokia_att;
   tileProviders[tileUrls[5]] = esri_att;
-var currentTileUrl = tileUrls[0];
+var currentTileUrl = tileUrls[4];
 
 var fields_combobox= {
   '#sel-var' : ['Integer','Real'], 
@@ -89,11 +88,11 @@ var CleanLeafletMap = function() {
   }
 };
 
-var baselayer;
+var gBaselayer;
 
 var CreateBaseLayer = function(){
-  if (baselayer) {
-    lmap.removeLayer(baselayer);
+  if (gBaselayer) {
+    lmap.removeLayer(gBaselayer);
   }
   var attr = tileProviders[currentTileUrl],
       options = {
@@ -101,7 +100,6 @@ var CreateBaseLayer = function(){
         maxZoom: 18,
         subdomains: 'abcd',
       };
-  
   if (attr = nokia_att) {
     options['app_id'] = 'DXEWcinCPybfIS9yHKbM';
     options['app_code'] = 'vPBKeXjNk_iROosIzNNNRg';
@@ -122,8 +120,8 @@ var SetupLeafletMap = function() {
   gViz.SetupBrushLink();
   if (gShowLeaflet) {
     if (!lmap) lmap = new L.Map('map');
-    baselayer = CreateBaseLayer(); 
-    lmap.addLayer(baselayer);
+    gBaselayer = CreateBaseLayer(); 
+    lmap.addLayer(gBaselayer);
   }
 };
 
@@ -287,24 +285,31 @@ var OnMapShown = function(map) {
         gViz.CleanMaps();
       });
       lmap.on('zoomend', function() {
-        gViz.UpdateMaps();
+        //gViz.UpdateMaps(); 
+        // already taken care by moveend
       });
       lmap.on('movestart', function(e) {
         gViz.CleanMaps();
       });
       lmap.on('move', function(e) {
+        console.log(e);
         var op = e.target.getPixelOrigin();
         var np = e.target._getTopLeftPoint();
         var offsetX = -np.x + op.x;
         var offsetY = -np.y + op.y;
-        gViz.MoveMaps(offsetX, offsetY);
+        if (Math.abs(offsetX) > 0 && Math.abs(offsetY) > 0) {
+          gViz.PanMaps(offsetX, offsetY);
+        }
       });
       lmap.on('moveend', function(e) {
+        console.log(e);
         var op = e.target.getPixelOrigin();
         var np = e.target._getTopLeftPoint();
         var offsetX = -np.x + op.x;
         var offsetY = -np.y + op.y;
-        gViz.UpdateMaps({"offsetX":offsetX, "offsetY":offsetY});
+        if (e.hard == true || (Math.abs(offsetX) > 0 && Math.abs(offsetY) > 0)) {
+          gViz.UpdateMaps({"offsetX":offsetX, "offsetY":offsetY});
+        }
       });
     } else {
       $('#map').hide();
@@ -353,7 +358,7 @@ var InitDialogs = function(data) {
   
   
   // setup uuid in GeoVizMap
-  gViz.SetupMap(layer_uuid); 
+  gViz.SetupMapUUID(layer_uuid); 
   
   LoadMapNames();
   
@@ -629,14 +634,14 @@ $(document).ready(function() {
   });
   
   var mapItems = $('#mapproviders').children();
-  $(mapItems[0]).css({'border':'2px solid orange'});
+  $(mapItems[4]).css({'border':'2px solid orange'});
   for (var i=0; i< mapItems.length; i++){
     $(mapItems[i]).click(function(){
       // update basemap
       currentTileUrl = tileUrls[parseInt($(this).attr('id'))];
-      baselayer = CreateBaseLayer();
+      gBaselayer = CreateBaseLayer();
       if (!lmap) lmap = new L.Map('map');
-      lmap.addLayer(baselayer);
+      lmap.addLayer(gBaselayer);
       $('#mapproviders').children().css({'border':'none'});
       $(this).css({'border':'2px solid orange'});
     });
@@ -697,7 +702,6 @@ $(document).ready(function() {
       for (var i=layers.length-1; i>=0; i--) {
         layer_ids.push(parseInt(layers[i].id));
       }
-      console.log(layer_ids);
       gViz.UpdateLayerOrder(layer_ids);
     }
   });
