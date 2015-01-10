@@ -633,8 +633,9 @@ GeoVizMap.prototype = {
     map.setLmapExtent(extent);
   }, 
   
-  getMap : function(index) {
-    return this.mapList[index];
+  getMap : function(idx) {
+    idx = typeof(idx) == "undefined" ? this.mapOrder[this.numMaps - 1] : parseInt(idx);
+    return this.mapList[idx];
   }, 
 };
 
@@ -799,10 +800,12 @@ MapCanvas.prototype = {
   },  
 
   move : function(offsetX, offsetY) {
+    this.offsetX -= offsetX;
+    this.offsetY -= offsetY;
     var context = this.canvas.getContext("2d");
     context.imageSmoothingEnabled= false;
     context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    context.drawImage(this.buffer, -this.offsetX + offsetX, -this.offsetY + offsetY);
+    context.drawImage(this.buffer, this.offsetX, this.offsetY);
   },
   
   highlight_cartodb: function( ids, context, nolinking ) {

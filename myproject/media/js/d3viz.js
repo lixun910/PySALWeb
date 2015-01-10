@@ -43,7 +43,6 @@ d3viz.prototype = {
   },
   
   GetMap : function(idx) {
-    idx = typeof(idx) == "undefined" ? this.geoviz.numMaps - 1 : parseInt(idx);
     return this.geoviz.getMap(idx);
   },
   

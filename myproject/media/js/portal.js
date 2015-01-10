@@ -25,7 +25,7 @@ var cartodb_att = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenS
   tileProviders[tileUrls[3]] = cartodb_att;
   tileProviders[tileUrls[4]] = nokia_att;
   tileProviders[tileUrls[5]] = esri_att;
-var currentTileUrl = tileUrls[4];
+var currentTileUrl = tileUrls[1];
 
 var fields_combobox= {
   '#sel-var' : ['Integer','Real'], 
@@ -307,9 +307,10 @@ var OnMapShown = function(map) {
         var np = e.target._getTopLeftPoint();
         var offsetX = -np.x + op.x;
         var offsetY = -np.y + op.y;
-        if (e.hard == true || (Math.abs(offsetX) > 0 && Math.abs(offsetY) > 0)) {
+        console.log(offsetX, offsetY);
+        //if (e.hard == true || (Math.abs(offsetX) > 0 && Math.abs(offsetY) > 0)) {
           gViz.UpdateMaps({"offsetX":offsetX, "offsetY":offsetY});
-        }
+        //}
       });
     } else {
       $('#map').hide();
