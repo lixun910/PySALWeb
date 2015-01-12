@@ -366,21 +366,23 @@ var InitDialogs = function(data) {
       field_names = [];
   
   
-  // setup uuid in GeoVizMap
-  gViz.SetupMapUUID(layer_uuid); 
+  // setup map meta data in GeoVizMap
+  gViz.SetupMap(layer_uuid, data); 
   
   LoadMapNames();
   
-  if (!gAddLayer) {
-    FillFieldsToControls(fields);
-    $( "#vars ul li" ).draggable({ helper: "clone" });
-    new List('vars', {valueNames:['name']});
-    // in weights box
-    LoadWnames();
-    setTimeout(LoadSpregP, 100);
-    setTimeout(LoadModelNames, 100);
-    //setTimeout(LoadMinPairDist, 3000);
-  }
+  FillFieldsToControls(fields);
+ 
+  // regression dialog 
+  $( "#vars ul li" ).draggable({ helper: "clone" });
+  new List('vars', {valueNames:['name']});
+  
+  // in weights box
+  LoadWnames();
+  setTimeout(LoadSpregP, 100);
+  setTimeout(LoadModelNames, 100);
+  //setTimeout(LoadMinPairDist, 3000);
+  
   ToggleToolbarButtons(true);
 };
 
@@ -464,7 +466,7 @@ var LoadWnames = function() {
     $.get("../get_weights_names/", {"layer_uuid": layer_uuid},function() {
     }).done(function(data) {
       if ( "success" in data ) {
-        console.log("get weights names failed.");
+        ShowMsgBox("Error", "Get weights names failed.");
         return;
       }
       var w_names = [];
@@ -472,7 +474,13 @@ var LoadWnames = function() {
         w_names.push(key); 
       }
       w_names.sort();
-      w_combobox= ['#sel-model-w-files', '#sel-kernel-w-files', '#sel-w-files','#sel-lisa-w','#sel-moran-w'];
+      w_combobox= [
+        '#sel-model-w-files', 
+        '#sel-kernel-w-files', 
+        '#sel-w-files',
+        '#sel-lisa-w',
+        '#sel-moran-w'
+      ];
       $.each( w_combobox, function(i, w_cmb ) {
         $(w_cmb).find('option').remove().end();
         $.each(w_names, function(j, w_name) {

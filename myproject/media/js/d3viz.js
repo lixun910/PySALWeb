@@ -20,11 +20,13 @@ var d3viz = function(container, hlcanvas) {
   this.map = undefined;
   this.mapType = undefined; //shapefile or json
   
-  
+  this.uuids = []; 
+ 
+  this.mapMeta = {};
   this.container = container; 
   this.hlcanvas = hlcanvas;
-  this.uuids = []; 
   this.geoviz = new GeoVizMap(container, hlcanvas);
+  
   // carto db
   this.userid = undefined;
   this.key = undefined;
@@ -34,8 +36,15 @@ var d3viz = function(container, hlcanvas) {
 
 d3viz.prototype = {
 
+  GetCurrentIdx : function() {
+    var layerElm = this.container.children()[this.geoviz.numMaps-1];
+    return parseInt(layerElm.attr('id'));
+  },
+  
   GetUUID : function() {
-    return this.uuids[this.geoviz.numMaps-1];
+    // return the uuid of current map layer
+    var currentIdx = this.GetCurrentIdx();
+    return this.uuids[currentIdx];
   },
   
   GetNumMaps : function() {
@@ -43,24 +52,18 @@ d3viz.prototype = {
   },
   
   GetMap : function(idx) {
+    // if idx == undefined return current mapcanvas
     return this.geoviz.getMap(idx);
   },
   
   RemoveMap : function(idx) {
-    var n = this.geoviz.numMaps;
-    idx = typeof(idx) == "undefined" ? n - 1 : parseInt(idx);
-    $('canvas[id=' + idx + ']').remove();
-    
-    // update canvas ids
-    for (var i =0; i < n; i++) {
-      if ( i > idx ) {
-        $('canvas[id=' + i + ']').attr('id', i - 1);
-      }
-    }
+    idx = parseInt(idx);
+    this.geoviz.removeMap(idx);
   },
   
-  SetupMapUUID : function(uuid) {
-    this.uuids.push(uuid);
+  SetupMap: function(metaData) {
+    this.uuids.push(metaData.uuid);
+    this.mapMeta[metaData.uuid] = metaData;
   },
  
   PanMaps : function(offsetX, offsetY) {
@@ -75,13 +78,8 @@ d3viz.prototype = {
     this.geoviz.cleanAllMaps();
   },
   
-  UpdateLayerOrder : function(orders) {
-    var newOrders = [];
-    for (var i=0; i < orders.length; i++) {
-      $('canvas[id=' + orders[i] + ']').appendTo(this.container);
-      newOrders.push(orders[i]);
-    }
-    this.geoviz.reorderMaps(newOrders);
+  UpdateLayerOrder : function(order) {
+    this.geoviz.reorderMaps(order);
   },
   
   /**

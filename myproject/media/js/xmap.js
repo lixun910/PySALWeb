@@ -618,8 +618,18 @@ GeoVizMap.prototype = {
   }, 
     
   removeMap : function(mapIndex) {
-    this.mapContainer.find('#mapIndex').remove();
-    // clean memory TODO
+    // remove canvas
+    this.mapContainer.find('#'+mapIndex).remove();
+    
+    // update the id of rest canvas
+    for (var i =0; i < this.numMaps; i++) {
+      if ( i > mapIndex ) {
+        $('canvas[id=' + i + ']').attr('id', i - 1);
+      }
+    }
+    
+    // clean memory
+    mapIndex = this.mapOrder.indexOf(mapIndex);
     this.mapList[mapIndex].destroy();
     this.mapList[mapIndex]= null;
     this.mapList = this.mapList.splice(mapIndex, 1);
@@ -649,15 +659,22 @@ GeoVizMap.prototype = {
     // gc
     mapcanvas = null; 
   }, 
-  
+ 
   reorderMaps : function(mapOrder) {
+    var n = this.numMaps;
+    var newExtent = mapOrder[n-1]  != this.mapOrder[n-1];
     this.mapOrder = mapOrder;
-    var topLayerIdx = mapOrder[mapOrder.length -1];
-    
-    var mapcanvas = this.mapList[topLayerIdx];
-    var map = mapcanvas.map;
-    var extent = map.setExtent();
-    map.setLmapExtent(extent);
+    // update orders of canvas by given new order [3,0,1,2]
+    for (var i=0; i < n; i++) {
+      $('canvas[id=' + mapOrder[i] + ']').appendTo(this.mapContainer);
+    }
+    if (newExtent) {
+      var topLayerIdx = mapOrder[n-1];
+      var mapcanvas = this.mapList[topLayerIdx];
+      var map = mapcanvas.map;
+      var extent = map.setExtent();
+      map.setLmapExtent(extent);
+    }
   }, 
   
   getMap : function(idx) {
@@ -1285,7 +1302,6 @@ MapCanvas.prototype = {
     if ( !this.noForeground ) {
       this.buffer2Screen();
     }   
-    console.log('update buffer');
     this.offsetX = 0;
     this.offsetY = 0;
   },
@@ -1317,7 +1333,10 @@ MapCanvas.prototype = {
   },
   
   OnKeyDown: function( evt ) {
-    if ( evt.keyCode = 77 ) {
+    if ( evt.keyCode == 83 ) {
+      var self = window.gViz.GetMap();
+      self.isKeyDown = true;
+    } else if ( evt.keyCode = 77 ) {
       var self = window.gViz.GetMap();
       self.hlcanvas.style.pointerEvents= 'none';  
     }
@@ -1337,7 +1356,6 @@ MapCanvas.prototype = {
     self.startY = y;
     if ( self.isKeyDown == true ) {
       if (self.brushRect && self.brushRect.Contains(new GPoint(x, y)) ) {
-        console.log("brushing");
         self.isBrushing = true;
       }
     }
@@ -1414,7 +1432,6 @@ MapCanvas.prototype = {
       } else if ( self.isKeyDown == true &&  self.isBrushing == false) {
         // setup brushing box
         self.brushRect = new GRect( self.startX, self.startY, x, y);
-        console.log(self.brushRect.x0,self.brushRect.x1,self.brushRect.y0,self.brushRect.y1);
       }
     }
     self.isMouseDown = false;

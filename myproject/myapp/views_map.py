@@ -264,6 +264,7 @@ def get_metadata(request):
             results = {}
             results['layer_uuid'] = layer_uuid
             results['name'] = name
+            results['geo_type'] = geodata.geotype
             results['n'] = geodata.n
             results['fields'] = GeoDB.GetColumnNamesFromTable(layer_uuid)
             results['json_path'] = settings.URL_PREFIX + settings.MEDIA_URL + geodata.jsonpath
