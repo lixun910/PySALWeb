@@ -37,8 +37,8 @@ var d3viz = function(container, hlcanvas) {
 d3viz.prototype = {
 
   GetCurrentIdx : function() {
-    var layerElm = this.container.children()[this.geoviz.numMaps-1];
-    return parseInt(layerElm.attr('id'));
+    var layerElm = this.container.find('canvas')[this.geoviz.numMaps-1];
+    return parseInt(layerElm.id);
   },
   
   GetUUID : function() {
@@ -62,8 +62,8 @@ d3viz.prototype = {
   },
   
   SetupMap: function(metaData) {
-    this.uuids.push(metaData.uuid);
-    this.mapMeta[metaData.uuid] = metaData;
+    this.uuids.push(metaData.layer_uuid);
+    this.mapMeta[metaData.layer_uuid] = metaData;
   },
  
   PanMaps : function(offsetX, offsetY) {

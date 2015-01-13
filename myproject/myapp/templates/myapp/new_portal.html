@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{{url_prefix}}/media/css/leaflet.css" />
 <link rel="stylesheet" href="{{url_prefix}}/media/css/jquery.switchButton.css" />
 <link rel="stylesheet" href="{{url_prefix}}/media/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
+<link rel="stylesheet" href="{{url_prefix}}/media/css/jquery.colorpicker.min.css" />
 <link rel="stylesheet" href="{{url_prefix}}/media/css/cartodb.css" />
 
 <script type="text/javascript" src="{{url_prefix}}/media/js/dropins.js" id="dropboxjs" data-app-key="50dk6qp6nc2fcxs"></script>
@@ -18,6 +19,7 @@
 <script src="{{url_prefix}}/media/js/d3viz.js"></script>
 <script src="{{url_prefix}}/media/js/proj4-src.js"></script>
 <script src="{{url_prefix}}/media/js/jquery.switchButton.js"></script>
+<script src="{{url_prefix}}/media/js/jquery.colorpicker.min.js"></script>
 <script src="{{url_prefix}}/media/js/zip/zip.js"></script>
 
 <script src="{{url_prefix}}/media/js/xmap.js"></script>
@@ -96,7 +98,7 @@
 </div>
 
 <div class="tool-menu" id="map-menu">
-	<div class="image-wrap" style="background-image: url(../../media/img/wiz-sim-poly.png);width: 92px; height: 82px;">
+	<div id="btnSimMap" class="image-wrap" style="background-image: url(../../media/img/wiz-sim-poly.png);width: 92px; height: 82px;">
 	  <span>Simple Map</span>
 	</div>
 	<div id="btnCatMap" class="image-wrap" style="background-image: url(../../media/img/wiz-cat-poly.png);">
@@ -522,6 +524,43 @@
     <td><select id="sel-histogram-x"></td>
   </tr>
  </table> 
+</div>
+
+<div id="dlg-simple-map" title="Configure Map">
+  <br/><br/>
+  <table>
+  <tr>
+    <td><label for="name">Configuration list:</label></td>
+    <td valign='top'><select id="sel-map-conf"><option  selected>default</option></select></td>
+  </tr>
+  <tr height=30>
+  </tr>
+  <tr>
+    <td><label for="name">Fill Color:</label></td>
+    <td><input type="text" id="colorpicker-fill" value=""></td>
+  </tr>
+  <tr>
+    <td><label for="name">Stroke Width:</label></td>
+    <td><input type="text" id="stroke-width" value="0.3"></td>
+  </tr>
+  <tr>
+    <td><label for="name">Stroke Color:</label></td>
+    <td><input type="text" id="colorpicker-stroke" value=""></td>
+  </tr>
+  <tr>
+    <td height=30><label for="name">Transparency:</label></td>
+    <td><div id="opacity-slider"></div></td>
+	<td width=10><span id="opacity">0.9</span></td>
+  </tr>
+ </table> 
+</div>
+<div id="dlg-save-map-conf" title="Save Map Configuration">
+<br>
+<br>
+<br>
+<br>
+    <label for="name">Input a map configuration name:</label>
+    <input type="text" id="map-conf-name" class="text ui-widget-content ui-corner-all" value="default">
 </div>
 <!--
 ///////////////////////////////////////////////////////////////////////////////

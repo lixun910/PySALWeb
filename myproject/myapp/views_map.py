@@ -19,7 +19,7 @@ import zipfile
 import urllib
 from hashlib import md5
 
-from myproject.myapp.models import Document, Geodata, Weights, SpregModel
+from myproject.myapp.models import Document, Geodata, Weights, SpregModel, MapConfigure
 from views_utils import * 
 from views_utils import Save_new_shapefile
 
@@ -251,8 +251,54 @@ def get_fields(request):
             )
     return HttpResponse(RSP_FAIL, content_type="application/json")
 
+
 @login_required
-def get_metadata(request):
+def get_configure(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        map_confs = MapConfigure.objects.filter(uuid=layer_uuid)
+        ret_confs = {}
+        for conf in map_confs:
+            ret_confs[conf.name] = conf.configuration
+        
+        return HttpResponse(json.dumps(ret_confs), content_type="application/json")
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+        
+@login_required
+def save_configure(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        layer_uuid = request.GET.get("layer_uuid","")
+        conf_name = request.GET.get("conf_name","")
+        
+        if layer_uuid and conf_name:
+            fill_clr = request.GET.get("fill_clr","")
+            stroke_clr = request.GET.get("stroke_clr","")
+            stroke_width = request.GET.get("stroke_width","")
+            opacity = request.GET.get("opacity","")
+            params = {}
+            if fill_clr: params['fill_color'] = fill_clr
+            if stroke_clr: params['stroke_color'] = stroke_clr
+            if stroke_width : params['stroke_width'] = stroke_clr
+            if opacity: params['transparency'] = opacity
+            
+            map_conf = MapConfigure(
+                uuid = layer_uuid,
+                name = conf_name,
+                configuration = json.dumps(params)
+            )
+            map_conf.save() 
+
+        return HttpResponse(RSP_OK, content_type="application/json")
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+
+@login_required
+def get_metadata(:
     userid = request.user.username
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 

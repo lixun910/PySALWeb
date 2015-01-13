@@ -267,8 +267,6 @@ var AddMapToLayerTree = function(name) {
   PositionLayerTree();
   // change current layer name
   PlaceLayerName(name);
-  // update current buttons 
-  //$('#btnShowTable').attr('href','../get_table/?layer_uuid=' + layer_uuid);
 };
 
 var BeforeMapShown = function() {
@@ -365,9 +363,11 @@ var InitDialogs = function(data) {
       fields = data.fields,
       field_names = [];
   
-  
   // setup map meta data in GeoVizMap
-  gViz.SetupMap(layer_uuid, data); 
+  gViz.SetupMap(data); 
+  
+  // update current buttons 
+  $('#btnShowTable span').html('<a href="../get_table/?layer_uuid=' + layer_uuid + '" target=_blank>Table</a>');
   
   LoadMapNames();
   
@@ -376,6 +376,9 @@ var InitDialogs = function(data) {
   // regression dialog 
   $( "#vars ul li" ).draggable({ helper: "clone" });
   new List('vars', {valueNames:['name']});
+  
+  // in simple map dlg
+  GetMapConfig();
   
   // in weights box
   LoadWnames();
@@ -405,6 +408,36 @@ var LoadMapNames = function(){
     }
   });
 };
+
+// get config names for a map
+var GetMapConfig = function(callback) {
+  if (gViz && gViz.GetUUID()) {
+    var layer_uuid = gViz.GetUUID();
+    $.get("../get_map_confs/", {"layer_uuid": layer_uuid})
+    .done( function(data) {
+      if ('success' in data) return;
+      if (data.length > 0) {
+        $('#sel-map-conf').find('option').remove().end();
+        var i =0;
+        for (var name in data) {
+          $('#sel-map-conf').append($('<option>')).text(name);
+          if (i==0) {
+            gViz.GetMap().update(data[name]);
+            $('#colorpicker-fill').val(gViz.GetMap().FILL_CLR.substr(1));
+            $('#colorpicker-stroke').val(gViz.GetMap().STROKE_CLR.substr(1));
+            $('#stroke-width').val(gViz.GetMap().STROKE_WIDTH);
+            $('#opacity-slide').val(gViz.GetMap().ALPHA);
+          }
+          i++;
+        }
+      } 
+      
+      if (typeof callback === "function") {
+        callback();
+      }
+    });
+  }
+}
 
 var LoadFieldNames = function(callback) {
   if (gViz && gViz.GetUUID()) {
@@ -689,7 +722,10 @@ $(document).ready(function() {
     
   $( "#dlg-msg" ).dialog({
     dialogClass: "dialogWithDropShadow",
-    width: 400, height: 200, autoOpen: false, modal: true,
+    width: 400, 
+    height: 200, 
+    autoOpen: false, 
+    modal: true,
     buttons: {OK: function() {$( this ).dialog( "close" );}}
   }).hide();
 
@@ -743,6 +779,16 @@ $(document).ready(function() {
     $('#dialog-open-file').dialog('open');
   });
   
+  // each item on bottom bar is linking to a popup menu  
+  // OnToolMenuClick() is link between tool item and menu
+  var toolMenu = {
+    '#btnMultiLayer':'#layer-tree', 
+    '#btnNewMap':'#map-menu', 
+    //'#btnShowTable':'#map-menu', 
+    '#btnExplore':'#explore-menu', 
+    '#btnSpace':'#space-menu', 
+    //'#btnSpreg':'#spreg-menu'
+  };
   var OnToolMenuClick = function(btn, menu) {
     $(btn).click(function(){
       if (gViz && gViz.GetNumMaps() > 0) {
@@ -759,31 +805,40 @@ $(document).ready(function() {
       }
     });
   };
-  
-  var toolMenu = {
-    '#btnMultiLayer':'#layer-tree', 
-    '#btnNewMap':'#map-menu', 
-    //'#btnShowTable':'#map-menu', 
-    '#btnExplore':'#explore-menu', 
-    '#btnSpace':'#space-menu', 
-    //'#btnSpreg':'#spreg-menu'
-  };
   for (var btn in toolMenu) {
     var menu = toolMenu[btn];
     OnToolMenuClick(btn, menu);
   }
- 
-  $('#btnCatMap').click(function(){
-    $('#dlg-quantile-map').dialog('option', "position", {
-      my: "bottom-38",
-      at: "top",
-      of: "#btnCatMap"
+
+  // each button on popup menu is linking to a dialog, 
+  // SetMenuButton() is used to link between button and dialog
+  var buttonDialog = {
+    '#btnSimMap' : '#dlg-simple-map',
+    '#btnCatMap' : '#dlg-quantile-map',
+  };
+  var OnMenuButtonClick = function(btnID, dlgID) {
+    $(btnID).click(function(){
+      // hide all dialogs
+      $('.ui-dialog-content').dialog('close');
+      $(dlgID).dialog('option', "position", {
+        my: "bottom-38",
+        at: "top",
+        of: btnID
+      });
+      $(dlgID).dialog('open');
+      var pos=$(btnID).offset();
+      $('#dialog-arrow').css({'left':pos.left});
+      $('#dialog-arrow').show();
     });
-    $('#dlg-quantile-map').dialog('open');
-    var pos=$(this).offset();
-    $('#dialog-arrow').css({'left':pos.left});
-    $('#dialog-arrow').show();
-  });
+  };
+  for (var btnID in buttonDialog) {
+    var dlgID = buttonDialog[btnID];
+    OnMenuButtonClick(btnID, dlgID);
+  }
+  
+  
+  
+  
   
   $('#btnCartoDB').click(function(){
     if (gViz) {
@@ -817,6 +872,85 @@ $(document).ready(function() {
     if (gViz) {  $('#dlg-lisa-map').dialog('open');}
   });
   
+  //////////////////////////////////////////////////////////////
+  // Configure Map
+  //////////////////////////////////////////////////////////////
+  $('#colorpicker-fill').colorpicker({
+    buttonColorize: true, 
+    showOn: 'both',
+    close: function(evt, clr) {
+      clr = '#' + clr.formatted;
+      var mapcanvas = gViz.GetMap();
+      if (clr != mapcanvas.FILL_CLR)
+        mapcanvas.update({'fill_color':clr});
+    },
+  });
+  $('#colorpicker-stroke').colorpicker({
+    buttonColorize: true, 
+    showOn: 'both',
+    close: function(evt, clr) {
+      clr = '#' + clr.formatted;
+      var mapcanvas = gViz.GetMap();
+      if (clr != mapcanvas.STROKE_CLR)
+        mapcanvas.update({'stroke_color':clr});
+    },
+  });
+  $('#stroke-width').change(function(){
+    var str_wdt = parseFloat($(this).val());
+    var mapcanvas = gViz.GetMap();
+    if (str_wdt != mapcanvas.STROKE_WIDTH)
+      mapcanvas.update({'stroke_width':str_wdt});
+  });
+  $('#opacity-slider').slider({
+    min: 0, max: 1, step: 0.1, value: 0.9,
+    slide: function( evt, ui) {
+      var opacity = ui.value;
+      $('#opacity').text(opacity);
+      var mapcanvas = gViz.GetMap();
+      mapcanvas.update({'transparency':opacity});
+    }
+  });
+  $( "#dlg-simple-map" ).dialog({
+    dialogClass: "dialogWithDropShadow",
+    width: 300,
+    height: 300,
+    autoOpen: false,
+    modal: false,
+    resizable:  false,
+    draggable: false,
+    beforeClose: function(event,ui){
+        $('#dialog-arrow').hide();
+    },
+    buttons: [{
+      text: "Save",
+      click: function() {
+        $('#map-conf-name').val($('#sel-map-conf').text());
+        $('#dlg-save-map-conf').dialog('open');
+      },
+    }]
+  });
+  $( "#dlg-save-map-conf").dialog({
+    dialogClass: "dialogWithDropShadow",
+    width: 500,
+    height: 200,
+    autoOpen: false,
+    modal: true,
+    buttons: [{
+      text: "Save",
+      click: function() {
+        var params = {
+          'layer_uuid' : gViz.GetUUID(),
+         'fill_clr' : $('#colorpicker-fill').val(),
+         'stroke_clr' : $('#colorpicker-stroke').val(),
+         'stroke_width' : $('#stroke-width').val(),
+         'opacity' : $('#opacity-slider').val(),
+         'conf_name' : $('#map-conf-name').val(),
+        };
+        console.log(params);
+        $( this ).dialog( "close" );
+      },
+    }]
+  });
   //////////////////////////////////////////////////////////////
   //  Open File 
   //////////////////////////////////////////////////////////////
@@ -2058,12 +2192,15 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Thematic Map
   //////////////////////////////////////////////////////////////
+  
   $( "#dlg-quantile-map" ).dialog({
     dialogClass: "dialogWithDropShadow",
-    width: 400,
-    height: 200,
+    width: 300,
+    height: 500,
     autoOpen: false,
     modal: false,
+    resizable:  false,
+    draggable: false,
     beforeClose: function(event,ui){
         $('#dialog-arrow').hide();
     },
@@ -2107,6 +2244,8 @@ $(document).ready(function() {
     height: 200,
     autoOpen: false,
     modal: true,
+    resizable:  false,
+    draggable: false,
     buttons: {
       "Open": function() {
         if (!gViz) return;
@@ -2146,6 +2285,8 @@ $(document).ready(function() {
     height: 200,
     autoOpen: false,
     modal: true,
+    resizable:  false,
+    draggable: false,
     buttons: {
       "Open": function() {
         if (!gViz && !gViz.GetUUID()) return;
@@ -2178,6 +2319,8 @@ $(document).ready(function() {
     height: 200,
     autoOpen: false,
     modal: true,
+    resizable:  false,
+    draggable: false,
     buttons: {
       "Open": function() {
         if (!gViz && !gViz.GetUUID()) return;
@@ -2211,6 +2354,8 @@ $(document).ready(function() {
     height: 200,
     autoOpen: false,
     modal: true,
+    resizable:  false,
+    draggable: false,
     buttons: {
       "Open": function() {
         if (!gViz && !gViz.GetUUID()) return;
