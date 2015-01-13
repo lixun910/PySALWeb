@@ -298,7 +298,7 @@ def save_configure(request):
     return HttpResponse(RSP_FAIL, content_type="application/json")
 
 @login_required
-def get_metadata(:
+def get_metadata(request):
     userid = request.user.username
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 

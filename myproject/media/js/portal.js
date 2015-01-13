@@ -413,7 +413,7 @@ var LoadMapNames = function(){
 var GetMapConfig = function(callback) {
   if (gViz && gViz.GetUUID()) {
     var layer_uuid = gViz.GetUUID();
-    $.get("../get_map_confs/", {"layer_uuid": layer_uuid})
+    $.get("../get_map_conf/", {"layer_uuid": layer_uuid})
     .done( function(data) {
       if ('success' in data) return;
       if (data.length > 0) {
@@ -423,14 +423,15 @@ var GetMapConfig = function(callback) {
           $('#sel-map-conf').append($('<option>')).text(name);
           if (i==0) {
             gViz.GetMap().update(data[name]);
-            $('#colorpicker-fill').val(gViz.GetMap().FILL_CLR.substr(1));
-            $('#colorpicker-stroke').val(gViz.GetMap().STROKE_CLR.substr(1));
-            $('#stroke-width').val(gViz.GetMap().STROKE_WIDTH);
-            $('#opacity-slide').val(gViz.GetMap().ALPHA);
           }
           i++;
         }
       } 
+      
+      $('#colorpicker-fill').val(gViz.GetMap().FILL_CLR.substr(1));
+      $('#colorpicker-stroke').val(gViz.GetMap().STROKE_CLR.substr(1));
+      $('#stroke-width').val(gViz.GetMap().STROKE_WIDTH);
+      $('#opacity-slide').val(gViz.GetMap().ALPHA);
       
       if (typeof callback === "function") {
         callback();
@@ -947,6 +948,9 @@ $(document).ready(function() {
          'conf_name' : $('#map-conf-name').val(),
         };
         console.log(params);
+        $.get('../save_map_conf/', params).done(function(results){
+          if ('success in ')
+        });
         $( this ).dialog( "close" );
       },
     }]
