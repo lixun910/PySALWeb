@@ -21,8 +21,9 @@ var d3viz = function(container, hlcanvas) {
   this.mapType = undefined; //shapefile or json
   
   this.uuids = []; 
- 
+  this.mapConfig = {};
   this.mapMeta = {};
+  this.mapTheme = {};
   this.container = container; 
   this.hlcanvas = hlcanvas;
   this.geoviz = new GeoVizMap(container, hlcanvas);
@@ -61,11 +62,15 @@ d3viz.prototype = {
     this.geoviz.removeMap(idx);
   },
   
-  SetupMap: function(metaData) {
+  SetupMapMeta: function(metaData) {
     this.uuids.push(metaData.layer_uuid);
     this.mapMeta[metaData.layer_uuid] = metaData;
   },
  
+  GetMapMeta: function() {
+    return this.mapMeta[this.GetUUID()];
+  },
+  
   PanMaps : function(offsetX, offsetY) {
     this.geoviz.moveAllMaps(offsetX, offsetY);
   },
@@ -82,6 +87,24 @@ d3viz.prototype = {
     this.geoviz.reorderMaps(order);
   },
   
+  SetMapConfig : function(config) {
+    var currentUUID = this.GetUUID();
+    this.mapConfig[currentUUID] = config;
+  },
+  
+  GetMapConfig : function()  {
+    var currentUUID = this.GetUUID();
+    return this.mapConfig[currentUUID];
+  },
+  
+  SetMapTheme : function(data) {
+    this.mapTheme[data.layer_uuid] = data;
+  },
+ 
+  GetMapTheme : function() {
+    var currentUUID = this.GetUUID();
+    return this.mapTheme[currentUUID];
+  },
   /**
    * AddMap() could be:
    * 1. Drag&Drop local ESRI Shape file

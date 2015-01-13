@@ -259,10 +259,10 @@ def get_configure(request):
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
-        map_confs = MapConfigure.objects.filter(uuid=layer_uuid)
+        map_confs = MapConfigure.objects.filter(layer_uuid=layer_uuid)
         ret_confs = {}
         for conf in map_confs:
-            ret_confs[conf.name] = conf.configuration
+            ret_confs[conf.name] = json.loads(conf.configuration)
         
         return HttpResponse(json.dumps(ret_confs), content_type="application/json")
     return HttpResponse(RSP_FAIL, content_type="application/json")
@@ -277,18 +277,26 @@ def save_configure(request):
         conf_name = request.GET.get("conf_name","")
         
         if layer_uuid and conf_name:
-            fill_clr = request.GET.get("fill_clr","")
-            stroke_clr = request.GET.get("stroke_clr","")
+            fill_clr = request.GET.get("fill_color","")
+            stroke_clr = request.GET.get("stroke_color","")
             stroke_width = request.GET.get("stroke_width","")
-            opacity = request.GET.get("opacity","")
+            opacity = request.GET.get("transparency","")
             params = {}
-            if fill_clr: params['fill_color'] = fill_clr
-            if stroke_clr: params['stroke_color'] = stroke_clr
-            if stroke_width : params['stroke_width'] = stroke_clr
-            if opacity: params['transparency'] = opacity
+            if fill_clr: 
+                if fill_clr[0] != "#":
+                    fill_clr = "#" + fill_clr
+                params['fill_color'] = fill_clr
+            if stroke_clr: 
+                if stroke_clr[0] != "#":
+                    stroke_clr = "#" + stroke_clr
+                params['stroke_color'] = stroke_clr
+            if stroke_width : params['stroke_width'] = float(stroke_width)
+            if opacity: params['transparency'] = float(opacity)
             
+            uuid = md5(layer_uuid + conf_name).hexdigest()
             map_conf = MapConfigure(
-                uuid = layer_uuid,
+                uuid = uuid,
+                layer_uuid = layer_uuid,
                 name = conf_name,
                 configuration = json.dumps(params)
             )

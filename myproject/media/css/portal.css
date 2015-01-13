@@ -184,7 +184,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   text-shadow: 0px 2px 0px rgba(235,235,235,.5); /* 50% white from bottom */
 }
 #layer-tree { 
-  width: 300px; 
+  width: 400px; 
   cursor:pointer;
   left: 100;
   bottom: 40;
@@ -194,13 +194,12 @@ border: 1px solid #aaa;margin: 1px 10px;
   padding: 0.4em; 
   font-size: 1.0em; 
   height: 18px; 
-  width: 92%;
   border-top: 2px dashed #bbb;
   border-left: 2px dashed #bbb;
   border-right: 2px dashed #bbb;
   z-index: 10000;
 }
-#sortable-layers { list-style-type: none; margin: 0; padding: 0; width: 95%; }
+#sortable-layers { list-style-type: none; margin: 0; padding: 0; width: 98%; }
 #sortable-layers li:first-child { color: orange}
 #sortable-layers li { margin: 0 3px 0px 10px; padding: 0.4em; padding-left: 1.5em; font-size: 1.4em; height: 18px; text-align: left; background: #eee;}
 #sortable-layers li span { position: absolute; margin-left: -1.3em; }
@@ -212,6 +211,9 @@ border: 1px solid #aaa;margin: 1px 10px;
   margin-top: 2px;
   background-repeat: no-repeat;
   background-image: url("../img/switch-on.png");
+}
+.leaf-name {
+  margin-left: 8px !important;
 }
 .tree-item-delete{
   width: 16px;

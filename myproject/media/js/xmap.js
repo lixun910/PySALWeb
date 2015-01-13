@@ -253,6 +253,9 @@ var JsonMap = function(name, geoJson, LL, Lmap, prj) {
   if ( this.Lmap) {
     this.Lmap.fitBounds([[this.mapBottom,this.mapLeft],[this.mapTop,this.mapRight]]);
   }
+  
+  this.screenWidth = null;
+  this.screenHeight = null;
 };
 
 JsonMap.prototype = {
@@ -377,6 +380,13 @@ JsonMap.prototype = {
   },
   
   fitScreen : function(screenWidth, screenHeight,marginLeft, marginTop, moveX, moveY) {
+    if (screenWidth == this.screenWidth && screenHeight == this.screenHeight)  {
+      return;
+    }
+    this.screenWidth = screenWidth;
+    this.screenHeight = screenHeight;
+    
+    // not used  in leaflet map
     if (moveX) this.moveX = moveX;
     if (moveY) this.moveY = moveY;
     // convert raw points to screen coordinators
@@ -644,7 +654,7 @@ GeoVizMap.prototype = {
   
   updateAllMaps : function(params) {
     for (var i=0; i<this.mapList.length; i++) {
-      this.mapList[i].update(params);
+      this.mapList[i].update(params, true);
     }
   }, 
   
@@ -1278,7 +1288,11 @@ MapCanvas.prototype = {
     }
   },
   
-  update: function(params) {
+  update: function(params, bForceUpdate) {
+    if (bForceUpdate!=undefined) {
+      this.map.screenWidth = null;
+      this.map.screenHeight = null;
+    }
     this.updateParameters(params);
     
     var newWidth = this.canvas.parentNode.clientWidth,

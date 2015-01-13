@@ -262,7 +262,7 @@ var SwitchLayer = function(elm, idx) {
 var AddMapToLayerTree = function(name) {
   // add item in layer-tree
   var nMaps = gViz.GetNumMaps() - 1;
-  var elm = '<li id="' +nMaps+ '" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>' + name + '<span class="tree-item-delete"></span><span class="tree-item-eye" onclick="SwitchLayer(this, ' + nMaps +')"></span></li>';
+  var elm = '<li id="' +nMaps+ '" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><span class="leaf-name" title="'+name+'">' + name + '</span><span class="tree-item-delete"></span><span class="tree-item-eye" onclick="SwitchLayer(this, ' + nMaps +')"></span></li>';
   $(elm).prependTo($('#sortable-layers'));
   PositionLayerTree();
   // change current layer name
@@ -364,7 +364,7 @@ var InitDialogs = function(data) {
       field_names = [];
   
   // setup map meta data in GeoVizMap
-  gViz.SetupMap(data); 
+  gViz.SetupMapMeta(data); 
   
   // update current buttons 
   $('#btnShowTable span').html('<a href="../get_table/?layer_uuid=' + layer_uuid + '" target=_blank>Table</a>');
@@ -416,23 +416,23 @@ var GetMapConfig = function(callback) {
     $.get("../get_map_conf/", {"layer_uuid": layer_uuid})
     .done( function(data) {
       if ('success' in data) return;
-      if (data.length > 0) {
-        $('#sel-map-conf').find('option').remove().end();
-        var i =0;
-        for (var name in data) {
-          $('#sel-map-conf').append($('<option>')).text(name);
-          if (i==0) {
-            gViz.GetMap().update(data[name]);
-          }
-          i++;
+      gViz.SetMapConfig(data);
+      var i =0;
+      for (var name in data) {
+        if (i==0) {
+          $('#sel-map-conf').find('option').remove().end();
+          gViz.GetMap().update(data[name]);
+          $('#sel-map-conf').append($('<option selected>',{value:name}).text(name));
+        } else {
+          $('#sel-map-conf').append($('<option>',{value:name}).text(name));
         }
-      } 
-      
+        i++;
+      }
       $('#colorpicker-fill').val(gViz.GetMap().FILL_CLR.substr(1));
       $('#colorpicker-stroke').val(gViz.GetMap().STROKE_CLR.substr(1));
       $('#stroke-width').val(gViz.GetMap().STROKE_WIDTH);
-      $('#opacity-slide').val(gViz.GetMap().ALPHA);
-      
+      $('#opacity-slider').slider('value',gViz.GetMap().ALPHA);
+      $('#opacity').text(gViz.GetMap().ALPHA);
       if (typeof callback === "function") {
         callback();
       }
@@ -745,21 +745,26 @@ $(document).ready(function() {
       ui.item.data('end_pos', index);
     },
     update: function(event, ui) {
-      var start_pos = ui.item.data('start_pos');
-      var end_pos = ui.item.data('end_pos');
-      var layers = $('#sortable-layers').children();
-      var current_layer = layers[0];
-      var layer_name = current_layer.textContent;
+      var layer_ids = [],
+          start_pos = ui.item.data('start_pos'),
+          end_pos = ui.item.data('end_pos'),
+          layers = $('#sortable-layers').children(),
+          current_layer = layers[0],
+          layer_name = current_layer.textContent,
+          space_pos = layer_name.indexOf(' ');
+      if (space_pos > 0) {
+        layer_name = layer_name.substr(0, layer_name.indexOf(' '));
+      }
       PlaceLayerName(layer_name);
      
-      var layer_ids = []; 
       for (var i=layers.length-1; i>=0; i--) {
         layer_ids.push(parseInt(layers[i].id));
       }
       gViz.UpdateLayerOrder(layer_ids);
+      var meta_data = gViz.GetMapMeta();
+      InitDialogs(meta_data);
     }
   });
-  $( "#sortable-layers" ).selectable(); 
   
   PositionLayerTree().hide();
     
@@ -816,6 +821,7 @@ $(document).ready(function() {
   var buttonDialog = {
     '#btnSimMap' : '#dlg-simple-map',
     '#btnCatMap' : '#dlg-quantile-map',
+    '#btnScatter' : '#dlg-scatter-plot',
   };
   var OnMenuButtonClick = function(btnID, dlgID) {
     $(btnID).click(function(){
@@ -859,9 +865,6 @@ $(document).ready(function() {
   });
   $('#btnSpreg').click(function(){
     if (gViz) { $('#dialog-regression').dialog('open');}
-  });
-  $('#btnScatterPlot').click(function(){
-    if (gViz) { $('#dlg-scatter-plot').dialog('open');}
   });
   $('#btnHist').click(function(){
     if (gViz) { $('#dlg-histogram').dialog('open');}
@@ -911,6 +914,19 @@ $(document).ready(function() {
       mapcanvas.update({'transparency':opacity});
     }
   });
+  $('#sel-map-conf').change(function(){
+    var config_name = $(this).val(),
+        config = gViz.GetMapConfig(),
+        sel_conf = config[config_name];
+    gViz.GetMap().update(sel_conf);
+    if ('stroke_color' in sel_conf) $('#colorpicker-stroke').val(sel_conf.stroke_color);
+    if ('fill_color' in sel_conf) $('#colorpicker-fill').val(sel_conf.fill_color);
+    if ('transparency' in sel_conf) {
+      $('#opacity-slider').slider('value',sel_conf.transparency);
+      $('#opacity').text(sel_conf.transparency);
+    }
+    if ('stroke_width' in sel_conf) $('#stroke-width').val(sel_conf.stroke_width);
+  });
   $( "#dlg-simple-map" ).dialog({
     dialogClass: "dialogWithDropShadow",
     width: 300,
@@ -925,7 +941,7 @@ $(document).ready(function() {
     buttons: [{
       text: "Save",
       click: function() {
-        $('#map-conf-name').val($('#sel-map-conf').text());
+        $('#map-conf-name').val($('#sel-map-conf').val());
         $('#dlg-save-map-conf').dialog('open');
       },
     }]
@@ -939,17 +955,27 @@ $(document).ready(function() {
     buttons: [{
       text: "Save",
       click: function() {
+        var conf_name = $('#map-conf-name').val();
         var params = {
           'layer_uuid' : gViz.GetUUID(),
-         'fill_clr' : $('#colorpicker-fill').val(),
-         'stroke_clr' : $('#colorpicker-stroke').val(),
-         'stroke_width' : $('#stroke-width').val(),
-         'opacity' : $('#opacity-slider').val(),
-         'conf_name' : $('#map-conf-name').val(),
+         'fill_color' : '#' + $('#colorpicker-fill').val(),
+         'stroke_color' : '#' + $('#colorpicker-stroke').val(),
+         'stroke_width' : parseFloat($('#stroke-width').val()),
+         'transparency' : parseFloat($('#opacity').text()),
+         'conf_name' : conf_name,
         };
         console.log(params);
         $.get('../save_map_conf/', params).done(function(results){
-          if ('success in ')
+          if ('success' in results && results.success == 1) {
+            if ($("#sel-map-conf option[value='"+conf_name+"']").length == 0) {
+              $('#sel-map-conf').append($('<option selected>').text(conf_name));
+            }
+            var conf = gViz.GetMapConfig();
+            conf[conf_name] = params;
+            ShowMsgBox('', "Map Configuration has been saved successfully.")
+          } else {
+            ShowMsgBox('Error', "Save Map Configuration error.")
+          }
         });
         $( this ).dialog( "close" );
       },
@@ -2228,10 +2254,21 @@ $(document).ready(function() {
           "var": sel_var, 
           "k": sel_cat
         };
-        $.get('../thematic_map/', params, function(){
-        }).done(function(result){
-          gMsg = result;
-          gViz.PopupThematicMap();
+        $.get('../thematic_map/', params).done(function(data){
+          //gMsg = result;
+          //gViz.PopupThematicMap();
+          
+  colors = colorbrewer['YlGn'][data.k];
+  colorTheme = {};
+  for ( var i=0, n = data.id_array.length; i<n; i++ ) {
+    colorTheme[colors[i]] = data.id_array[i];
+  }
+  gViz.GetMap().updateColor(colorTheme);
+  var type = " (" + data.col_name + ",k=" + data.k + ")",
+      curTreeItem = $($('#sortable-layers li')[0]);
+      newLayerName = $('#btnMultiLayer span').text() + type;
+  $(curTreeItem.children()[1]).text(newLayerName);
+  
         });
         $(this).dialog("close");
       }, 
@@ -2317,6 +2354,7 @@ $(document).ready(function() {
   //////////////////////////////////////////////////////////////
   //  Scatter Plot
   //////////////////////////////////////////////////////////////
+          $( "#test" ).draggable().resizable();
   $( "#dlg-scatter-plot" ).dialog({
     dialogClass: "dialogWithDropShadow",
     width: 400,
@@ -2342,7 +2380,15 @@ $(document).ready(function() {
         $.get('../scatter_plot/', params, function(){
         }).done(function(result){
           gMsg = result;
-          gViz.PopupScatterPlot();
+          //gViz.PopupScatterPlot();
+          $('<iframe />', {
+              name: 'myFrame',
+              id:   'myFrame',
+              width: '100%',
+              height: '100%',
+              src: '../../static/scatterplot.html',
+              scrolling: 'no',
+          }).appendTo('#test').attr('frameborder',0);
         });
         $(this).dialog("close");
       }, 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>PySAL Web Beta</title>
+<title>PySAL Cloud</title>
 <link rel="stylesheet" href="{{url_prefix}}/media/css/portal.css" />
 <link rel="stylesheet" href="{{url_prefix}}/media/css/leaflet.css" />
 <link rel="stylesheet" href="{{url_prefix}}/media/css/jquery.switchButton.css" />
@@ -22,6 +22,7 @@
 <script src="{{url_prefix}}/media/js/jquery.colorpicker.min.js"></script>
 <script src="{{url_prefix}}/media/js/zip/zip.js"></script>
 
+<script src="{{url_prefix}}/media/js/colorbrewer.js"></script>
 <script src="{{url_prefix}}/media/js/xmap.js"></script>
 <script src="{{url_prefix}}/media/js/utils.js"></script>
 <script src="{{url_prefix}}/media/js/shapefile.js"></script>
@@ -110,7 +111,7 @@
 	<div class="image-wrap" style="background-image: url(../../media/img/wiz-hist.png);">
 	  <span>Histogram</span>
 	</div>
-	<div class="image-wrap" style="background-image: url(../../media/img/wiz-scatter.png);">
+	<div id="btnScatter" class="image-wrap" style="background-image: url(../../media/img/wiz-scatter.png);">
 	  <span>Scatter Plot</span>
 	</div>
 	<div class="image-wrap" style="background-image: url(../../media/img/wiz-pcp.png);">
@@ -531,7 +532,7 @@
   <table>
   <tr>
     <td><label for="name">Configuration list:</label></td>
-    <td valign='top'><select id="sel-map-conf"><option  selected>default</option></select></td>
+    <td valign='top'><select id="sel-map-conf"><option value='default' selected>default</option></select></td>
   </tr>
   <tr height=30>
   </tr>
@@ -1058,4 +1059,8 @@
 
 <div id="divPop" class="bubble">This is Popup Div.</div>
 </body>
+
+<div id="test" style="position: fixed; top: 200px; width: 350px; height: 350px; padding: 0.5em; z-index: 10009;border: 1px #333 solid;background-color:#CCC;opacity: 0.6;">
+<h3 class="ui-widget-header">Resizable</h3>
+</div>
 </html>

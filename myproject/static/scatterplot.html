@@ -11,7 +11,6 @@
 <script src="../media/js/simple_statistics.js"></script>
 <script src="../media/js/d3.v3.min.js" charset="utf-8"></script>
 <script src="../media/js/utils.js"></script>
-<script src="../media/js/d3viz.js"></script>
 
 <script>
 var science = { stats: {} };
@@ -20,7 +19,7 @@ var science = { stats: {} };
 <script src="../media/js/loess.js" charset="utf-8"></script>
 
 <script>
-var msg, svg, viz, uuid, quadtree;
+var msg, svg,  uuid, quadtree;
 var background, hbuffer, buffer;
 var xScale, yScale, xMap, yMap;
 var svg_w, svg_h;
@@ -39,7 +38,9 @@ var OnResize = function(evt) {
   if (background) {
     var new_h = $('#map-container').height(),
         new_w = $('#map-container').width(); 
-    $('svg').height(new_h).width(new_w).empty();
+    d3.select("svg")
+      .attr("width", new_w)
+      .attr("height", new_h);
     $('#background').height(new_h).width(new_w);
     var ctx = background.getContext('2d');
     ctx.clearRect(0,0,new_w,new_h);
@@ -182,7 +183,7 @@ $(document).ready(function() {
   // Local Storage Brushing/Linking
   //localStorage.clear();
 
-  msg = window.opener.gMsg;
+  msg = window.parent.gMsg;
   layer_uuid = msg.layer_uuid;
   fieldX = msg.x_name;
   fieldY = msg.y_name;
@@ -195,7 +196,6 @@ $(document).ready(function() {
     }
   });
   
-  viz = new d3viz($('#map-container'));
   hbuffer = document.createElement("canvas");
   buffer = document.createElement("canvas");
   DrawPoints(); 

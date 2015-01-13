@@ -20,8 +20,9 @@ class Document(models.Model):
     docfile = models.FileField(upload_to=get_upload_path)
 
 class MapConfigure(models.Model):
-    # layer uuid: md5('temp/023420/xx.shp')
     uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
+    # layer uuid: md5('temp/023420/xx.shp')
+    layer_uuid = models.CharField(max_length=64, db_index=True)
     # layer name
     name = models.CharField(max_length=255)
     # configuration
