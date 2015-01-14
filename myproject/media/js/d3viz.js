@@ -32,6 +32,8 @@ var d3viz = function(container, hlcanvas) {
   this.userid = undefined;
   this.key = undefined;
   
+  this.resizeTimer;
+  
   self = this;
 };
 

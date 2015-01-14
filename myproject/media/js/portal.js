@@ -2366,33 +2366,23 @@ $(document).ready(function() {
     buttons: {
       "Open": function() {
         if (!gViz && !gViz.GetUUID()) return;
-        var sel_x = $('#sel-scatter-x').val();
-        var sel_y = $('#sel-scatter-y').val();
+        var sel_x = $('#sel-scatter-x').val(),
+            sel_y = $('#sel-scatter-y').val();
         if (sel_x == '' || sel_y == '') {
           ShowMsgBox("Info", "Please select variables for scatter plot.")
           return;
         }
-        var params = {
-          "layer_uuid": gViz.GetUUID(),
-          "var_x": sel_x, 
-          "var_y": sel_y
-        };
-        $.get('../scatter_plot/', params, function(){
-        }).done(function(result){
-          gMsg = result;
-          //gViz.PopupScatterPlot();
-          $('<iframe />', {
-              name: 'myFrame',
-              id:   'myFrame',
-              width: '100%',
-              height: '100%',
-              src: '../../static/scatterplot.html',
-              scrolling: 'no',
-          }).appendTo('#test').attr('frameborder',0);
-        });
-        $(this).dialog("close");
+        var url = '../../static/scatterplot.html?uuid=' + gViz.GetUUID() + '&x=' + sel_x + '&y=' + sel_y;
+        $('<iframe />', {
+            name: 'myFrame',
+            id:   'myFrame',
+            width: '100%',
+            height: '100%',
+            src: url,
+            scrolling: 'no',
+            frameborder: 0,
+        }).appendTo('#test');
       }, 
-      Cancel: function() {$( this ).dialog( "close" );},
     },
   });
   //////////////////////////////////////////////////////////////

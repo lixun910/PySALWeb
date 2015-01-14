@@ -1338,12 +1338,22 @@ MapCanvas.prototype = {
   },
   
   // register mouse events of canvas
-  OnResize: function( evt ) {
+  OnResizeDone : function() {
+    $('canvas').show();
     var n = window.gViz.GetNumMaps();
     for (var i=0; i < n; i++) {
       var self = window.gViz.GetMap(i);
       self.update();
     }
+    console.log('resize');
+  },
+  
+  OnResize: function( evt ) {
+    var n = window.gViz.GetNumMaps(),
+        cur = window.gViz.GetMap(); 
+    $('canvas').hide();
+    clearTimeout(window.gViz.resizeTimer);
+    window.gViz.resizeTimer = setTimeout(cur.OnResizeDone, 500);
   },
   
   OnKeyDown: function( evt ) {
