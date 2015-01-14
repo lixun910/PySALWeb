@@ -65,8 +65,11 @@ d3viz.prototype = {
   },
   
   SetupMapMeta: function(metaData) {
-    this.uuids.push(metaData.layer_uuid);
-    this.mapMeta[metaData.layer_uuid] = metaData;
+    var uuid = metaData.layer_uuid;
+    this.uuids.push(uuid);
+    this.mapMeta[uuid] = metaData;
+    // set uuid to mapcanvas
+    this.geoviz.getMap(this.uuids.length-1).uuid = uuid;
   },
  
   GetMapMeta: function() {

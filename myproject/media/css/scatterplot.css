@@ -11,6 +11,7 @@ html, body {
   width : 220px; 
   vertical-align: text-top;
   color: red;
+  cursor:pointer;
 }
 #linear-txt {
   color: blue;
@@ -22,17 +23,18 @@ html, body {
   width: 100%;
   height: 100%;
 }
-canvas {
+svg{
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
 }
-svg {
+canvas{
   position: relative;
   width: 100%;
   height: 100%;
+  pointer-events: none;
 }
 .axis path,
 .axis line {

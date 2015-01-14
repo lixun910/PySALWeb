@@ -822,6 +822,8 @@ $(document).ready(function() {
     '#btnSimMap' : '#dlg-simple-map',
     '#btnCatMap' : '#dlg-quantile-map',
     '#btnScatter' : '#dlg-scatter-plot',
+    '#btnCreateW' : '#dialog-weights',
+    '#btnMoranScatter' : '#dlg-moran-scatter-plot',
   };
   var OnMenuButtonClick = function(btnID, dlgID) {
     $(btnID).click(function(){
@@ -2337,6 +2339,17 @@ $(document).ready(function() {
           ShowMsgBox("Info", "Please select a weights first. Note: You can create a weights by click the weights creation button");
           return;
         }
+        var url = '../../static/moran_scatterplot.html?uuid=' + gViz.GetUUID() + '&x=' + sel_var + '&w=' + sel_w;
+        $('<iframe />', {
+            name: 'myFrame',
+            id:   'myFrame',
+            width: '100%',
+            height: '100%',
+            src: url,
+            scrolling: 'no',
+            frameborder: 0,
+        }).appendTo('#test');
+        /*
         var params = {
           "layer_uuid": gViz.GetUUID(),
           "var_x": sel_var, 
@@ -2346,6 +2359,7 @@ $(document).ready(function() {
           gMsg = result;
           gViz.PopupMoranScatterPlot();
         });
+        */
         $(this).dialog("close");
       }, 
       Cancel: function() {$( this ).dialog( "close" );},

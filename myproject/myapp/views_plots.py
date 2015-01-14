@@ -95,7 +95,7 @@ def moran_scatter_plot(request):
             
             results = {
                 "x_name": var_x,
-                "y_name": 'lag(%s)' %var_x,
+                "y_name": 'lagged (%s)' %var_x,
                 'x' : y_z.tolist(),
                 'y' : y_lag_z.tolist(),
             }

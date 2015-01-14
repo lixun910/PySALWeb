@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <link rel="stylesheet" href="../media/css/jquery-ui.css">
-<link rel="stylesheet" href="../media/css/ui-lightness/jquery-ui-1.10.4.custom.css">
 <link rel="stylesheet" href="../media/css/scatterplot.css">
 
 <script src="../media/js/jquery.min.js"></script>
@@ -20,18 +19,22 @@ var science = { stats: {} };
 
 <body>
 <div id="map-container"> 
-  <canvas></canvas>
   <svg id='graph'></svg>
+  <canvas></canvas>
 </div>
 <div id="selector">
- <div id="slider"></div>
  LOESS bandwidth
  <input type="text" id="bandwidth" readonly>
+ <div id="slider"></div>
  <span id="linear-txt"></span>
 </div>
 
 <script>
+
+
 $('#selector').draggable();
+
+// global variables
 var resizeTimer;
 
 var loess_bandwidth = 0.5,
@@ -46,14 +49,19 @@ var margin = 30,
     height = parseInt(d3.select("#graph").style("height")) - margin*2;
 var xMin, yMin, xMax, yMax, xExt, yExt;
 
+var lin, reg_data, loess_data;
+
+// get canvas
 var canvas = $('canvas')[0];
 canvas.width = width + margin*2;
 canvas.height = height + margin*2;
 
+// create buffer for canvas
 var buffer = document.createElement("canvas");
 buffer.width =  width + margin*2;
 buffer.height = height + margin*2;
 
+// d3 draw
 var xScale = d3.scale.linear()
     .range([0, width])
     .nice();
@@ -152,16 +160,16 @@ var graph = d3.select("#graph")
     .attr("transform", "translate(" + margin + "," + margin + ")");
 
 function Buffer2Screen(buffer) {
-  var context = canvas.getContext("2d");
-  context.imageSmoothingEnabled= false;
-  context.clearRect(0, 0, buffer.width, buffer.height);
-  context.drawImage(buffer, 0, 0);
-  return context;
+  var ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled= false;
+  ctx.clearRect(0, 0, buffer.width, buffer.height);
+  ctx.drawImage(buffer, 0, 0);
+  return ctx;
 }
-
 
 function DrawPoints(data) {
   var ctx = buffer.getContext('2d');
+  ctx.imageSmoothingEnabled= false;
   ctx.lineWidth = 0.3;
   ctx.fillStyle = 'green';
 
@@ -182,7 +190,28 @@ function DrawPoints(data) {
   Buffer2Screen(buffer);
 }
 
-var lin, reg_data, loess_data;
+function Highlight(ids) {
+  var ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled= false;
+  ctx.clearRect(0, 0, width+margin*2, height + margin*2);
+  ctx.globalAlpha = 0.2;
+  ctx.drawImage(buffer, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 0.3;
+  ctx.fillStyle = 'green';
+
+  var end = 2*Math.PI;
+  for (var i=0, n = ids.length; i< n; i++ ) {
+    var x = points[ ids[i] ][0],
+        y = points[ ids[i] ][1];
+    x = xScale(x) + margin;
+    y = yScale(y) + margin;
+    ctx.beginPath();
+    ctx.arc(x,y,2,0,end);
+    ctx.stroke();
+    ctx.fill();
+  }
+}
 
 $.get('../myapp/scatter_plot/',{'layer_uuid' : uuid, 'var_x' : fieldX, 'var_y' : fieldY,}).done(function(data){
   // get bounds from data
@@ -252,7 +281,7 @@ $.get('../myapp/scatter_plot/',{'layer_uuid' : uuid, 'var_x' : fieldX, 'var_y' :
   // Render the linear fitted line
   graph.append('path')
     .attr('class', 'reg')
-    .style("stroke-dasharray", ("3, 3"))
+    //.style("stroke-dasharray", ("3, 3"))
     .attr('d', regline(reg_data));
 
   // Render the loess fitted line
@@ -318,13 +347,13 @@ $.get('../myapp/scatter_plot/',{'layer_uuid' : uuid, 'var_x' : fieldX, 'var_y' :
   d3.select(window).on('resize', resize); 
 
  /* Update the axis with the new scale */
-    graph.select('.x.axis')
-      .attr("transform", "translate(0," + height + ")")
-      .call(xAxis);
+  graph.select('.x.axis')
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
 
-    graph.select('.y.axis')
-      .call(yAxis);
-    DrawPoints(points);
+  graph.select('.y.axis')
+    .call(yAxis);
+  DrawPoints(points);
 
   $( "#slider" ).slider({
     value: 0.5,
@@ -342,6 +371,13 @@ $.get('../myapp/scatter_plot/',{'layer_uuid' : uuid, 'var_x' : fieldX, 'var_y' :
   $( "#bandwidth" ).val( $( "#slider" ).slider( "value" ) );
 });
 
+$(window).bind('storage', function(e) {
+  var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
+  if ( hl_ids && uuid in hl_ids ) {
+    var ids = hl_ids[uuid];
+    Highlight(ids);
+  }
+});
 </script>
 
 

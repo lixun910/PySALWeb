@@ -518,57 +518,6 @@ JsonMap.prototype = {
 //////////////////////////////////////////////////////////////
 // GeoVizMap
 //////////////////////////////////////////////////////////////
-var GColor = function( r, g, b, a ) {
-  if ( isNaN(r) ) {
-    this.r = parseInt((this.cutHex(r)).substring(0,2),16);
-    this.g = parseInt((this.cutHex(r)).substring(2,4),16);
-    this.b = parseInt((this.cutHex(r)).substring(4,7),16);
-    this.a = 255;
-  } else {
-    this.r = r;
-    this.g = g;
-    this.b = b;
-    this.a = a;
-    if (!a) this.a = 1;
-  }
-};
-
-GColor.prototype = {
-  cutHex: function(h) {
-    return (h.charAt(0)=="#") ? h.substring(1,7):h;
-  },
-  _toHex: function(n) {
-    n = parseInt(n,10);
-   if (isNaN(n)) return "00";
-   n = Math.max(0,Math.min(n,255));
-   return "0123456789ABCDEF".charAt((n-n%16)/16)
-    + "0123456789ABCDEF".charAt(n%16);
-  },
-  toString: function() {
-    //return "rgba(" + this.r|0 + "," + this.g|0 + "," + this.b|0 + "," + this.a + ")";
-    return "#"+this._toHex(this.r) + this._toHex(this.g) + this._toHex(this.b); 
-  },
-  toRGB: function(bg) {
-    if (!bg) {
-      bg = new GColor(255,255,255,1);
-    }
-    var a = this.a;
-    return new GColor(
-        (1 - a) * bg.r + a * this.r,
-        (1 - a) * bg.g + a * this.g,
-        (1 - a) * bg.b + a * this.b
-    );
-  },
-};
-
-var GPoint = function( x, y ) {
-  this.x = x;
-  this.y = y;
-};
-
-GPoint.prototype = {
-};
-
 var GRect = function( x0, y0, x1, y1 ) {
   this.x0 = x0 <= x1 ? x0 : x1;
   this.y0 = y0 <= y1 ? y0 : y1;
@@ -577,9 +526,9 @@ var GRect = function( x0, y0, x1, y1 ) {
 };
 
 GRect.prototype = {
-  Contains: function( gpoint ) {
-    return gpoint.x >= this.x0 && gpoint.x <= this.x1 && 
-           gpoint.y >= this.y0 && gpoint.y <= this.y1;
+  Contains: function( x, y) {
+    return x >= this.x0 && x <= this.x1 && 
+           y >= this.y0 && y <= this.y1;
   },
   GetW: function() {
     return this.x1 - this.x0;
@@ -606,6 +555,7 @@ var GeoVizMap = function(mapContainer, hlcanvas) {
   this.mapList = [];
   this.mapOrder = [];
   this.layerColors = ['#006400','#FFCC33','#CC6699','#95CAE4','#993333','#279B61'];
+  this.uuid = null;
 };
 
 GeoVizMap.prototype = {
@@ -808,29 +758,29 @@ MapCanvas.prototype = {
   },
   
   buffer2Screen: function() {
-    var context = this.canvas.getContext("2d");
-    context.imageSmoothingEnabled= false;
-    context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    context.drawImage(this.buffer, 0, 0);
-    return context;
+    var ctx = this.canvas.getContext("2d");
+    ctx.imageSmoothingEnabled= false;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.drawImage(this.buffer, 0, 0);
+    return ctx;
   },
  
   clearCanvas: function(canvas) {
-    var context = canvas.getContext("2d");
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   } ,
   fadeCanvas : function(nMaps, is_highlight) {
     //var nMaps = window.gViz.GetNumMaps();
     for (var i=0; i < nMaps; i++) {
       var that = window.gViz.GetMap(i);
-      var context = that.canvas.getContext("2d");
-      context.clearRect(0, 0, that.canvas.width, that.canvas.height);
+      var ctx = that.canvas.getContext("2d");
+      ctx.clearRect(0, 0, that.canvas.width, that.canvas.height);
       if (is_highlight)
-        context.globalAlpha = that.HL_ALPHA;
+        ctx.globalAlpha = that.HL_ALPHA;
       else
-        context.globalAlpha = that.ALPHA;
+        ctx.globalAlpha = that.ALPHA;
       if (!that.noForeground) {
-        context.drawImage( that.buffer, 0, 0);
+        ctx.drawImage( that.buffer, 0, 0);
       }
     }
   },
@@ -842,9 +792,9 @@ MapCanvas.prototype = {
     return _buffer;
   },
   destroy: function() {
-    var context = this.canvas.getContext("2d");
-    context.imageSmoothingEnabled= false;
-    context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    var ctx = this.canvas.getContext("2d");
+    ctx.imageSmoothingEnabled= false;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.hlcanvas.removeEventListener('mousemove', this.OnMouseMove, false);
     this.hlcanvas.removeEventListener('mousedown', this.OnMouseDown, false);
     this.hlcanvas.removeEventListener('mouseup', this.OnMouseUp, false);
@@ -853,27 +803,27 @@ MapCanvas.prototype = {
   },  
 
   move : function(offsetX, offsetY) {
-    var context = this.canvas.getContext("2d");
-    context.imageSmoothingEnabled= false;
-    context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    context.drawImage(this.buffer, offsetX, offsetY);
+    var ctx = this.canvas.getContext("2d");
+    ctx.imageSmoothingEnabled= false;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.drawImage(this.buffer, offsetX, offsetY);
   },
   
-  highlight_cartodb: function( ids, context, nolinking ) {
+  highlight_cartodb: function( ids, ctx, nolinking ) {
     if ( ids == undefined ) 
       return;
       
-    if ( context == undefined) { 
-      context = this.canvas.getContext("2d");
-      context.lineWidth = this.STROKE_WIDTH;
-      context.imageSmoothingEnabled= false;
-      context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if ( ctx == undefined) { 
+      ctx = this.canvas.getContext("2d");
+      ctx.lineWidth = this.STROKE_WIDTH;
+      ctx.imageSmoothingEnabled= false;
+      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       if (!this.noForeground) {
         if ( ids && ids.length > 0 ) {
-          context.globalAlpha = this.HL_ALPHA;
+          ctx.globalAlpha = this.HL_ALPHA;
         }
-        context.drawImage( this.buffer, 0, 0);
-        context.globalAlpha = 1;
+        ctx.drawImage( this.buffer, 0, 0);
+        ctx.globalAlpha = 1;
       }
     } 
   
@@ -883,23 +833,23 @@ MapCanvas.prototype = {
       //colors["rgba(255,255,0,0.7)"] = ids;
       var imageObj = new Image();
       imageObj.onload = function() {
-        var fillPattern = context.createPattern(imageObj,'repeat'); 
-        context.strokeColor = "#000000";
-        context.lineWidth = 1;
+        var fillPattern = ctx.createPattern(imageObj,'repeat'); 
+        ctx.strokeColor = "#000000";
+        ctx.lineWidth = 1;
         var colors = {};
         colors['dummy'] = ids;
         if (this.shpType == "Polygon" || this.shpType == "MultiPolygon") {
-          context.fillStyle = fillPattern;
-          this.drawPolygons( context, screenObjs, colors);
+          ctx.fillStyle = fillPattern;
+          this.drawPolygons( ctx, screenObjs, colors);
         } else if (this.shpType == "Point" || this.shpType == "MultiPoint") {
-          context.fillStyle = fillPattern;
-          this.drawPoints( context, screenObjs, colors );
+          ctx.fillStyle = fillPattern;
+          this.drawPoints( ctx, screenObjs, colors );
         } else if (this.shpType == "LineString" || this.shpType == "Line") {
-          context.strokeStyle = fillPattern;
-          this.drawLines( context, screenObjs, colors );
+          ctx.strokeStyle = fillPattern;
+          this.drawLines( ctx, screenObjs, colors );
         }
-        context.strokeStyle = this.STROKE_CLR;
-        context.lineWidth = this.STROKE_WIDTH;
+        ctx.strokeStyle = this.STROKE_CLR;
+        ctx.lineWidth = this.STROKE_WIDTH;
         this.selected = ids;
         if ( nolinking ) {
           this.triggerLink(ids);
@@ -909,35 +859,35 @@ MapCanvas.prototype = {
     }
   },
   
-  highlight: function( ids, context, nolinking ) {
+  highlight: function( ids, ctx, nolinking ) {
     if ( ids == undefined ) 
       return;
       
-    if ( context == undefined) { 
-      context = this.canvas.getContext("2d");
-      context.lineWidth = this.STROKE_WIDTH;
-      context.imageSmoothingEnabled= false;
-      context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    if ( ctx == undefined) { 
+      ctx = this.canvas.getContext("2d");
+      ctx.lineWidth = this.STROKE_WIDTH;
+      ctx.imageSmoothingEnabled= false;
+      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       if (!this.noForeground) {
         if ( ids && ids.length > 0 ) {
-          context.globalAlpha = this.HL_ALPHA;
+          ctx.globalAlpha = this.HL_ALPHA;
         }
-        context.drawImage( this.buffer, 0, 0);
-        context.globalAlpha = 1;
+        ctx.drawImage( this.buffer, 0, 0);
+        ctx.globalAlpha = 1;
       }
     } 
     
     if (ids.length > 0) {
-      context.lineWidth = this.STROKE_WIDTH;
-      context.strokeStyle = this.STROKE_CLR;
-      this.drawSelect( ids, context );
+      ctx.lineWidth = this.STROKE_WIDTH;
+      ctx.strokeStyle = this.STROKE_CLR;
+      this.drawSelect( ids, ctx );
      
       this.selected = ids;
       if ( nolinking == false) {
         this.triggerLink(ids);
       }
     }
-    return context;
+    return ctx;
   },
   
   highlightExt: function( ids, extent, linking) {
@@ -998,8 +948,8 @@ MapCanvas.prototype = {
       }
     }
    
-    var context = this.hlcanvas.getContext("2d");
-    context.clearRect(0, 0, this.hlcanvas.width, this.hlcanvas.height);
+    var ctx = this.hlcanvas.getContext("2d");
+    ctx.clearRect(0, 0, this.hlcanvas.width, this.hlcanvas.height);
     if ( this.selected.length > 0 ) {
       if (this.noForeground) {
         this.highlight_cartodb(this.selected, undefined, true);
@@ -1010,42 +960,42 @@ MapCanvas.prototype = {
         this.fadeCanvas(nMaps, true);
         
         // highlight ext area
-        context.globalAlpha = 1;
-        context.save(); // save for clipping
-        context.beginPath(); // specify area for clipping
-        context.rect( startX, startY, w, h);
-        context.closePath();
-        context.clip(); // do clipping
-        context.drawImage( this.buffer, 0, 0);
-        context.restore(); // restore from clipping, and draw reset
+        ctx.globalAlpha = 1;
+        ctx.save(); // save for clipping
+        ctx.beginPath(); // specify area for clipping
+        ctx.rect( startX, startY, w, h);
+        ctx.closePath();
+        ctx.clip(); // do clipping
+        ctx.drawImage( this.buffer, 0, 0);
+        ctx.restore(); // restore from clipping, and draw reset
         
         if (this.shpType != "Point" && this.shpType != "MultiPoint") {
           // for polygons and lines
           if ( hdraw.length + ddraw.length == 0) 
             return false;
           // erase those out of highlight area
-          context.lineWidth = this.STROKE_WIDTH;
-          context.fillStyle = "rgba(0,0,0,1)";
-          context.globalCompositeOperation = "destination-out";
-          this.drawSelect(ddraw, context);
-          this.drawSelect(hdraw, context);
+          ctx.lineWidth = this.STROKE_WIDTH;
+          ctx.fillStyle = "rgba(0,0,0,1)";
+          ctx.globalCompositeOperation = "destination-out";
+          this.drawSelect(ddraw, ctx);
+          this.drawSelect(hdraw, ctx);
          
           // draw those not completed objects 
-          context.globalCompositeOperation = "source-over";
-          context.globalAlpha = this.ALPHA;
-          context.strokeStyle = this.STROKE_CLR;
-          this.drawSelect(hdraw, context);
+          ctx.globalCompositeOperation = "source-over";
+          ctx.globalAlpha = this.ALPHA;
+          ctx.strokeStyle = this.STROKE_CLR;
+          this.drawSelect(hdraw, ctx);
         } 
       }
     } 
     // draw selection rectangle
-    context.beginPath();
-    context.strokeStyle = "#000000";
-    context.rect(startX, startY, w, h);
-    context.stroke();
-    context.closePath();
+    ctx.beginPath();
+    ctx.strokeStyle = "#000000";
+    ctx.rect(startX, startY, w, h);
+    ctx.stroke();
+    ctx.closePath();
     // restore stroke color
-    context.strokeStyle = this.STROKE_CLR;
+    ctx.strokeStyle = this.STROKE_CLR;
     
     
     if (linking) {
@@ -1061,14 +1011,14 @@ MapCanvas.prototype = {
     if ( localStorage["HL_IDS"] ){ 
       hl = JSON.parse(localStorage["HL_IDS"]);
     }
-    hl[this.canvas.id] = select_ids;//this.selected;
+    hl[this.uuid] = select_ids;//this.selected;
     localStorage["HL_IDS"] = JSON.stringify(hl);
   
     var hl_map = {}; 
     if ( localStorage["HL_MAP"] ){ 
       hl_map = JSON.parse(localStorage["HL_MAP"]);
     }
-    hl_map[this.canvas.id] = highlight_range;
+    hl_map[this.uuid] = highlight_range;
     localStorage["HL_MAP"] = JSON.stringify(hl_map);
   },
   
@@ -1222,39 +1172,39 @@ MapCanvas.prototype = {
     } 
   },
   
-  draw: function(context,  colors, fillColor, strokeColor, lineWidth) {
-    context.imageSmoothingEnabled= false;
-    context.lineWidth = this.STROKE_WIDTH;
-    context.globalAlpha = this.ALPHA;
+  draw: function(ctx,  colors, fillColor, strokeColor, lineWidth) {
+    ctx.imageSmoothingEnabled= false;
+    ctx.lineWidth = this.STROKE_WIDTH;
+    ctx.globalAlpha = this.ALPHA;
     
     if (this.shpType == "LineString" || this.shpType == "Line") {
-      context.strokeStyle = fillColor ? fillColor : this.FILL_CLR;
-      context.lineWidth = lineWidth ? lineWidth: this.STROKE_WIDTH;
+      ctx.strokeStyle = fillColor ? fillColor : this.FILL_CLR;
+      ctx.lineWidth = lineWidth ? lineWidth: this.STROKE_WIDTH;
       
     } else if (this.shpType == "Polygon" || this.shpType == "MultiPolygon") {
-      context.strokeStyle = strokeColor ? strokeColor : this.STROKE_CLR;
-      context.fillStyle = fillColor ? fillColor : this.FILL_CLR;
+      ctx.strokeStyle = strokeColor ? strokeColor : this.STROKE_CLR;
+      ctx.fillStyle = fillColor ? fillColor : this.FILL_CLR;
       
     } else {
-      context.strokeStyle = strokeColor ? strokeColor : this.STROKE_CLR;
-      context.fillStyle = fillColor ? fillColor : this.FILL_CLR;
+      ctx.strokeStyle = strokeColor ? strokeColor : this.STROKE_CLR;
+      ctx.fillStyle = fillColor ? fillColor : this.FILL_CLR;
       
     }
     
     if (this.shpType == "Polygon" || this.shpType == "MultiPolygon" ) {
-      this.drawPolygons( context, this.map.screenObjects, colors) ;
+      this.drawPolygons( ctx, this.map.screenObjects, colors) ;
       
     } else if (this.shpType == "Point" || this.shpType == "MultiPoint") {
-      this.drawPoints( context, this.map.screenObjects, colors) ;
+      this.drawPoints( ctx, this.map.screenObjects, colors) ;
       
     } else if (this.shpType == "Line" || this.shpType == "LineString") {
-      this.drawLines( context, this.map.screenObjects, colors) ;
+      this.drawLines( ctx, this.map.screenObjects, colors) ;
       
     }
-    context.globalAlpha = 1;
+    ctx.globalAlpha = 1;
   }, 
   
-  drawSelect: function( ids, context, invisible ) {
+  drawSelect: function( ids, ctx, invisible ) {
     var colors = {}; 
     if ( this.color_theme ) {
       // filter: remove dup ids
@@ -1280,11 +1230,11 @@ MapCanvas.prototype = {
     }
     var screenObjs = this.map.screenObjects; 
     if (this.shpType == "Polygon" || this.shpType == "MultiPolygon") {
-      this.drawPolygons( context, screenObjs, colors);
+      this.drawPolygons( ctx, screenObjs, colors);
     } else if (this.shpType == "Point" || this.shpType == "MultiPoint") {
-      this.drawPoints( context, screenObjs, colors );
+      this.drawPoints( ctx, screenObjs, colors );
     } else if (this.shpType == "LineString" || this.shpType == "Line") {
-      this.drawLines( context, screenObjs, colors );
+      this.drawLines( ctx, screenObjs, colors );
     }
   },
   
@@ -1327,13 +1277,13 @@ MapCanvas.prototype = {
   },
   
   resetDraw: function(e) {
-      var context = this.canvas.getContext("2d");
-      context.lineWidth = this.STROKE_WIDTH;
-      context.imageSmoothingEnabled= false;
-      context.globalAlpha = 1;
-      context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      var ctx = this.canvas.getContext("2d");
+      ctx.lineWidth = this.STROKE_WIDTH;
+      ctx.imageSmoothingEnabled= false;
+      ctx.globalAlpha = 1;
+      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       if ( !this.noForeground) {
-        context.drawImage( this.buffer, 0, 0);
+        ctx.drawImage( this.buffer, 0, 0);
       }
   },
   
@@ -1379,15 +1329,15 @@ MapCanvas.prototype = {
     self.startX = x;
     self.startY = y;
     if ( self.isKeyDown == true ) {
-      if (self.brushRect && self.brushRect.Contains(new GPoint(x, y)) ) {
+      if (self.brushRect && self.brushRect.Contains(x, y) ) {
         self.isBrushing = true;
       }
     }
     if (self.brushRect == undefined ||
-        self.brushRect && !self.brushRect.Contains(new GPoint(x, y)) ) {
+        self.brushRect && !self.brushRect.Contains(x, y) ) {
       self.brushRect = undefined;
       self.isBrushing = false;
-      //context.globalAlpha = self.ALPHA;
+      //ctx.globalAlpha = self.ALPHA;
     }
   },
   OnMouseMove: function(evt) {
