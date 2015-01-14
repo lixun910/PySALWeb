@@ -209,8 +209,7 @@ d3viz.prototype = {
       var hl_ids = JSON.parse(localStorage.getItem('HL_IDS')),
           hl_ext = JSON.parse(localStorage.getItem('HL_MAP'));
       for ( var uuid in hl_ids ) {
-        //if ( mapDict && uuid in mapDict ) {
-          var map = self.mapCanvas;//mapDict[uuid];
+          var map = self.GetMap();
           var ids = hl_ids[uuid];
           if ( hl_ext && uuid in hl_ext ) {
             map.highlightExt(ids, hl_ext[uuid]);

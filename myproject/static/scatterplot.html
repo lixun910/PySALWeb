@@ -275,6 +275,9 @@ $.get('../myapp/scatter_plot/',{'layer_uuid' : uuid, 'var_x' : fieldX, 'var_y' :
     width = parseInt(d3.select("#graph").style("width")) - margin*2;
     height = parseInt(d3.select("#graph").style("height")) - margin*2;
 
+    if (width < 300) $('#selector').hide();
+    else $('#selector').show();
+
     /* Update the range of the scale with new width/height */
     xScale.range([0, width]).nice();
     yScale.range([height, 0]).nice();
@@ -295,9 +298,9 @@ $.get('../myapp/scatter_plot/',{'layer_uuid' : uuid, 'var_x' : fieldX, 'var_y' :
     graph.selectAll('.reg')
          .attr("d", regline(reg_data));
 
-    //loess_data = d3.zip(xValues.map(xScale), loess(xValues, yValues).map(yScale));
-    //graph.selectAll('.line')
-    //     .attr("d", regline(loess_data));
+    loess_data = d3.zip(xValues.map(xScale), loess(xValues, yValues).map(yScale));
+    graph.selectAll('.line')
+         .attr("d", regline(loess_data));
 
     // upate canvas
     canvas.width = width + margin*2;
