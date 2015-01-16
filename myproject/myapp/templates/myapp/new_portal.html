@@ -3,30 +3,30 @@
 <head>
 <meta charset="utf-8">
 <title>PySAL Cloud</title>
-<link rel="stylesheet" href="{{url_prefix}}/media/css/portal.css" />
-<link rel="stylesheet" href="{{url_prefix}}/media/css/leaflet.css" />
-<link rel="stylesheet" href="{{url_prefix}}/media/css/jquery.switchButton.css" />
-<link rel="stylesheet" href="{{url_prefix}}/media/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
-<link rel="stylesheet" href="{{url_prefix}}/media/css/jquery.colorpicker.min.css" />
-<link rel="stylesheet" href="{{url_prefix}}/media/css/cartodb.css" />
+<link rel="stylesheet" href="../../media/css/portal.css" />
+<link rel="stylesheet" href="../../media/css/leaflet.css" />
+<link rel="stylesheet" href="../../media/css/jquery.switchButton.css" />
+<link rel="stylesheet" href="../../media/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
+<link rel="stylesheet" href="../../media/css/jquery.colorpicker.min.css" />
+<link rel="stylesheet" href="../../media/css/cartodb.css" />
 
-<script type="text/javascript" src="{{url_prefix}}/media/js/dropins.js" id="dropboxjs" data-app-key="50dk6qp6nc2fcxs"></script>
-<script src="{{url_prefix}}/media/js/cartodb.js"></script>
-<script src="{{url_prefix}}/media/js/jquery.min.js"></script>
-<script src="{{url_prefix}}/media/js/d3.v3.min.js"></script>
-<script src="{{url_prefix}}/media/js/jquery-ui-1.10.4.custom.min.js"></script>
-<script src="{{url_prefix}}/media/js/list.min.js"></script>
-<script src="{{url_prefix}}/media/js/d3viz.js"></script>
-<script src="{{url_prefix}}/media/js/proj4-src.js"></script>
-<script src="{{url_prefix}}/media/js/jquery.switchButton.js"></script>
-<script src="{{url_prefix}}/media/js/jquery.colorpicker.min.js"></script>
-<script src="{{url_prefix}}/media/js/zip/zip.js"></script>
+<script type="text/javascript" src="../../media/js/dropins.js" id="dropboxjs" data-app-key="50dk6qp6nc2fcxs"></script>
+<script src="../../media/js/cartodb.js"></script>
+<script src="../../media/js/jquery.min.js"></script>
+<script src="../../media/js/d3.v3.min.js"></script>
+<script src="../../media/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script src="../../media/js/list.min.js"></script>
+<script src="../../media/js/d3viz.js"></script>
+<script src="../../media/js/proj4-src.js"></script>
+<script src="../../media/js/jquery.switchButton.js"></script>
+<script src="../../media/js/jquery.colorpicker.min.js"></script>
+<script src="../../media/js/zip/zip.js"></script>
 
-<script src="{{url_prefix}}/media/js/colorbrewer.js"></script>
-<script src="{{url_prefix}}/media/js/xmap.js"></script>
-<script src="{{url_prefix}}/media/js/utils.js"></script>
-<script src="{{url_prefix}}/media/js/shapefile.js"></script>
-<script src="{{url_prefix}}/media/js/portal.js"></script>
+<script src="../../media/js/colorbrewer.js"></script>
+<script src="../../media/js/xmap.js"></script>
+<script src="../../media/js/utils.js"></script>
+<script src="../../media/js/shapefile.js"></script>
+<script src="../../media/js/portal.js"></script>
 <script>
     var csrftoken = '{{ csrf_token }}';
     var url_prefix = '{{url_prefix}}';
@@ -38,10 +38,10 @@
 <div class="awesome-bar" style="background:#038D98;">
   <table class="toolbar_tbl" align="left" >
     <tr>
-      <td width=160"><img id="logo" src="{{url_prefix}}/media/img/pysalweb-logo.png"></td>
+      <td width=160"><img id="logo" src="../../media/img/pysalweb-logo.png"></td>
 	  <td style="max-width: 300px;min-width: 300px;"></td>
       <td class="righttd">
-        <img id="account" src="{{url_prefix}}/media/img/user.png" align="">
+        <img id="account" src="../../media/img/user.png" align="">
        {{userid}}
         <button id="btn_logout">logout</button> &nbsp;&nbsp;
       </td>
@@ -80,7 +80,7 @@
 			<div class="blockBtn" id="btnNewMap"><img src="../../media/img/nmap.png"/><span>Map</span></div>
 		  </td>
 		  <td width=100>
-			<div class="blockBtn" id="btnExplore"><img src="../../media/img/scatter.png"/><span>Explore</span></div>
+			<div class="blockBtn" id="btnExplore"><img src="../../media/img/hist.png"/><span>Explore</span></div>
 		  </td>
 		  <td width=160>
 			<div class="blockBtn" id="btnSpace"><img src="../../media/img/moran.png"/><span>Spatial Analysis</span></div>
@@ -105,10 +105,13 @@
 	<div id="btnCatMap" class="image-wrap" style="background-image: url(../../media/img/wiz-cat-poly.png);">
 	  <span>Choropthleth Map</span>
 	</div>
+	<div id="btnDensity" class="image-wrap" style="background-image: url(../../media/img/wiz-density.jpeg);">
+	  <span>Density Map</span>
+	</div>
 </div>
 
 <div class="tool-menu" id="explore-menu">
-	<div class="image-wrap" style="background-image: url(../../media/img/wiz-hist.png);">
+	<div id="btnHist" class="image-wrap" style="background-image: url(../../media/img/wiz-hist.png);">
 	  <span>Histogram</span>
 	</div>
 	<div id="btnScatter" class="image-wrap" style="background-image: url(../../media/img/wiz-scatter.png);">
@@ -123,16 +126,22 @@
 </div>
 
 <div class="tool-menu" id="space-menu">
-	<div id="btnCreateW" class="image-wrap" style="background-image: url(../../media/img/newW.png);">
+	<div id="btnRoad" class="image-wrap" style="background-image: url(../../media/img/wiz-road.png);">
+	  <span>Road Network Analysis</span>
+	</div>
+	<div id="btnSpaceTime" class="image-wrap" style="background-image: url(../../media/img/wiz-spacetime.png);">
+	  <span>Space Time Aggregation</span>
+	</div>
+	<div id="btnCreateW" class="image-wrap" style="background-image: url(../../media/img/wiz-w.png);">
 	  <span>Create Weights</span>
 	</div>
-	<div class="image-wrap" style="background-image: url(../../media/img/wHist.png);">
+	<div class="image-wrap" style="background-image: url(../../media/img/wiz-hist-w.png);">
 	  <span>Weights Histogram</span>
 	</div>
-	<div id="btnMoranScatter" class="image-wrap" style="background-image: url(../../media/img/moran.png);">
+	<div id="btnMoranScatter" class="image-wrap" style="background-image: url(../../media/img/wiz-moran.png);">
 	  <span>Moran Scatter Plot</span>
 	</div>
-	<div class="image-wrap" style="background-image: url(../../media/img/lisa.png)">
+	<div id="btnLISA" class="image-wrap" style="background-image: url(../../media/img/wiz-lisa.png)">
 	  <span>LISA Map</span>
 	</div>
 </div>
@@ -151,7 +160,7 @@
   <span> <br/><br/>
     <table>
       <tr><td>
-      <img id="img-open-dlg" src="{{url_prefix}}/media/img/add-file.png">
+      <img id="img-open-dlg" src="../../media/img/add-file.png">
       </td>
       <td>
       Load your map files from one of these sources (shp, json, etc.):
@@ -174,8 +183,8 @@
 	    {% else %}
 	      <a href='#' onclick='AddExistMap("{{layer.uuid}}","../../media/{{layer.jsonpath}}")'>{{layer.name}}</a>
 	    {% endif %}
-            <img class='novis' onclick="DownloadMap('{{layer.uuid}}');" src="{{url_prefix}}/media/img/download.png">
-            <img class='novis' onclick="DeleteMap(this,'{{layer.uuid}}');" src="{{url_prefix}}/media/img/uncheckmark.gif">
+            <img class='novis' onclick="DownloadMap('{{layer.uuid}}');" src="../../media/img/download.png">
+            <img class='novis' onclick="DeleteMap(this,'{{layer.uuid}}');" src="../../media/img/uncheckmark.gif">
           </p>
           {% endfor %}
         </div>
@@ -197,7 +206,7 @@
     </div>
     <div id="tabs-4">
       <form id="cartodb-form">
-        <img src="{{url_prefix}}/media/img/cartodb.png">
+        <img src="../../media/img/cartodb.png">
         <table>
           <tr>
             <td>CartoDB user id</td>
@@ -209,7 +218,7 @@
             <td>CartoDB app key</td>
             <td>
               <input type="text" id="txt-carto-key" size=45 value="340808e9a453af9680684a65990eb4eb706e9b56">
-	      &nbsp;&nbsp;&nbsp;<img id='btn-file-cartodb-get-all-tables'src="{{url_prefix}}/media/img/refresh.png">
+	      &nbsp;&nbsp;&nbsp;<img id='btn-file-cartodb-get-all-tables'src="../../media/img/refresh.png">
 
             </td>
           </tr>
@@ -229,7 +238,7 @@
     </div>
   </div>
   <br/><br/>
-  <div id="progress_bar_openfile"><img src="{{url_prefix}}/media/img/progress-bar.gif"></div>
+  <div id="progress_bar_openfile"><img src="../../media/img/progress-bar.gif"></div>
 </div>
 
 <!--
@@ -238,7 +247,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 -->
 <div id="dialog-cartodb"  title="CartoDB Dialog">
-  <span> <br/><img src="{{url_prefix}}/media/img/cartodb.png"><br/></span>
+  <span> <br/><img src="../../media/img/cartodb.png"><br/></span>
   <div id="tabs-dlg-cartodb">
     <ul>
       <li><a href="#tabs-1">Setup</a></li>
@@ -263,7 +272,7 @@
       </form>
     </div>
     <div id="tabs-2">
-      <br><img src="{{url_prefix}}/media/img/carto_upload.png"><br><br>
+      <br><img src="../../media/img/carto_upload.png"><br><br>
       <form id="cartodb-upload-form">
         <table>
           <tr>
@@ -278,7 +287,7 @@
     </div>
   </div>
   <br/><br/>
-  <div id="progress_bar_cartodb"><img src="{{url_prefix}}/media/img/progress-bar.gif"></div>
+  <div id="progress_bar_cartodb"><img src="../../media/img/progress-bar.gif"></div>
 </div>
 
 <!--
@@ -287,7 +296,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 -->
 <div id="dialog-road"  title="Road Network Dialog">
-  <span> <br/><img src="{{url_prefix}}/media/img/network.png"><br/><br/></span>
+  <span> <br/><img src="../../media/img/network.png"><br/><br/></span>
   <div id="tabs-dlg-road">
     <ul>
       <li><a href="#tabs-1">Road Segmentation</a></li>
@@ -387,7 +396,7 @@
     </div>
   </div>
   <br/>  <br/>
-  <div id="progress_bar_road"><img src="{{url_prefix}}/media/img/progress-bar.gif"></div>
+  <div id="progress_bar_road"><img src="../../media/img/progress-bar.gif"></div>
 </div>
 
 
@@ -397,7 +406,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 -->
 <div id="dialog-spacetime"  title="Space Time Aggregation">
-  <table><tr><td><img src="{{url_prefix}}/media/img/st.png"></td>
+  <table><tr><td><img src="../../media/img/st.png"></td>
   <td>&nbsp;&nbsp;Aggregate points in time and space and apply spatial analysis.</td>
   </tr>
   </table>
@@ -406,7 +415,7 @@
     <h2><a href='#'>Space</a></h2>
     <div style="height:400px;">
       <p style="text-align: left">Example of Space Aggregation (e.g. counting how many points in each polygon.)</p>
-      <br><img src="{{url_prefix}}/media/img/pnp.png"><br><br>
+      <br><img src="../../media/img/pnp.png"><br><br>
       
       <form id="spacetime-count-pform">
         <table>
@@ -454,7 +463,7 @@
     </table>
     </div>
   </div>
-  <div id="progress_bar_spacetime"><img src="{{url_prefix}}/media/img/progress-bar.gif"></div>
+  <div id="progress_bar_spacetime"><img src="../../media/img/progress-bar.gif"></div>
 </div>
 <!--
 ///////////////////////////////////////////////////////////////////////////////
@@ -474,7 +483,7 @@
   </tr>
  </table> 
   <br/>  <br/>
-  <div id="progress_bar_lisa"><img src="{{url_prefix}}/media/img/progress-bar.gif"></div>
+  <div id="progress_bar_lisa"><img src="../../media/img/progress-bar.gif"></div>
 </div>
 
 <!--
@@ -512,6 +521,10 @@
     <td><select id="sel-scatter-x"></td>
     <td><select id="sel-scatter-y"></td>
   </tr>
+  <tr>
+    <td>
+	  <input type="checkbox" id="chk-newtab-scatter" id=0>Open in new window?
+	</td>
  </table> 
 </div>
 
@@ -598,6 +611,10 @@
       <option value="10">10</option>
     </td>
   </tr>
+  <tr>
+    <td><label for="name">Select a color scheme:</label></td>
+    <td><select id="color-selector"></td>
+  </tr>
  </table> 
 </div>
 
@@ -618,9 +635,9 @@
       <td><li>Select an ID variable for weights file:</li></td>
       <td>
       <select id='sel-w-id'></select>
-      <img id="img-id-chk" src="{{url_prefix}}/media/img/checkmark.png">
-      <img id="img-id-nochk" src="{{url_prefix}}/media/img/uncheckmark.gif">
-      <img id="img-id-spin" src="{{url_prefix}}/media/img/loading_small.gif">
+      <img id="img-id-chk" src="../../media/img/checkmark.png">
+      <img id="img-id-nochk" src="../../media/img/uncheckmark.gif">
+      <img id="img-id-spin" src="../../media/img/loading_small.gif">
       </td>
     </tr>
     <tr>
@@ -1054,13 +1071,12 @@
 
 <div id="prgInfo" class="info-div" style="left: 0px; right: none;">
   <span>Uploading data ...</span><br/>
-  <img src="{{url_prefix}}/media/img/progress-bar.gif">
+  <img src="../../media/img/progress-bar.gif">
 </div>
 
 <div id="divPop" class="bubble">This is Popup Div.</div>
 </body>
 
-<div id="test" style="position: fixed; top: 200px; width: 350px; height: 350px; padding: 0.5em; z-index: 10009;border: 1px #333 solid;background-color:#FFF;opacity: 0.8;">
-<h3 class="popup-widget">Resizable</h3>
-</div>
+<div id="legend" class="info" style="z-index:9999;position:fixed;top:200px;right:5px;">Legend</div>
+
 </html>

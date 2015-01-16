@@ -110,6 +110,11 @@ d3viz.prototype = {
     var currentUUID = this.GetUUID();
     return this.mapTheme[currentUUID];
   },
+  
+  AddFrame : function(layer_uuid, frame_uuid, url) {
+    
+  },
+  
   /**
    * AddMap() could be:
    * 1. Drag&Drop local ESRI Shape file

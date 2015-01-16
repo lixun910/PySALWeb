@@ -5,21 +5,24 @@
 <style>
 html, body {
   font: 11px sans-serif;
-  width: 90%;
-  height: 90%;
+  width: 100%;
+  height: 100%;
+  margin: 0;
 }
 #container {
   position: relative;
-  width: 90%;
-  height: 90%;
+  width: 100%;
+  height: 100%;
 }
-#background {
+#graph {
   position: absolute;
   top: 0;
   left: 0;
 }
 svg {
   position: relative;
+  width: 100%;
+  height: 100%;
 }
 .bar rect {
   fill: steelblue;
@@ -27,7 +30,7 @@ svg {
 }
 
 .bar text {
-  fill: #fff;
+  fill: #000;
 }
 
 .axis path, .axis line {
@@ -41,94 +44,158 @@ svg {
 <script src="../media/js/jquery-ui-1.10.4.custom.min.js"></script>
 <script src="../media/js/simple_statistics.js"></script>
 <script src="../media/js/d3.v3.min.js" charset="utf-8"></script>
+<script src="../media/js/utils.js" charset="utf-8"></script>
+<script src="../media/js/colorbrewer.js" charset="utf-8"></script>
 </head>
+<body>
+<div id="container"> 
+  <canvas></canvas>
+  <svg id='graph'></svg>
+</div>
 <script>
 
-var OnResize = function(evt) {
-  if (background) {
-    var new_h = $('#container').height(),
-        new_w = $('#container').width(); 
-    $('svg').height(new_h).width(new_w).empty();
-    $('#background').height(new_h).width(new_w);
-    DrawPoints();
+var colors = colorbrewer.Paired[10];
+var uuid = getParameterByName('uuid'),
+    fieldX = getParameterByName('x');
+var points = [];
+    
+var margin = {top: 15, right: 30, bottom: 30, left: 50},
+    screenW = parseInt(d3.select("#container").style("width")),
+    screenH = parseInt(d3.select("#container").style("height")),
+    width = screenW - margin.left - margin.right,
+    height = screenH - margin.top - margin.bottom;
+    
+var xMin, xMax, xExt;
+
+var brushX = d3.scale.identity().domain([0, width]),
+    brushY = d3.scale.identity().domain([0, height]);
+
+var graph = d3.select("#graph")
+    .attr("width", screenW)
+    .attr("height", screenH)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  
+var x, y, data, xAxis, yAxis, results, numbins, barWidth;
+
+$.get('../myapp/histogram/',{'layer_uuid' : uuid, 'var_x' : fieldX}).done(function(json){
+
+  results = json;
+  
+  for (var i=0, n = results.x.length; i < n; i++ ) {
+    var x = results.x[i];
+    if ( i == 0 ) {
+      xMin = x;
+      xMax = x;
+    } else {
+      if ( x < xMin) xMin = x;
+      if ( x > xMax) xMax = x;
+    }
   }
+
+  x = d3.scale.linear()
+    .domain([xMin, xMax])
+    .range([0, width]);
+
+  // Generate a histogram using twenty uniformly-spaced bins.
+  data = d3.layout.histogram()
+    .bins(x.ticks(10))
+    (results.x);
+
+  numbins = data.length;
+  barWidth = (width-10)/numbins - 1;
+
+  y = d3.scale.linear()
+    .domain([0, d3.max(data, function(d) { return d.y; })])
+    .range([height, 0]);
+    
+  xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom");
+
+  yAxis = d3.svg.axis()
+      .scale(y)
+      .orient("left");
+      
+  var bar = graph.selectAll(".bar")
+      .data(data)
+    .enter().append("g")
+      .attr("class", "bar")
+      .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+
+  console.log(x(data[0].dx));
+  console.log(x(data[1].dx));
+  
+  bar.append("rect")
+      .attr("x", 1)
+      .attr("width", barWidth)
+      .attr("height", function(d) { return height +2 - y(d.y) ; })
+      .style('fill', function(d,i) {return colors[i%10];});
+
+  bar.append("text")
+      .attr("y", 0) 
+      .attr("x", x(data[0].dx) / 2)
+      .attr("text-anchor", "middle")
+      .text(function(d) { return d.y; });
+
+  graph.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + (parseInt(height) + 10) +  ")")
+      .call(xAxis);
+      
+  graph.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
+});
+
+var OnResize = function(evt) {
+
+  screenW = parseInt(d3.select("#graph").style("width"));
+  screenH = parseInt(d3.select("#graph").style("height"));
+  
+  width = screenW - margin.left - margin.right;
+  height = screenH - margin.top- margin.bottom;
+  
+  x = d3.scale.linear()
+    .domain([xMin, xMax])
+    .range([0, width]);
+    
+  barWidth = width/numbins - 1;
+    
+  y = d3.scale.linear()
+    .domain([0, d3.max(data, function(d) { return d.y; })])
+    .range([height, 0]);
+    
+  xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom");
+
+  yAxis = d3.svg.axis()
+      .scale(y)
+      .orient("left");
+      
+  graph.select('.x.axis')
+    .attr("transform", "translate(0," + (height+10) + ")")
+    .call(xAxis);
+
+  graph.select('.y.axis')
+      .call(yAxis);
+      
+  graph.selectAll('.bar')
+      .data(data)
+      .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+
+  graph.selectAll('rect')    
+      .attr("width", barWidth)
+      .attr("height", function(d) { return height +2 - y(d.y) ; });
+    
+  graph.selectAll('text')
+      .attr("x", x(data[0].dx) / 2);
+  
 };
 
 window.addEventListener("resize", OnResize);
 
-var svg_w, svg_h;
-
-var DrawHistogram = function() {
-  // Generate a Bates distribution of 10 random variables.
-  var values = d3.range(1000).map(d3.random.bates(10));
-  // A formatter for counts.
-  var formatCount = d3.format(",.0f");
-  
-  svg_w = parseInt($(background).parent().css("width"));
-  svg_h = parseInt($(background).parent().css("height"));
-  
-  var margin = {top: 10, right: 30, bottom: 30, left: 30},
-      width = svg_w - margin.left - margin.right,
-      height = svg_h - margin.top - margin.bottom;
- 
-       
-  var x = d3.scale.linear()
-      .domain([d3.min(data, function(d){return d.x;}), 
-               d3.max(data, function(d){return d.x;})])
-      .range([0, width]);
-
-  // Generate a histogram using twenty uniformly-spaced bins.
-  var data = d3.layout.histogram()
-      .bins(x.ticks(20))
-      (values);
-  
-  var y = d3.scale.linear()
-      .domain([0, d3.max(data, function(d) { return d.y; })])
-      .range([height, 0]);
-      
-  var xAxis = d3.svg.axis()
-      .scale(x)
-      .orient("bottom");
-      
-var svg = d3.select("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-};
-
-$(document).ready(function() {
-
-
-var bar = svg.selectAll(".bar")
-    .data(data)
-  .enter().append("g")
-    .attr("class", "bar")
-    .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
-
-bar.append("rect")
-    .attr("x", 1)
-    .attr("width", x(data[0].dx) - 1)
-    .attr("height", function(d) { return height - y(d.y); });
-
-bar.append("text")
-    .attr("dy", ".75em")
-    .attr("y", 6)
-    .attr("x", x(data[0].dx) / 2)
-    .attr("text-anchor", "middle")
-    .text(function(d) { return formatCount(d.y); });
-
-svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(xAxis);
-});
-
 </script>
-<body>
-<div id="container"> 
-  <canvas id="background"></canvas>
-  <svg></svg>
-</div>
 </body>
 </html>

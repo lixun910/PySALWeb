@@ -170,7 +170,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
-  opacity: 0.8;
+  opacity: 0.5;
   background-repeat: no-repeat;
   background-position: center; 
 }
@@ -300,11 +300,27 @@ border: 1px solid #aaa;margin: 1px 10px;
   padding: 25px;
   width: 50%;
 }
-.popup-widget{
-  background-color: #f6a828;
-  background-image: url("../img/right-arrow.png") !important;
-  background-position: right;
+.popup-frame {
+  width: 350px; 
+  height: 250px; 
+  padding: 0.5em; 
+  z-index: 10001;
+  border: 1px #999 solid;
+  background-color:#FFF;
+  opacity: 0.5;
+  cursor: pointer;
+}
+.popup-frame:hover{
+  opacity: 0.9;
+}
+.popup-close {
+  float: left;
+  background-image: url("../img/close_pop.png");
   background-repeat: no-repeat;
+  width: 16px; /*or your image's width*/
+  height: 16px; /*or your image's height*/
+  margin: 0;
+  padding: 0;
 }
 #btnMultiLayer span {
   background-image: url("../img/right-arrow.png");
@@ -366,6 +382,14 @@ border: 1px solid #aaa;margin: 1px 10px;
   left: 0;
   width: 100%; 
   height: 100%;
+}
+.info {
+    padding: 6px 8px;
+    font: 14px/16px Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
 }
 /* jquery ui dialog*/
 .plain-dialog {
