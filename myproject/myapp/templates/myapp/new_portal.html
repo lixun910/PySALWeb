@@ -35,21 +35,12 @@
 </head>
 
 <body>
-<div class="awesome-bar" style="background:#038D98;">
-  <table class="toolbar_tbl" align="left" >
-    <tr>
-      <td width=160"><img id="logo" src="../../media/img/pysalweb-logo.png"></td>
-	  <td style="max-width: 300px;min-width: 300px;"></td>
-      <td class="righttd">
-        <img id="account" src="../../media/img/user.png" align="">
-       {{userid}}
-        <button id="btn_logout">logout</button> &nbsp;&nbsp;
-      </td>
-      <td width=100 class="righttd">
-		<div id="basemap">Basemap</div>
-	  </td>
-    </tr>
-  </table>
+<div class="awesome-bar">
+  <div class="logo"></div>
+  <div class="header_topright">
+    <div class="account"> Account</div>
+    <div class="basemap"> Basemap</div>
+  </div>
 </div>
 <!--
 ///////////////////////////////////////////////////////////////////////////////
@@ -1054,6 +1045,12 @@
     <p class="font-weight:bold;" id="msg-title"></p>
     <p id="msg-content" class="text-align:left;"></p>
   </div>
+</div>
+
+<div id="userInfo" class="info-div">
+  <p>{{userid}}</p> <br/>
+  <span>Storage Usage: <img src="../../media/img/capacity.png" height=14></span> <br/><br/>
+  <button id="btn_logout">logout</button>
 </div>
 
 <div id="mapInfo" class='info-div'>

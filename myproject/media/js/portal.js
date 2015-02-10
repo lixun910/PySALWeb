@@ -732,7 +732,7 @@ $(document).ready(function() {
   }).hide();
 
   // basemap buton on the right side of top bar
-  $('#basemap').click(function(){
+  $('.basemap').click(function(){
     $('#mapInfo').toggle();
   });
  
@@ -967,8 +967,9 @@ $(document).ready(function() {
       },
     }]
   });
+  
   //////////////////////////////////////////////////////////////
-  //  Open File 
+  //  Open File  test. open. test.
   //////////////////////////////////////////////////////////////
   $('#tabs-dlg-open-file').tabs();
   if($('#tabs-1').text().indexOf('a') > 0) {
