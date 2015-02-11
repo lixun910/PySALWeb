@@ -1,6 +1,6 @@
 
 // Author: xunli at asu.edu
-(function(window,undefined){
+define( ["../utils","../../require",'../../parallel'], function(Utils, require, Parallel) {
 
   var Moran = function() {
     this.y = [ 0.91659 ,  0.      ,  1.568381,  1.968504,  6.333568,  4.820937,
@@ -124,6 +124,8 @@
     // this.y, this.w
     // w_ij(X_i - X_m)(X_j - X_m)
     // Xi - X_m
+    
+    var t0 = performance.now();
     this.n = this.y.length;
     this.sum = 0.0;
     
@@ -135,27 +137,98 @@
     
     this.lower = 0.0;
     
+    this.z = [];
+   
+    var tmp; 
+    
     for (var i=0; i< this.n; i++) {
-        var tmp = this.y[i] - this.mean;
+        tmp = this.y[i] - this.mean;
+        this.z.push(tmp);
         this.lower += tmp * tmp;
     }
     
     this.upper = 0.0;
     this.sum_of_w = 0;
+    this.w_n_dict = {};
     
     for (var i in this.w) {
-        var nn = this.w[i];
-        this.sum_of_w += nn.length;
-        for (var k in nn) {
-            var j = nn[k];
-            this.upper += (this.y[i] - this.mean) * (this.y[j] - this.mean);
+        var nn = this.w[i],
+            j = nn.length;
+        this.w_n_dict[i] = j;
+        this.sum_of_w += j;
+        for (var k=0; k < j; k++) {
+            this.upper += this.z[i] * this.z[nn[k]];
         }
     }
-    this.upper *= this.n;
-    this.lower *= this.sum_of_w;
+    
+    this.lower *= this.sum_of_w / this.n;
     this.I = this.upper / this.lower;
     this.EI = -1 / (this.n - 1);
+   
+    this.permutate(this.z);
+    var t1 = performance.now();
+    alert((t1-t0)/1000);
   };
   
-  window["Moran"] = Moran;
-})(self);
+  
+  Moran.prototype = {
+    __calc : function(z) {
+      var upper = 0.0, tmp;
+      
+      for (var i in this.w) {
+        var nn = this.w[i];
+        for (var k=0, j=this.w_n_dict[i]; k < j; k++) {
+          upper += z[i] * z[nn[k]];
+        }
+      }
+      return upper / this.lower;   
+    },
+    
+    permutate : function(z, pp) {
+      if (pp == undefined) pp = 9999;
+      
+      var zs = [];      
+      for (var i=0; i < pp; i++) {
+        z = Utils.shuffle(z);
+        zs.push(z);
+      }
+     
+      var log = function() { console.log(arguments); };
+      
+      var p = new Parallel(zs);
+         
+      p.map(this.__calc).then(log);
+      
+     
+      /* 
+      var larger = 0, sum_I = 0, Is = [], I = 0;
+       
+      for (var i=0; i < pp; i++) {
+        z = Utils.shuffle(z);
+        I = this.__calc(z);
+        
+        if (I >= this.I) larger += 1;
+        if ( (pp - larger) < larger ) {
+          larger = pp - larger;
+        }
+        sum_I += I;
+        Is.push(I);
+      }
+      
+      this.p_sim = (larger + 1.0) / (pp + 1.0);
+      this.EI_sim =  sum_I / pp;
+      this.seI_sim = Utils.std(Is);
+      this.VI_sim = this.seI_sim * this.seI_sim;
+      this.z_sim = (this.I - this.EI_sim) / this.seI_sim;
+      
+      if (this.z_sim > 0) {
+        this.p_z_sim = 1 - Utils.cdf(this.z_sim);
+      } else {
+        this.p_z_sim = Utils.cdf(this.z_sim);
+      }
+      */
+    },
+  };
+ 
+  return Moran;
+});
