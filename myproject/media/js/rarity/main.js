@@ -134,7 +134,7 @@ function(parallel, Moran, Moran_Local, W) {
        99: [96, 97, 98]};
   
   // Moran function
-  var  m = new Moran(y, w);
-  //var  ml = new Moran_Local(y, w);
-  console.log(m);
+  //var  m = new Moran(y, w);
+  var  ml = new Moran_Local(y, w);
+  console.log(ml);
 });
