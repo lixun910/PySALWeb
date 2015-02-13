@@ -7,5 +7,11 @@ define( function() {
     this.neighbors = neighbors;
   };
  
+  W.prototype = {
+    sparse : function() {
+      
+    },
+  };
+  
   return W;
 });

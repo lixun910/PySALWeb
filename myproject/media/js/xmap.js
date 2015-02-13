@@ -456,6 +456,20 @@ ShpMap.prototype = {
 };
 
 //////////////////////////////////////////////////////////////
+// TopoJsonMap
+//////////////////////////////////////////////////////////////
+var TopoJsonMap = function(name, topoJson, LL, Lmap, prj) {
+  // "type" : "Topology",
+  // "transform" : {'scale' :, "translate": }
+  // "objects" : {'polygon': {'type':'Geome'}, 'geometries':[]}
+  // "arcs": []
+  this.name = name;
+  this.topojson = topojson;
+  
+};
+
+
+//////////////////////////////////////////////////////////////
 // JsonMap
 //////////////////////////////////////////////////////////////
 var JsonMap = function(name, geoJson, LL, Lmap, prj) {
