@@ -44,10 +44,7 @@ define( ["../utils"], function(Utils) {
     this.I = this.upper / this.lower;
     this.EI = -1 / (this.n - 1);
    
-    var t0 = performance.now();
     this._permutate(this.z);
-    var t1 = performance.now();
-    console.log((t1-t0)/1000);
   };
   
   
@@ -125,7 +122,6 @@ define( ["../utils"], function(Utils) {
       });
          
       p.map(calc).then(function(data){
-        var t1 = performance.now();
         console.log((t1-this.t0)/1000);
         //console.log(data);
       });

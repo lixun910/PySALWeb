@@ -1,42 +1,23 @@
 
-var isNode = false,
-    baseUrl,
-    paths;
-
-if (typeof module !== 'undefined' && module.exports) {
-  // node.js
-  isNode = true;
-  require = require('requirejs');
-  baseUrl = "../lib";
-  paths = {
-    rarity : '../rarity'
-  };
-} else {  
-  // browsers
-  baseUrl = "../media/js";
-  paths = {
-    rarity : 'rarity'
-  };
-}
+require = require('amdrequire');
 
 require.config({ 
   //By default load any module IDs from ../media/js/rarity
-  baseUrl: baseUrl,
+  baseUrl: 'media/js/lib',
   //except, if the module ID starts with "app",
   //load it from the ../media/js/app directory. paths
   //config is relative to the baseUrl, and
   //never includes a ".js" extension since
   //the paths config could be for a directory.
-  paths: paths,
+  paths: {
+    rarity: 'rarity'
+  }
 });
  
 // Start the main app logic.
-require([
-  'rarity/esda/moran', 
-  'rarity/esda/local_moran', 
-  'rarity/weights/weights'
-  ], 
-  function(Moran, Moran_Local, W) {
+require(['rarity/esda/moran', 
+         'rarity/esda/local_moran', 'rarity/weights/weights'], 
+function(Moran, Moran_Local, W) {
   var y = [ 0.91659 ,  0.      ,  1.568381,  1.968504,  6.333568,  4.820937,
       0.      ,  0.      ,  4.132231,  0.620347,  1.932367,  3.596314,
       2.393776,  2.570694,  1.834862,  4.988914,  1.831502,  1.271456,
@@ -156,10 +137,9 @@ require([
        99: [96, 97, 98]};
   
   // Moran function
-  console.time('moran');
-  new Moran(y, w);
-  console.timeEnd('moran');
-  console.time('moran_local');
-  new Moran_Local(y, w);
-  console.timeEnd('moran_local');
+  //var  m = new Moran(y, w);
+  var t0 = performance.now();
+  var  ml = new Moran_Local(y, w);
+  var t1 = performance.now();
+  console.log(ml, (t1-t0)/1000.0);
 });
