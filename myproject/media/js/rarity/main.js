@@ -34,9 +34,14 @@ require.config({
 require([
   'rarity/esda/moran', 
   'rarity/esda/local_moran', 
-  'rarity/weights/weights'
+  'rarity/weights/weights',
+  'rarity/io/topojson_map',
   ], 
-  function(Moran, Moran_Local, W) {
+  function(Moran, Moran_Local, W, TopoJsonMap) {
+  var topology = {"type":"Topology","transform":{"scale":[0.0002520165073211382,0.00019492849732399704],"translate":[-0.04527237752903268,-0.4646223970748078]},"objects":{"Polygon":{"type":"GeometryCollection","geometries":[{"arcs":[[[0]],[[1]]],"type":"MultiPolygon","properties":{"Name":"Eyes","IValue":1,"FValue":1.1}},{"arcs":[[2]],"type":"Polygon","properties":{"Name":"Nose","IValue":2,"FValue":2.2}},{"arcs":[[3]],"type":"Polygon","properties":{"Name":"Mouth","IValue":3,"FValue":3.3}}]}},"arcs":[[[137,1059],[13,17],[23,8],[20,-6],[11,-13],[4,-17],[-15,-11],[-25,-2],[-21,4],[-7,7],[-3,13]],[[605,1069],[16,22],[18,6],[23,-6],[15,-11],[10,-17],[-8,-15],[-27,-4],[-19,-2],[-14,8],[-11,4],[-3,15]],[[394,780],[-10,-205],[33,51],[13,-10],[-56,-77],[-8,241],[28,0]],[[0,262],[21,30],[116,-149],[148,-107],[180,4],[153,118],[115,166],[15,-19],[-107,-169],[-153,-125],[-198,-11],[-165,104],[-125,158]]]};
+  
+  var topoMap = new TopoJsonMap('xxx', topology);
+  
   var y = [ 0.91659 ,  0.      ,  1.568381,  1.968504,  6.333568,  4.820937,
       0.      ,  0.      ,  4.132231,  0.620347,  1.932367,  3.596314,
       2.393776,  2.570694,  1.834862,  4.988914,  1.831502,  1.271456,

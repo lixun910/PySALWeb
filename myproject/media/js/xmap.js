@@ -1,6 +1,11 @@
 // Author: xunli at asu.edu
 (function(window,undefined){
 
+
+
+//////////////////////////////////////////////////////////////
+// Density Map
+//////////////////////////////////////////////////////////////
 var _getColorPalette = function(config) {
   var gradientConfig = { 0.25: "rgb(0,0,255)", 0.55: "rgb(0,255,0)", 0.85: "yellow", 1.0: "rgb(255,0,0)"};
   var paletteCanvas = document.createElement('canvas');
@@ -455,18 +460,7 @@ ShpMap.prototype = {
   },
 };
 
-//////////////////////////////////////////////////////////////
-// TopoJsonMap
-//////////////////////////////////////////////////////////////
-var TopoJsonMap = function(name, topoJson, LL, Lmap, prj) {
-  // "type" : "Topology",
-  // "transform" : {'scale' :, "translate": }
-  // "objects" : {'polygon': {'type':'Geome'}, 'geometries':[]}
-  // "arcs": []
-  this.name = name;
-  this.topojson = topojson;
-  
-};
+
 
 
 //////////////////////////////////////////////////////////////
