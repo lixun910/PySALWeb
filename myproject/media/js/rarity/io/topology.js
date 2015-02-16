@@ -18,8 +18,8 @@ TopoJSON.decodeArcs = function(arcs, transform) {
         prevX = 0,
         prevY = 0,
         xy, x, y;
-    for (var i=0, len=arc.length; i<len; i++) {
-      xy = arc[i];
+    for (var j=0, len=arc.length; j<len; j++) {
+      xy = arc[j];
       x = xy[0] + prevX;
       y = xy[1] + prevY;
       xy[0] = x * mx + bx;
