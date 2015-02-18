@@ -30,3 +30,5 @@ wingide.wpu
 
 myproject/media/temp/92c0118e474391a23d4a673a5b1d6039/HWVED3/phx/phx.html
 *.db
+
+*.log

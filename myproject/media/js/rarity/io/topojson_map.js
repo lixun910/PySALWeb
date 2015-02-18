@@ -1,6 +1,6 @@
 // Author: xunli at asu.edu
 
-define( ["./topology"], function(TopoJSON) {
+define( ["./topojson", "../weights/weights"], function(TopoJSON, W) {
 
 var TopoJsonMap = function(name, topology, LL, Lmap, prj) {
   // "type" : "Topology",
@@ -220,6 +220,35 @@ TopoJsonMap.prototype = {
       py = this.scaleY * (this.mapTop - y) + this.offsetY;
     }
     return [px, py];
+  },
+  
+  
+  createQueenWeights: function() {
+    var edge_dict = {},
+        arcs, arc,m;
+    for (var i=0, n=this.layer.shapes.length; i<n;i++)  {
+      arcs = this.layer.shapes[i];
+      m = arcs.length;
+      for (var j=0; j<m; j++) {
+        arc = arcs[j];
+        if ( edge_dict[arc] === undefined ) {
+          edge_dict[arc] = {};
+        }
+        edge_dict[arc][i] = null;
+      }
+    } 
+    var ids, w_dict = {};
+    for (var arc in edge_dict) {
+      ids = edge_dict[arc];
+      
+      for (var i=0, n=ids.length; i<n; i++) {
+        for (var j=i+1; j<n; j++) {
+          w_dict[i][j] = 1;
+          w_dict[j][i] = 1;
+        }
+      }
+    }
+    return new W(w_dict);
   },
 };
 

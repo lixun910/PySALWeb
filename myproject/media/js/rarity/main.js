@@ -9,13 +9,15 @@ if (typeof module !== 'undefined' && module.exports) {
   require = require('requirejs');
   baseUrl = "../lib";
   paths = {
-    rarity : '../rarity'
+    rarity : '../rarity',
+    jquery : 'jquery.min',
   };
 } else {  
   // browsers
   baseUrl = "../media/js";
   paths = {
-    rarity : 'rarity'
+    rarity : 'rarity',
+    jquery : 'lib/jquery.min',
   };
 }
 
@@ -30,12 +32,43 @@ require.config({
   paths: paths,
 });
  
-require(['rarity/io/topojson_map'], function(TopoJsonMap) {
+require(['jquery', 'rarity/io/geojson','rarity/io/geojson_map','rarity/viz/canvas_map'], 
+function($, GeoJSON, GeoJsonMap, CanvasMap) { 
+  var json = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{"Name":"One","IValue":1,"FValue":1.1},"geometry":{"type":"Point","coordinates":[-0.0006817661753210358,-0.25904661905760773]}},
+{"type":"Feature","properties":{"Name":"Two","IValue":2,"FValue":2.2},"geometry":{"type":"Point","coordinates":[0.11697145363360706,-0.25630328607387354]}},
+{"type":"Feature","properties":{"Name":"Three","IValue":3,"FValue":3.3},"geometry":{"type":"Point","coordinates":[0.05043668122270728,-0.33930131004366804]}},
+{"type":"Feature","properties":{"Name":"Four","IValue":4,"FValue":4.4},"geometry":{"type":"Point","coordinates":[-0.04126637554585155,-0.4126637554585152]}},
+{"type":"Feature","properties":{"Name":"Five","IValue":5,"FValue":5.5},"geometry":{"type":"Point","coordinates":[-0.011462882096069604,-0.44017467248908293]}},
+{"type":"Feature","properties":{"Name":"Six","IValue":6,"FValue":6.6},"geometry":{"type":"Point","coordinates":[0.027510917030567628,-0.4608078602620088]}},
+{"type":"Feature","properties":{"Name":"Seven","IValue":7,"FValue":7.7},"geometry":{"type":"Point","coordinates":[0.07565502183406081,-0.4585152838427947]}},
+{"type":"Feature","properties":{"Name":"Eight","IValue":8,"FValue":8.8},"geometry":{"type":"Point","coordinates":[0.11233624454148461,-0.43558951965065495]}},
+{"type":"Feature","properties":{"Name":"Nine","IValue":9,"FValue":9.9},"geometry":{"type":"Point","coordinates":[0.13984716157205224,-0.40578602620087334]}}]};
+  
+  var geojson = new GeoJSON("test", json);
+  var jsonMap = new GeoJsonMap(geojson);
+  
+  
+  var canvas = $('#map');
+  var hlcanvas = $('#hlmap');
+  var mapCanvas = new CanvasMap(jsonMap, canvas, hlcanvas);
+}); 
+  
+require(['jquery', 'rarity/io/topojson_map', 'rarity/viz/canvas_map'], 
+function($, TopoJsonMap,CanvasMap) {
   var topology = {"type":"Topology","transform":{"scale":[0.0002520165073211382,0.00019492849732399704],"translate":[-0.04527237752903268,-0.4646223970748078]},"objects":{"Polygon":{"type":"GeometryCollection","geometries":[{"arcs":[[[0]],[[1]]],"type":"MultiPolygon","properties":{"Name":"Eyes","IValue":1,"FValue":1.1}},{"arcs":[[2]],"type":"Polygon","properties":{"Name":"Nose","IValue":2,"FValue":2.2}},{"arcs":[[3]],"type":"Polygon","properties":{"Name":"Mouth","IValue":3,"FValue":3.3}}]}},"arcs":[[[137,1059],[13,17],[23,8],[20,-6],[11,-13],[4,-17],[-15,-11],[-25,-2],[-21,4],[-7,7],[-3,13]],[[605,1069],[16,22],[18,6],[23,-6],[15,-11],[10,-17],[-8,-15],[-27,-4],[-19,-2],[-14,8],[-11,4],[-3,15]],[[394,780],[-10,-205],[33,51],[13,-10],[-56,-77],[-8,241],[28,0]],[[0,262],[21,30],[116,-149],[148,-107],[180,4],[153,118],[115,166],[15,-19],[-107,-169],[-153,-125],[-198,-11],[-165,104],[-125,158]]]};
+ 
+  //  create contiguity weights  in backgroun
   
   var topoMap = new TopoJsonMap('xxx', topology);
+
+  var canvas = $('#map');
+  var hlcanvas = $('#hlmap');
+  var mapCanvas = new CanvasMap(topoMap, canvas, hlcanvas);
   
+  var w = topoMap.createQueenWeights();
 });
+
+
 // Start the main app logic.
 require([
   'rarity/esda/moran', 

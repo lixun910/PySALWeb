@@ -1,17 +1,18 @@
 
 // Author: xunli at asu.edu
-define( function() {
+define(function() {
 
-  var W= function(neighbors, weights, id_order, ids) {
-    this.transformations = {};
-    this.neighbors = neighbors;
-  };
- 
-  W.prototype = {
-    sparse : function() {
-      
-    },
-  };
-  
-  return W;
+var W= function(edge_dict, point_dict) {
+  this.transformations = {};
+  this.neighbors = {};
+};
+
+W.prototype = {
+  sparse : function() {
+    
+  },
+};
+
+return W;
+
 });
