@@ -1,7 +1,7 @@
 
 // Author: xunli at asu.edu
 
-define(['../utils'], function(Utils, kdtree){
+define(['../utils','kdtree'], function(Utils, kdtree){
 
 var shapes = function() {
   this.points;

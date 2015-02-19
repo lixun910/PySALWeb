@@ -14,12 +14,17 @@ if (typeof module !== 'undefined' && module.exports) {
     kdtree : 'static-kdtree'
   };
 } else {  
-  // browsers
+  // browsers:
   baseUrl = "../media/js";
   paths = {
     rarity : 'rarity',
     jquery : 'lib/jquery.min',
-    "static-kdtree": 'lib/static-kdtree',
+    kdtree : 'lib/kdtree',
+  };
+  shim = {
+    kdtree : {
+      exports: 'kdtree'
+    }
   };
 }
 
@@ -33,7 +38,7 @@ require.config({
   //the paths config could be for a directory.
   paths: paths,
   shim : {
-    "static-kdtree" : {
+    "lib/static-kdtree" : {
       exports : "kdtree"
     }
   }
