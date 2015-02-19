@@ -87,4 +87,12 @@ define({
     
     return 0.5 * (1 + this.erf((x - _mean) / (Math.sqrt(2 * _variance))));
   },
+  
+  buildKDtree : function(points) {
+      var points = [
+  [0, 1, 100],
+  [-5, 0.11, Math.PI],
+  [0, 10, -13]];
+      var tree = kdtree(points);
+  },
 });

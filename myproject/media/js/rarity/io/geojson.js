@@ -1,7 +1,7 @@
 
 // Author: xunli at asu.edu
 
-define(function(){
+define(['../utils'], function(Utils, kdtree){
 
 var shapes = function() {
   this.points;
@@ -19,6 +19,7 @@ var GeoJSON = function(name, json, prj) {
   
   this.points = [];
   this.pt_dict = {};
+  this.queen_dict = {};
   this.arcs = [];
   this.arc_dict = {};
   this.shapes = [];
@@ -26,6 +27,12 @@ var GeoJSON = function(name, json, prj) {
   this.nn = 0; 
   this.aa = 0;
   this.init();
+ 
+      var points = [
+  [0, 1, 100],
+  [-5, 0.11, Math.PI],
+  [0, 10, -13]];
+      var tree = kdtree(points);
 };
 
 GeoJSON.translateGeoJSONType = function(type) {
@@ -43,25 +50,34 @@ GeoJSON.typeLookup = {
 
 GeoJSON.prototype = {
 
-  addPoint : function(x, y) {
+  addPoint : function(x, y, polyid) {
+    if (this.queen_dict[[x,y]]) {
+      this.queen_dict[[x,y]][polyid] = null;
+    } else {
+      this.queen_dict[[x,y]] = {polyid:null};
+    }
     if (this.pt_dict[x]) {
       if (this.pt_dict[x][y]) {
         return this.pt_dict[x][y];
+      } else {
+        this.points.push([x,y]);
+        this.pt_dict[x] = {y:this.nn};
+        return this.nn++;
       }
     }
-    this.pt_dict[x] = {}
+    this.pt_dict[x] = {y:this.nn}
     this.points.push([x,y]);
-    this.pt_dict[x][y] = this.nn;
     return this.nn++;   
   },
   
-  addArc : function(arc) {
-    if (this.arc_dict[arc]) {
-      return this.arc_dict[arc];
+  addArc : function(pt1, pt2, polyid) {
+    if (this.arc_dict[[pt1, pt2]]) {
+      this.arc_dict[[pt1, pt2]][polyid] = null;
+    } else if (this.arc_dict[[pt2, pt1]]) {
+      this.arc_dict[[pt2, pt1]][polyid] = null;
+    } else {
+      this.arc_dict[[pt1, pt2]] = {polyid:null};
     }
-    this.arcs.push(arc);
-    this.arc_dict[arc] = this.aa;
-    return this.aa++;
   },
   
   init: function() {
@@ -108,15 +124,17 @@ GeoJSON.prototype = {
             ptIdx = this.addPoint(x, y);
             arc.push(ptIdx);
           }
-          arcIdx = this.addArc(arc);
-          arcs.push(arcIdx);
+          for (var k=0, nArc=arc.length; k<nArc-1;k++) {
+            this.addArc(arc[k], arc[k+1], i);
+          }
+          arcs.push(arc);
         }
         this.shapes.push(arcs);
         
       } else if (geom.type === "LineString" || geom.type === "Polygon" ||
                  geom.type === "MultiPoint") {
         arc = [];
-        for (var k=0, nPoints=geom.coordinates.length; k < nPoints; k++ ) {
+        for (var k=0, nPoints=geom.coordinates.length; k<nPoints; k++ ) {
           x = geom.coordinates[k][0];
           y = geom.coordinates[k][1];
           if (this.prj) {
@@ -137,8 +155,10 @@ GeoJSON.prototype = {
           ptIdx = this.addPoint(x, y);
           arc.push(ptIdx);
         }
-        arcIdx = this.addArc(arc);
-        this.shapes.push(arcIdx);
+        for (var k=0, nArc=arc.length; k<nArc-1;k++) {
+          this.addArc(arc[k], arc[k+1], i);
+        }
+        this.shapes.push(arc);
         
       } else if (geom.type === "Point") {
           x = geom.coordinates[0];
@@ -174,7 +194,12 @@ GeoJSON.prototype = {
     }
     this.extent = [minX, maxX, minY, maxY];
   },
-  
+
+  kdtree : function() {
+    if (this.kdtree) return this.kdtree;
+    
+    
+  },
 };
 
 return GeoJSON;

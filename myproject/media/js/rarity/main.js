@@ -11,6 +11,7 @@ if (typeof module !== 'undefined' && module.exports) {
   paths = {
     rarity : '../rarity',
     jquery : 'jquery.min',
+    kdtree : 'static-kdtree'
   };
 } else {  
   // browsers
@@ -18,6 +19,7 @@ if (typeof module !== 'undefined' && module.exports) {
   paths = {
     rarity : 'rarity',
     jquery : 'lib/jquery.min',
+    "static-kdtree": 'lib/static-kdtree',
   };
 }
 
@@ -30,6 +32,11 @@ require.config({
   //never includes a ".js" extension since
   //the paths config could be for a directory.
   paths: paths,
+  shim : {
+    "static-kdtree" : {
+      exports : "kdtree"
+    }
+  }
 });
  
 require(['jquery', 'rarity/io/geojson','rarity/io/geojson_map','rarity/viz/canvas_map'], 
@@ -63,9 +70,9 @@ function($, TopoJsonMap,CanvasMap) {
 
   var canvas = $('#map');
   var hlcanvas = $('#hlmap');
-  var mapCanvas = new CanvasMap(topoMap, canvas, hlcanvas);
+  //var mapCanvas = new CanvasMap(topoMap, canvas, hlcanvas);
   
-  var w = topoMap.createQueenWeights();
+  //var w = topoMap.createQueenWeights();
 });
 
 

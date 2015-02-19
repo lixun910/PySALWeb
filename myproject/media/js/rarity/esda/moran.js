@@ -59,30 +59,32 @@ Moran.prototype = {
         upper += z[i] * z[nn[k]];
       }
     }
-    return upper / this.lower;   
+    return upper; 
   },
   
   _permutate : function(z, pp) {
     if (pp == undefined) pp = 999;
-    var larger = 0, sum_I = 0, Is = [], I = 0;
+    var larger = 0, sum_I = 0, Is = [], upper = 0;
      
     for (var i=0; i < pp; i++) {
       z = Utils.shuffle(z);
-      I = this.__calc(z);
+      upper = this.__calc(z);
       
-      if (I >= this.I) {
+      if (upper >= this.upper) {
         larger += 1;
       }
       if ( (pp - larger) < larger ) {
         larger = pp - larger;
       }
-      sum_I += I;
-      Is.push(I);
+      sum_I += upper;
+      Is.push(upper);
     }
+   
+    sum_I /= this.lower;
     
     this.p_sim = (larger + 1.0) / (pp + 1.0);
     this.EI_sim =  sum_I / pp;
-    this.seI_sim = Utils.std(Is);
+    this.seI_sim = Utils.std(Is) / this.lower;
     this.VI_sim = this.seI_sim * this.seI_sim;
     this.z_sim = (this.I - this.EI_sim) / this.seI_sim;
     
