@@ -69,14 +69,14 @@ require(['jquery','rarity/io/shapefile','rarity/io/shapefile_map','rarity/viz/ca
         precision: 0,
         auto_snap: false,
       };
-      //var data = MapShaper.importFileContent(content, type, opts);
-      //MapShaper.setLayerName(data.layers[0], fname);
+      var data = MapShaper.importFileContent(content, type, opts);
+      MapShaper.setLayerName(data.layers[0], fname);
       console.timeEnd('shapefile');
       //var map = new ShpMap(name, shp, L, lmap, prj);
       var shp = new Shapefile(xhr.response);
-      console.time('shapefile');
+      console.time('__shapefile');
       shp.read();
-      console.timeEnd('shapefile');
+      console.timeEnd('__shapefile');
       console.time('_shapefile');
       shp._read();
       console.timeEnd('_shapefile');

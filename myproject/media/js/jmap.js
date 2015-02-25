@@ -1017,11 +1017,13 @@
       if ( colors == undefined ) { 
         for ( var i=0, n=points.length; i<n; i++ ) {
           var pt = points[i];
-          //ctx.fillRect(pt[0], pt[1], 3, 3);
+          ctx.fillRect(pt[0], pt[1], 3, 3);
+          /*
           ctx.beginPath();
           ctx.arc(pt[0], pt[1], 2, 0, end, true);
           ctx.stroke();
           ctx.fill();
+          */
         } 
       } else {
         for ( var c in colors ) {
@@ -1029,11 +1031,11 @@
           var ids = colors[c];
           for ( var i=0, n=ids.length; i< n; ++i) {
             var pt = points[ids[i]];
-            //ctx.fillRect(pt[0], pt[1], 3, 3);
-            ctx.beginPath();
-            ctx.arc(pt[0], pt[1], 2, 0, end, true);
-            ctx.stroke();
-            ctx.fill();
+            ctx.fillRect(pt[0], pt[1], 3, 3);
+            //ctx.beginPath();
+            //ctx.arc(pt[0], pt[1], 2, 0, end, true);
+            //ctx.stroke();
+            //ctx.fill();
           } 
         }
       } 

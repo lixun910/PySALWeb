@@ -914,7 +914,7 @@ function ShpReader(src) {
         x = obj[0];
         y = obj[1];
         ptIdx = this.addPoint(x,y,shpIdx);
-        this.shapes.push(ptIdx);
+        shapes.push(ptIdx);
         
       }  else if (shpType === ShpType.POLYLINE || shpType === ShpType.POLYGON ||
         shpType === ShpType.MULTIPOINT || shpType === ShpType.POLYLINEM ||
@@ -1184,7 +1184,7 @@ ShpReader.getRecordClass = function(type) {
     read: function() {
       var n = 2;
       if (hasZ) n++;
-      if (this.hasM()) n++;
+      //if (this.hasM()) n++;
       return this._data().skipBytes(12).readFloat64Array(n);
     }
   };
