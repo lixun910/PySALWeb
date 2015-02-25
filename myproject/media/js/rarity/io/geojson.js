@@ -23,16 +23,17 @@ var GeoJSON = function(name, json, prj) {
   this.arcs = [];
   this.arc_dict = {};
   this.shapes = [];
- 
+
+  // number of non-duplicated points 
   this.nn = 0; 
-  this.aa = 0;
+  
   this.init();
- 
-      var points = [
-  [0, 1, 100],
+  
+  var pts = [[0, 1, 100],
   [-5, 0.11, Math.PI],
   [0, 10, -13]];
-      var tree = kdtree(points);
+  
+  var tree = kdtree(pts);
 };
 
 GeoJSON.translateGeoJSONType = function(type) {
@@ -61,13 +62,15 @@ GeoJSON.prototype = {
         return this.pt_dict[x][y];
       } else {
         this.points.push([x,y]);
-        this.pt_dict[x] = {y:this.nn};
+        this.pt_dict[x][y] = this.nn;
         return this.nn++;
       }
+    } else {
+      this.pt_dict[x] = {};
+      this.pt_dict[x][y] = this.nn;
+      this.points.push([x,y]);
+      return this.nn++;   
     }
-    this.pt_dict[x] = {y:this.nn}
-    this.points.push([x,y]);
-    return this.nn++;   
   },
   
   addArc : function(pt1, pt2, polyid) {
@@ -76,7 +79,8 @@ GeoJSON.prototype = {
     } else if (this.arc_dict[[pt2, pt1]]) {
       this.arc_dict[[pt2, pt1]][polyid] = null;
     } else {
-      this.arc_dict[[pt1, pt2]] = {polyid:null};
+      this.arc_dict[[pt1, pt2]] = {};
+      this.arc_dict[[pt1, pt2]][polyid] = null;
     }
   },
   
@@ -121,7 +125,7 @@ GeoJSON.prototype = {
             if (x < bminX) {bminX = x;}
             if (y > bmaxY) {bmaxY = y;}
             if (y < bminY) {bminY = y;}
-            ptIdx = this.addPoint(x, y);
+            ptIdx = this.addPoint(x, y, i);
             arc.push(ptIdx);
           }
           for (var k=0, nArc=arc.length; k<nArc-1;k++) {
@@ -152,7 +156,7 @@ GeoJSON.prototype = {
           if (x < bminX) {bminX = x;}
           if (y > bmaxY) {bmaxY = y;}
           if (y < bminY) {bminY = y;}
-          ptIdx = this.addPoint(x, y);
+          ptIdx = this.addPoint(x, y,i );
           arc.push(ptIdx);
         }
         for (var k=0, nArc=arc.length; k<nArc-1;k++) {
@@ -179,7 +183,7 @@ GeoJSON.prototype = {
           if (y > bmaxY) {bmaxY = y;}
           if (y < bminY) {bminY = y;}
           
-          ptIdx = this.addPoint(x, y);
+          ptIdx = this.addPoint(x, y, i);
           this.shapes.push(ptIdx);
       } 
       
@@ -195,11 +199,6 @@ GeoJSON.prototype = {
     this.extent = [minX, maxX, minY, maxY];
   },
 
-  kdtree : function() {
-    if (this.kdtree) return this.kdtree;
-    
-    
-  },
 };
 
 return GeoJSON;

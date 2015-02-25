@@ -69,14 +69,6 @@ var Utils = {
     return arr;
   },
 
-  reduce: function(arr, func, val, ctx) {
-    var len = arr && arr.length || 0;
-    for (var i = 0; i < len; i++) {
-      val = func.call(ctx, val, arr[i], i);
-    }
-    return val;
-  },
-
   mapFilter: function(src, func, ctx) {
     var isArray = Utils.isArrayLike(src),
         dest = [],
@@ -845,7 +837,15 @@ function ShpReader(src) {
   var header = parseHeader(file.readBytes(100, 0));
   var RecordClass = ShpReader.getRecordClass(header.type);
   var recordOffs = 100;
-
+  
+  var points = [];
+  var arcs = [];
+  var arc_dict = {};
+  var shapes = [];
+  var pt_dict = {};
+  var queen_dict = {};
+  var nn = 0;
+  
   this.header = function() {
     return header;
   };
@@ -855,14 +855,121 @@ function ShpReader(src) {
   };
 
   // return data as nested arrays of shapes > parts > points > [x,y(,z,m)]
-  this.read = function() {
+  this._read = function() {
     var shapes = [];
     this.forEachShape(function(shp) {
-      shapes.push(shp.isNull ? null : shp.read(format));
+      shapes.push(shp.isNull ? null : shp.read());
     });
+    
     return shapes;
   };
 
+  this.addPoint = function(x, y, polyid) {
+    if (queen_dict[[x,y]]) {
+      queen_dict[[x,y]][polyid] = null;
+    } else {
+      queen_dict[[x,y]] = {polyid:null};
+    }
+    
+    if (pt_dict[x]) {
+      if (pt_dict[x][y]) {
+        return pt_dict[x][y];
+      } else {
+        points.push([x,y]);
+        pt_dict[x][y] = nn;
+        return nn++;
+      }
+    } else {
+      pt_dict[x] = {};
+      pt_dict[x][y] = nn;
+      points.push([x,y]);
+      return nn++;   
+    }
+  };
+  
+  this.addArc = function(pt1, pt2, polyid) {
+    if (arc_dict[[pt1, pt2]]) {
+      arc_dict[[pt1, pt2]][polyid] = null;
+    } else if (arc_dict[[pt2, pt1]]) {
+      arc_dict[[pt2, pt1]][polyid] = null;
+    } else {
+      arc_dict[[pt1, pt2]] = {};
+      arc_dict[[pt1, pt2]][polyid] = null;
+    }
+  };
+  
+  this.read = function(prj) {
+    // check if already read
+    if (shapes.length > 0) return shapes;
+    
+    var shpType = this.type(),
+        shp,
+        obj,
+        shpIdx = 0,
+        x, y, ptIdx, nPts, arc, arcs;
+        
+    while (shp = this.nextShape() ) { 
+      obj = shp.read();
+      if (shpType === ShpType.POINT || shpType === ShpType.POINTZ || shpType === ShpType.POINTM ) {
+        x = obj[0];
+        y = obj[1];
+        ptIdx = this.addPoint(x,y,shpIdx);
+        this.shapes.push(ptIdx);
+        
+      }  else if (shpType === ShpType.POLYLINE || shpType === ShpType.POLYGON ||
+        shpType === ShpType.MULTIPOINT || shpType === ShpType.POLYLINEM ||
+        shpType === shpType.POLYLINEZ || shpType === ShpType.POLYGONM ||
+        shpType === shpType.MULIPOINTZ )  {
+  
+        arcs = [];     
+        for (var p=0; p < shp.partCount; p++)  {
+          arc = [];
+          part = obj[p];
+          nPts = part.length;
+          
+          for (var i=0; i<nPts; i++) {
+            x = part[i][0];
+            y = part[i][1];
+            ptIdx = this.addPoint(x,y,shpIdx);
+            arc.push(ptIdx);
+          }
+         
+          for (var i=0; i<nPts-1; i++)  {
+            this.addArc(arc[i], arc[i+1], shpIdx);
+          }
+          
+          if (shp.partCount <= 1) {
+            shapes.push(arc);
+          } else {
+            arcs.push(arc);
+          }
+        } 
+        if (shp.partCount > 1) {
+          shapes.push(arcs);
+        }
+      }      
+      shpIdx += 1;
+    } 
+    
+    return shapes;
+  };
+  
+  this.getQueenDict = function() {
+    if (this.queen_dict === undefined) {
+      var shp;
+      while (shp = this.shpReader.nextShape() ) { 
+        if (shpType == 1 || shpType == 11 || shpType == 21 || shpType == 28) {
+          this.shpTdype = 'Point'; 
+        } else if (shpType == 5 || shpType == 15 || shpType == 25) {
+          this.shpType = 'Polygon'; 
+        } else {
+          this.shpType = 'Line'; 
+        }
+      }
+    }
+    return this.queen_dict;
+  };
+  
   // Callback interface: for each record in a .shp file, pass a
   //   record object to a callback function
   //
@@ -991,7 +1098,8 @@ ShpReader.getRecordClass = function(type) {
       this.pointCount = 1;
       this.partCount = 1;
     } else {
-      bin.skipBytes(32); // skip bbox
+      //bin.skipBytes(32); // skip bbox
+      this.bbox = bin.readFloat64Array(4);
       this.partCount = hasParts ? bin.readUint32() : 1;
       this.pointCount = bin.readUint32();
     }

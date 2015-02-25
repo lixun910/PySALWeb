@@ -3,9 +3,12 @@ var isNode = false,
     baseUrl,
     paths;
 
+var fs;
+
 if (typeof module !== 'undefined' && module.exports) {
   // node.js
   isNode = true;
+  fs = require('fs')  ;
   require = require('requirejs');
   baseUrl = "../lib";
   paths = {
@@ -20,10 +23,14 @@ if (typeof module !== 'undefined' && module.exports) {
     rarity : 'rarity',
     jquery : 'lib/jquery.min',
     kdtree : 'lib/kdtree',
+    mapshaper: 'lib/mapshaper',
   };
   shim = {
     kdtree : {
       exports: 'kdtree'
+    },
+    mapshaper : {
+      exports: 'mapshaper'
     }
   };
 }
@@ -44,6 +51,37 @@ require.config({
   }
 });
  
+require(['jquery','rarity/io/shapefile','rarity/io/shapefile_map','rarity/viz/canvas_map', 'mapshaper'], function($, Shapefile, ShapefileMap, CanvasMap, MapShaper) {
+
+  if (isNode) {
+  } else {
+    //var test_url = "http://127.0.0.1:8000/xun/media/temp/029b61a54fefa098808afef66b2033a1/NAT.shp";
+    var test_url = "https://dl.dropboxusercontent.com/content_link/kzeXA0m0Z6tplf2Hy2C1NYfND38UPBKGDdsAQrf38M2f7H05CYUByP8lynQJpxYy?dl=1";
+    //var test_url = "http://127.0.0.1:8000/xun/media/temp/vouchers_short.shp";
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", test_url, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function(evt) {
+      console.time('shapefile');
+      var content = xhr.response;
+      var fname = "NAT.shp";
+      var type = "shp";
+      var opts = {
+        files: [fname],
+        precision: 0,
+        auto_snap: false,
+      };
+      //var data = MapShaper.importFileContent(content, type, opts);
+      //MapShaper.setLayerName(data.layers[0], fname);
+      console.timeEnd('shapefile');
+      //var map = new ShpMap(name, shp, L, lmap, prj);
+    };
+    xhr.send(null);
+  }
+});
+
+
+
 require(['jquery', 'rarity/io/geojson','rarity/io/geojson_map','rarity/viz/canvas_map'], 
 function($, GeoJSON, GeoJsonMap, CanvasMap) { 
   var json = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{"Name":"One","IValue":1,"FValue":1.1},"geometry":{"type":"Point","coordinates":[-0.0006817661753210358,-0.25904661905760773]}},
