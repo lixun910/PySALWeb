@@ -55,7 +55,7 @@ require(['jquery','rarity/io/shapefile','rarity/io/shapefile_map','rarity/viz/ca
 
   if (isNode) {
   } else {
-    var test_url = "https://webpool.csf.asu.edu/xun/media/temp/029b61a54        fefa098808afef66b2033a1/pubhsg_short.shp";
+    var test_url = "https://webpool.csf.asu.edu/xun/media/temp/029b61a54fefa098808afef66b2033a1/pubhsg_short.shp";
     var xhr = new XMLHttpRequest();
     xhr.open("GET", test_url, true);
     xhr.responseType = 'arraybuffer';
