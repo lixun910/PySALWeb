@@ -14462,7 +14462,11 @@ C.VERBOSE = false;
 
 if (typeof define === "function" && define.amd) {
   //define("mapshaper", api);
-  define("mapshaper", MapShaper);
+  define({
+    "MapShaper": MapShaper, 
+    "geom":geom,
+    "Bounds":Bounds,
+  });
 } else if (typeof module === "object" && module.exports) {
   module.exports = api;
 }

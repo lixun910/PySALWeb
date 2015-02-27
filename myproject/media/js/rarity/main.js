@@ -21,9 +21,11 @@ if (typeof module !== 'undefined' && module.exports) {
   baseUrl = "../media/js";
   paths = {
     rarity : 'rarity',
+    rtree : 'rtree',
     jquery : 'lib/jquery.min',
     kdtree : 'lib/kdtree',
     mapshaper: 'lib/mapshaper',
+    proj4: 'lib/proj4',
   };
   shim = {
     kdtree : {
@@ -31,6 +33,12 @@ if (typeof module !== 'undefined' && module.exports) {
     },
     mapshaper : {
       exports: 'mapshaper'
+    },
+    proj4 : {
+      exports: 'proj4'
+    }
+    rtree : {
+      exports : 'RTree'
     }
   };
 }
@@ -44,42 +52,34 @@ require.config({
   //never includes a ".js" extension since
   //the paths config could be for a directory.
   paths: paths,
-  shim : {
-    "lib/static-kdtree" : {
-      exports : "kdtree"
-    }
-  }
+  shim : shim,
 });
  
-require(['jquery','rarity/io/shapefile','rarity/io/shapefile_map','rarity/viz/canvas_map', 'mapshaper'], function($, Shapefile, ShapefileMap, CanvasMap, MapShaper) {
+require(['jquery','rarity/viz/shape_map','rarity/viz/canvas_map', 'mapshaper', 'proj4'], function($, ShapeMap, MapCanvas, mapshaper, Proj4) {
 
   if (isNode) {
   } else {
     var test_url = "https://webpool.csf.asu.edu/xun/media/temp/029b61a54fefa098808afef66b2033a1/pubhsg_short.shp";
+    var test_url = "http://127.0.0.1:8000/xun/media/temp/029b61a54fefa098808afef66b2033a1/man_road.shp";
+    var test_url = "http://127.0.0.1:8000/xun/media/temp/029b61a54fefa098808afef66b2033a1/man_points.shp";
+    var test_url = "http://127.0.0.1:8000/xun/media/temp/029b61a54fefa098808afef66b2033a1/NAT.shp";
     var xhr = new XMLHttpRequest();
     xhr.open("GET", test_url, true);
     xhr.responseType = 'arraybuffer';
     xhr.onload = function(evt) {
-      console.time('shapefile');
       var content = xhr.response;
-      var fname = "NAT.shp";
-      var type = "shp";
-      var opts = {
-        files: [fname],
-        precision: 0,
-        auto_snap: false,
-      };
-      var data = MapShaper.importFileContent(content, type, opts);
-      MapShaper.setLayerName(data.layers[0], fname);
-      console.timeEnd('shapefile');
-      //var map = new ShpMap(name, shp, L, lmap, prj);
-      var shp = new Shapefile(xhr.response);
-      console.time('__shapefile');
-      shp.read();
-      console.timeEnd('__shapefile');
-      console.time('_shapefile');
-      shp._read();
-      console.timeEnd('_shapefile');
+      
+      var prj_data = 'PROJCS["NAD83_New_York_East_ftUS",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137,298.257222101]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38.83333333333334],PARAMETER["central_meridian",-74.5],PARAMETER["scale_factor",0.9999],PARAMETER["false_easting",492125],PARAMETER["false_northing",0],UNIT["Foot_US",0.30480060960121924]]'; 
+      var prj = Proj4(prj_data, Proj4.defs('WGS84'));
+     
+      var shape_map = new ShapeMap(test_url, content, prj);
+      
+      
+      var canvas = $('#map');
+      var hlcanvas = $('#hlmap');
+      var mapCanvas = new MapCanvas(shape_map, canvas, hlcanvas);
+      
+      //topojson = mapshaper.MapShaper.exportTopoJSON(data, opts);
     };
     xhr.send(null);
   }
@@ -105,7 +105,7 @@ function($, GeoJSON, GeoJsonMap, CanvasMap) {
   
   var canvas = $('#map');
   var hlcanvas = $('#hlmap');
-  var mapCanvas = new CanvasMap(jsonMap, canvas, hlcanvas);
+  //var mapCanvas = new CanvasMap(jsonMap, canvas, hlcanvas);
 }); 
   
 require(['jquery', 'rarity/io/topojson_map', 'rarity/viz/canvas_map'], 

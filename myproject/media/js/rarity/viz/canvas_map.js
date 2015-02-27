@@ -219,7 +219,7 @@ MapCanvas.prototype = {
     } 
   
     if (ids.length > 0) {
-      var screenObjs = this.map.screenObjects; 
+      var screenObjs = this.map.shapes; 
       var colors = {};
       //colors["rgba(255,255,0,0.7)"] = ids;
       var imageObj = new Image();
@@ -481,55 +481,61 @@ MapCanvas.prototype = {
       }
     }
   },
+ 
+  drawArcs : function(ctx, arcs)  {
+    var cnt = 0,
+        x, y,
+        iter, arcs, arcId;
+    for (var i=0, n=arcs.length; i<n; i++) {
+      arcId = arcs[i];
+      iter = this.map.arcs.getArcIter(arcId);
+      while (iter.hasNext()) {
+        if (cnt === 0) {
+          x = iter.x;
+          y = iter.y;
+          ctx.moveTo(x, y);
+        } else {
+          if ( x !== iter.x || y !== iter.y ) {
+            ctx.lineTo(x, y);
+            x = iter.x;
+            y = iter.y;
+          }
+        }
+        cnt++;
+      }
+    }
+  },
   
   drawLines: function( ctx, lines, colors ) {
     if ( lines == undefined || lines.length == 0 )
       return;
+    var arcs, arc, parts;
     if ( colors == undefined ) { 
       ctx.beginPath();
-      for ( var i=0, n=lines.length; i<n; i++ ) {
-        var obj = lines[i];
-        if ( Array.isArray(obj[0][0]) ) {
-          // multi parts 
-          for ( var j=0, nParts=obj.length; j<nParts; j++ ) {
-            ctx.moveTo(obj[j][0][0], obj[j][0][1]);
-            for ( var k=1, nPoints=obj[j].length; k<nPoints; k++) {
-              var x = obj[j][k][0], y = obj[j][k][1];
-              ctx.lineTo(x, y);
-            }
-          }
-        } else {
-          ctx.moveTo(obj[0][0], obj[0][1]);
-          for ( var k=1, nPoints=obj.length; k<nPoints; k++) {
-            var x = obj[k][0], y = obj[k][1];
-            ctx.lineTo(x, y);
-          }
+      for (var i=0, n=lines.length; i<n; i++) {
+        parts = lines[i];
+        for (var j=0,m=parts.length; j<m;j++) {
+          arcs = parts[j];
+          this.drawArcs( ctx, arcs);
         }
-      } 
+      }
+      if (this.shpType === "POLYGON") ctx.fill();
       ctx.stroke();
     } else {
+      var ids;
       for ( var c in colors ) {
-        var ids = colors[c];
+        ids = colors[c];
         ctx.strokeStyle = c;
+        
         for ( var i=0, n=ids.length; i< n; ++i) {
           ctx.beginPath();
-          var obj = lines[ids[i]];
-          if ( Array.isArray(obj[0][0]) ) {
-            // multi parts 
-            for ( var j=0, nParts=obj.length; j<nParts; j++ ) {
-              ctx.moveTo(obj[j][0][0], obj[j][0][1]);
-              for ( var k=1, nPoints=obj[j].length; k<nPoints; k++) {
-                var x = obj[j][k][0], y = obj[j][k][1];
-                ctx.lineTo(x, y);
-              }
-            }
-          } else {
-            ctx.moveTo(obj[0][0], obj[0][1]);
-            for ( var k=1, nPoints=obj.length; k<nPoints; k++) {
-              var x = obj[k][0], y = obj[k][1];
-              ctx.lineTo(x, y);
-            }
+          parts = lines[ids[i]];
+          
+          for (var i=0,n=parts.length; i<n;i++) {
+            arcs = parts[i];
+            this.drawArc(ctx, arcs);
           }
+          if (this.shpType === "POLYGON") ctx.fill();
           ctx.stroke();
         }
       }
@@ -537,27 +543,42 @@ MapCanvas.prototype = {
   },
   
   drawPoints: function( ctx, points, colors ) {
-    var end = 2*Math.PI;
+    var end = 2*Math.PI,
+        draw_dict = {},
+        part, pt;
+    
     if ( colors == undefined ) { 
       for ( var i=0, n=points.length; i<n; i++ ) {
-        var pt = points[i];
-        //ctx.fillRect(pt[0], pt[1], 3, 3);
-        ctx.beginPath();
-        ctx.arc(pt[0], pt[1], 2, 0, end, true);
-        ctx.stroke();
-        ctx.fill();
+        part = points[i];
+        for (var j=0, m=part.length; j<m; j++) {
+          //ctx.fillRect(pt[0], pt[1], 3, 3);
+          pt = part[0];
+          if (draw_dict[pt] === undefined) {
+            ctx.beginPath();
+            ctx.arc(pt[0], pt[1], 2, 0, end, true);
+            ctx.stroke();
+            ctx.fill();
+            draw_dict[pt] = null;
+          }
+        }
       } 
     } else {
       for ( var c in colors ) {
         ctx.fillStyle = c;
         var ids = colors[c];
         for ( var i=0, n=ids.length; i< n; ++i) {
-          var pt = points[ids[i]];
-          //ctx.fillRect(pt[0], pt[1], 3, 3);
-          ctx.beginPath();
-          ctx.arc(pt[0], pt[1], 2, 0, end, true);
-          ctx.stroke();
-          ctx.fill();
+          part = points[ids[i]];
+          for (var j=0, m=part.length; j<m; j++) {
+            //ctx.fillRect(pt[0], pt[1], 3, 3);
+            pt = part[0];
+            if (draw_dict[pt] === undefined) {
+              //ctx.fillRect(pt[0], pt[1], 3, 3);
+              ctx.beginPath();
+              ctx.arc(pt[0], pt[1], 2, 0, end, true);
+              ctx.stroke();
+              ctx.fill();
+            }
+          }
         } 
       }
     } 
@@ -568,12 +589,14 @@ MapCanvas.prototype = {
     ctx.imageSmoothingEnabled= false;
     ctx.lineWidth = this.STROKE_WIDTH;
     ctx.globalAlpha = this.ALPHA;
+    var shpType = this.shpType,
+        map = this.map;
     
-    if (this.shpType == "LINESTRING" || this.shpType == "LINE") {
+    if (shpType === "POLYLINE" || shpType === "LINESTRING" || shpType === "LINE") {
       ctx.strokeStyle = fillColor ? fillColor : this.FILL_CLR;
       ctx.lineWidth = lineWidth ? lineWidth: this.STROKE_WIDTH;
       
-    } else if (this.shpType == "POLYGON" || this.shpType == "MULTIPOLYGON") {
+    } else if (shpType === "POLYGON" || shpType === "MULTIPOLYGON") {
       ctx.strokeStyle = strokeColor ? strokeColor : this.STROKE_CLR;
       ctx.fillStyle = fillColor ? fillColor : this.FILL_CLR;
       
@@ -583,20 +606,20 @@ MapCanvas.prototype = {
       
     }
     
-    if (this.shpType == "POLYGON" || this.shpType == "MULTIPOLYGON" ) {
-      this.drawPolygons( ctx, this.map.screenObjects, colors) ;
+    if (shpType === "POLYGON" || shpType === "MULTIPOLYGON" ) {
+      this.drawLines( ctx, map.shapes, colors) ;
       
-    } else if (this.shpType == "POINT" || this.shpType == "MULTIPOINT") {
+    } else if (shpType === "POINT" || shpType === "MULTIPOINT") {
       if ( this.heatmap == true) {
         // test heatmap
         var hm = new Canvas2dRenderer(this.buffer);
-        hm.renderAll(this.map.screenObjects);
+        hm.renderAll(map.shapes);
         this.heatmap = false;
       }
-      this.drawPoints( ctx, this.map.screenObjects, colors) ;
+      this.drawPoints( ctx, map.shapes, colors) ;
       
-    } else if (this.shpType == "LINE" || this.shpType == "LINESTRING") {
-      this.drawLines( ctx, this.map.screenObjects, colors) ;
+    } else if (shpType === "POLYLINE" || shpType === "LINE" || shpType === "LINESTRING") {
+      this.drawLines( ctx, map.shapes, colors) ;
       
     }
     ctx.globalAlpha = 1;
@@ -626,7 +649,7 @@ MapCanvas.prototype = {
       var c = this.FILL_CLR;
       colors[c] = ids;
     }
-    var screenObjs = this.map.screenObjects; 
+    var screenObjs = this.map.shapes; 
     if (this.shpType == "POLYGON" || this.shpType == "MULTIPOLYGON") {
       this.drawPolygons( ctx, screenObjs, colors);
     } else if (this.shpType == "POINT" || this.shpType == "MULTIPOINT") {
