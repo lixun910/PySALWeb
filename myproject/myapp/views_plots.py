@@ -39,7 +39,7 @@ def histogram(request):
             if var_x:
                 data = GeoDB.GetTableData(str(layer_uuid), [var_x])
                 x = data[var_x]
-                results = {"x": x, "x_name": var_x,}
+                results = {var_x: x}
                 return HttpResponse(
                     json.dumps(results), 
                     content_type="application/json"
@@ -63,10 +63,8 @@ def scatter_plot(request):
             x = data[var_x]
             y = data[var_y]
             results = {
-                "x": x,
-                "y": y,
-                "x_name": var_x,
-                "y_name": var_y,
+                var_x: x,
+                var_y: y,
             }
             return HttpResponse(
                 json.dumps(results), 
@@ -94,10 +92,8 @@ def moran_scatter_plot(request):
             y_lag_z = (y_lag - y_lag.mean()) / y_lag.std()
             
             results = {
-                "x_name": var_x,
-                "y_name": 'lagged (%s)' %var_x,
-                'x' : y_z.tolist(),
-                'y' : y_lag_z.tolist(),
+                var_x : y_z.tolist(),
+                'lagged' : y_lag_z.tolist(),
             }
             return HttpResponse(
                 json.dumps(results), 

@@ -1,6 +1,6 @@
 // Author: xunli at asu.edu
 
-define( ["./topojson", "../weights/weights"], function(TopoJSON, W) {
+define( ["./topojson", "../weights/w"], function(TopoJSON, W) {
 
 var TopoJsonMap = function(name, topology, LL, Lmap, prj) {
   // "type" : "Topology",

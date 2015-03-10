@@ -40,12 +40,7 @@ svg {
 }
 
 </style>
-<script src="../media/js/jquery.min.js"></script>
-<script src="../media/js/jquery-ui-1.10.4.custom.min.js"></script>
-<script src="../media/js/simple_statistics.js"></script>
-<script src="../media/js/d3.v3.min.js" charset="utf-8"></script>
-<script src="../media/js/utils.js" charset="utf-8"></script>
-<script src="../media/js/colorbrewer.js" charset="utf-8"></script>
+<script src="../media/js/require.js" charset="utf-8"></script>
 </head>
 <body>
 <div id="container"> 
@@ -54,147 +49,183 @@ svg {
 </div>
 <script>
 
-var colors = colorbrewer.Paired[10];
-var uuid = getParameterByName('uuid'),
-    fieldX = getParameterByName('x');
-var points = [];
-    
-var margin = {top: 15, right: 30, bottom: 30, left: 50},
-    screenW = parseInt(d3.select("#container").style("width")),
-    screenH = parseInt(d3.select("#container").style("height")),
-    width = screenW - margin.left - margin.right,
-    height = screenH - margin.top - margin.bottom;
-    
-var xMin, xMax, xExt;
 
-var brushX = d3.scale.identity().domain([0, width]),
-    brushY = d3.scale.identity().domain([0, height]);
-
-var graph = d3.select("#graph")
-    .attr("width", screenW)
-    .attr("height", screenH)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-  
-var x, y, data, xAxis, yAxis, results, numbins, barWidth;
-
-$.get('../myapp/histogram/',{'layer_uuid' : uuid, 'var_x' : fieldX}).done(function(json){
-
-  results = json;
-  
-  for (var i=0, n = results.x.length; i < n; i++ ) {
-    var x = results.x[i];
-    if ( i == 0 ) {
-      xMin = x;
-      xMax = x;
-    } else {
-      if ( x < xMin) xMin = x;
-      if ( x > xMax) xMax = x;
+require.config({
+    baseUrl: '../media/js',
+    paths: {
+        jquery: './lib/jquery.min',
+        d3: './lib/d3.v3.min',
+        colorbrewer  : './lib/colorbrewer',
+    },
+    shim : {
+      d3 : {exports : 'd3'},
+      colorbrewer: {exports : "colorbrewer"},
     }
-  }
-
-  x = d3.scale.linear()
-    .domain([xMin, xMax])
-    .range([0, width]);
-
-  // Generate a histogram using twenty uniformly-spaced bins.
-  data = d3.layout.histogram()
-    .bins(x.ticks(10))
-    (results.x);
-
-  numbins = data.length;
-  barWidth = (width-10)/numbins - 1;
-
-  y = d3.scale.linear()
-    .domain([0, d3.max(data, function(d) { return d.y; })])
-    .range([height, 0]);
-    
-  xAxis = d3.svg.axis()
-      .scale(x)
-      .orient("bottom");
-
-  yAxis = d3.svg.axis()
-      .scale(y)
-      .orient("left");
-      
-  var bar = graph.selectAll(".bar")
-      .data(data)
-    .enter().append("g")
-      .attr("class", "bar")
-      .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
-
-  console.log(x(data[0].dx));
-  console.log(x(data[1].dx));
-  
-  bar.append("rect")
-      .attr("x", 1)
-      .attr("width", barWidth)
-      .attr("height", function(d) { return height +2 - y(d.y) ; })
-      .style('fill', function(d,i) {return colors[i%10];});
-
-  bar.append("text")
-      .attr("y", 0) 
-      .attr("x", x(data[0].dx) / 2)
-      .attr("text-anchor", "middle")
-      .text(function(d) { return d.y; });
-
-  graph.append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0," + (parseInt(height) + 10) +  ")")
-      .call(xAxis);
-      
-  graph.append("g")
-      .attr("class", "y axis")
-      .call(yAxis);
 });
 
-var OnResize = function(evt) {
+require(["./ui/cartoProxy","./ui/utils", 'colorbrewer', 'd3'],
+function(CartoProxy,Utils, colorbrewer, d3){
 
-  screenW = parseInt(d3.select("#graph").style("width"));
-  screenH = parseInt(d3.select("#graph").style("height"));
+  console.log(this.window, CartoProxy, colorbrewer, d3);
   
-  width = screenW - margin.left - margin.right;
-  height = screenH - margin.top- margin.bottom;
+  var colors = colorbrewer.Paired[10];
   
-  x = d3.scale.linear()
-    .domain([xMin, xMax])
-    .range([0, width]);
-    
-  barWidth = width/numbins - 1;
-    
-  y = d3.scale.linear()
-    .domain([0, d3.max(data, function(d) { return d.y; })])
-    .range([height, 0]);
-    
-  xAxis = d3.svg.axis()
-      .scale(x)
-      .orient("bottom");
-
-  yAxis = d3.svg.axis()
-      .scale(y)
-      .orient("left");
+  var uuid = Utils.getParameterByName('uuid'),
+      table_name = Utils.getParameterByName('table_name'),
+      carto_uid = Utils.getParameterByName('carto_uid'),
+      carto_key = Utils.getParameterByName('carto_key'),
+      var_x = Utils.getParameterByName('x');
       
-  graph.select('.x.axis')
-    .attr("transform", "translate(0," + (height+10) + ")")
-    .call(xAxis);
-
-  graph.select('.y.axis')
-      .call(yAxis);
+  var points = [];
       
-  graph.selectAll('.bar')
-      .data(data)
-      .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
-
-  graph.selectAll('rect')    
-      .attr("width", barWidth)
-      .attr("height", function(d) { return height +2 - y(d.y) ; });
-    
-  graph.selectAll('text')
-      .attr("x", x(data[0].dx) / 2);
+  var margin = {top: 15, right: 30, bottom: 30, left: 50},
+      screenW = parseInt(d3.select("#container").style("width")),
+      screenH = parseInt(d3.select("#container").style("height")),
+      width = screenW - margin.left - margin.right,
+      height = screenH - margin.top - margin.bottom;
+      
+  var xMin, xMax, xExt;
   
-};
-
-window.addEventListener("resize", OnResize);
+  var brushX = d3.scale.identity().domain([0, width]),
+      brushY = d3.scale.identity().domain([0, height]);
+  
+  var graph = d3.select("#graph")
+      .attr("width", screenW)
+      .attr("height", screenH)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+  var x, y, data, xAxis, yAxis, results, numbins, barWidth;
+  
+  var ProcessData = function(var_x, data) {  
+    var results = data[var_x];
+    
+    for (var i=0, n = results.length; i < n; i++ ) {
+      var x = results[i];
+      if ( i == 0 ) {
+        xMin = x;
+        xMax = x;
+      } else {
+        if ( x < xMin) xMin = x;
+        if ( x > xMax) xMax = x;
+      }
+    }
+  
+    x = d3.scale.linear()
+      .domain([xMin, xMax])
+      .range([0, width]);
+  
+    // Generate a histogram using twenty uniformly-spaced bins.
+    data = d3.layout.histogram()
+      .bins(x.ticks(10))
+      (results);
+  
+    numbins = data.length;
+    barWidth = (width-10)/numbins - 1;
+  
+    y = d3.scale.linear()
+      .domain([0, d3.max(data, function(d) { return d.y; })])
+      .range([height, 0]);
+      
+    xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+  
+    yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+        
+    var bar = graph.selectAll(".bar")
+        .data(data)
+      .enter().append("g")
+        .attr("class", "bar")
+        .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+  
+    console.log(x(data[0].dx));
+    console.log(x(data[1].dx));
+    
+    bar.append("rect")
+        .attr("x", 1)
+        .attr("width", barWidth)
+        .attr("height", function(d) { return height +2 - y(d.y) ; })
+        .style('fill', function(d,i) {return colors[i%10];});
+  
+    bar.append("text")
+        .attr("y", 0) 
+        .attr("x", x(data[0].dx) / 2)
+        .attr("text-anchor", "middle")
+        .text(function(d) { return d.y; });
+  
+    graph.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + (parseInt(height) + 10) +  ")")
+        .call(xAxis);
+        
+    graph.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+  };
+  
+  var OnResize = function(evt) {
+  
+    screenW = parseInt(d3.select("#graph").style("width"));
+    screenH = parseInt(d3.select("#graph").style("height"));
+    
+    width = screenW - margin.left - margin.right;
+    height = screenH - margin.top- margin.bottom;
+    
+    x = d3.scale.linear()
+      .domain([xMin, xMax])
+      .range([0, width]);
+      
+    barWidth = width/numbins - 1;
+      
+    y = d3.scale.linear()
+      .domain([0, d3.max(data, function(d) { return d.y; })])
+      .range([height, 0]);
+      
+    xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+  
+    yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+        
+    graph.select('.x.axis')
+      .attr("transform", "translate(0," + (height+10) + ")")
+      .call(xAxis);
+  
+    graph.select('.y.axis')
+        .call(yAxis);
+        
+    graph.selectAll('.bar')
+        .data(data)
+        .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+  
+    graph.selectAll('rect')    
+        .attr("width", barWidth)
+        .attr("height", function(d) { return height +2 - y(d.y) ; });
+      
+    graph.selectAll('text')
+        .attr("x", x(data[0].dx) / 2);
+    
+  };
+  
+  this.window.addEventListener("resize", OnResize);
+  
+  if (table_name)  {
+    CartoProxy.SetUID(carto_uid);
+    CartoProxy.SetKey(carto_key);
+    CartoProxy.GetVariables(table_name, [var_x], function(data){
+      ProcessData(var_x, data);
+    });
+  } else if (uuid) {
+    $.get('../myapp/histogram/', {'layer_uuid': uuid, 'var_x' : var_x}).done(function(data){
+      ProcessData(var_x, data);
+    });
+  }
+});
 
 </script>
 </body>

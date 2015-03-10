@@ -1,3 +1,45 @@
+var isNode = false,
+    baseUrl,
+    paths;
+
+var fs;
+
+if (typeof module !== 'undefined' && module.exports) {
+  // node.js
+  isNode = true;
+} else {  
+  // browsers:
+  baseUrl = "../../media/js";
+  paths = {
+    geoda: 'geoda',
+    rtree : 'lib/rtree',
+    //jquery : 'lib/jquery.min',
+    kdtree : 'lib/kdtree',
+    mapshaper: 'lib/mapshaper',
+    //proj4: 'lib/proj4',
+    //d3: 'lib/d3.v3.min'
+  };
+  shim = {
+    kdtree : {exports: 'kdtree'},
+    mapshaper : {exports: 'mapshaper'},
+    //proj4 : {exports: 'proj4'},
+    rtree : {exports : 'RTree'},
+    //d3 : {exports : 'd3'},
+  };
+}
+
+require.config({ 
+  //By default load any module IDs from ../media/js/rarity
+  baseUrl: baseUrl,
+  //except, if the module ID starts with "app",
+  //load it from the ../media/js/app directory. paths
+  //config is relative to the baseUrl, and
+  //never includes a ".js" extension since
+  //the paths config could be for a directory.
+  paths: paths,
+  shim : shim,
+});
+
 
 var carto_uid, carto_key, carto_layer,
     lmap, uuid,  
@@ -1824,8 +1866,7 @@ $(document).ready(function() {
   // init Spreg dialg: tabs
   $( "#y_catalog" ).accordion();
   $( "#x_catalog" ).accordion();
-  $( "#w_catalog_model" ).accordion();
-  $( "#w_catalog_kernel" ).accordion();
+
   $( "#vars ul li" ).draggable({ helper: "clone"});
   $( ".drop_box ol li" ).dblclick(function() {});
   $( ".drop_box ol" ).droppable({

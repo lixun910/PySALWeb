@@ -264,7 +264,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   float: right;
   right: 20px;
   margin-top: 2px;
-  background-image: url("../img/switch-on.png") no-repeat;
+  background: url("../img/switch-on.png") no-repeat;
 }
 .leaf-name {
   margin-left: 8px !important;
@@ -449,6 +449,7 @@ th {
 }
 td { 
   text-align: left;
+  height: 20px;
 }
 .custom-combobox { 
   position: relative; 
@@ -480,13 +481,6 @@ td {
 .ui-widget-overlay { 
   background: #eee repeat-x; 
   opacity: .8;
-}
-table { 
-  border-spacing: 0;
-}
-th { 
-  text-align: left; 
-  padding: 10px 0 10px 0; 
 }
 h1 { 
   padding: .2em; 
@@ -535,12 +529,7 @@ ol li:hover {
   width: 90%;
 }
 #w_catalog_model {
-  width: 48%; 
-  float: left;
-}
-#w_catalog_kernel {
-  width: 50%; 
-  float: right;
+  width: 100%; 
 }
 #model_spec { 
   width: 600px; 
@@ -572,6 +561,9 @@ ol li:hover {
 #x_box ol {
   height: 215px;
 }
+#model-weights-plugin, #kernel-weights-plugin {
+  height: 200px;
+}
 #estimation { 
   width: 600px; 
   margin-right: 2em; 
@@ -581,7 +573,7 @@ ol li:hover {
 .est_tab { 
   border: 1px #bbb solid; 
   border-radius:5px; 
-  width: 32%; 
+  width: 30%; 
   height: 120px; 
   float: left; 
   margin: 15px 1px 0 0; 
@@ -589,7 +581,7 @@ ol li:hover {
 }
 .est_tab p { 
   margin: -5px 0 5px 5px; 
-  background-color: white; 
+  background-color: ; 
   width: 100px; 
   text-align:center; 
   font-weight: bold;

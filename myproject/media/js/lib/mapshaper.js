@@ -2,15 +2,15 @@
 
 var Env = (function() {
   var inNode = typeof module !== 'undefined' && !!module.exports;
-  var inPhantom = !inNode && !!(window.phantom && window.phantom.exit);
+  var inPhantom = false;//!inNode && !!(window.phantom && window.phantom.exit);
   var inBrowser = !inNode; // phantom?
-  var ieVersion = inBrowser && /MSIE ([0-9]+)/.exec(navigator.appVersion) && parseInt(RegExp.$1) || NaN;
+  var ieVersion = false;//inBrowser && /MSIE ([0-9]+)/.exec(navigator.appVersion) && parseInt(RegExp.$1) || NaN;
 
   return {
-    iPhone : inBrowser && !!(navigator.userAgent.match(/iPhone/i)),
-    iPad : inBrowser && !!(navigator.userAgent.match(/iPad/i)),
-    touchEnabled : inBrowser && ("ontouchstart" in window),
-    canvas: inBrowser && !!document.createElement('canvas').getContext,
+    iPhone : false,//inBrowser && !!(navigator.userAgent.match(/iPhone/i)),
+    iPad : false,//inBrowser && !!(navigator.userAgent.match(/iPad/i)),
+    touchEnabled : false,//inBrowser && ("ontouchstart" in window),
+    canvas: inBrowser, // && !!document.createElement('canvas').getContext,
     inNode : inNode,
     inPhantom : inPhantom,
     inBrowser: inBrowser,
@@ -8348,6 +8348,24 @@ TopoJSON.forEachArc = function forEachArc(obj, cb) {
 
 
 
+TopoJSON.decodePoints = function(shapes, transform) {
+  var mx = transform.scale[0],
+      my = transform.scale[1],
+      bx = transform.translate[0],
+      by = transform.translate[1];
+
+  Utils.forEach(shapes, function(pt) {
+    var x, y,xy;
+    xy = pt.coordinates;
+    x = xy[0];
+    y = xy[1];
+    xy[0] = x * mx + bx;
+    xy[1] = y * my + by;
+  });
+};
+
+
+
 TopoJSON.decodeArcs = function(arcs, transform) {
   var mx = transform.scale[0],
       my = transform.scale[1],
@@ -9197,8 +9215,15 @@ MapShaper.importTopoJSON = function(topology, opts) {
     }
 
     arcs = new ArcCollection(topology.arcs);
+    
+  } else {
+    // decode points if needed
+    if (topology.transform && topology.transform.scale && topology.transform.translate) {
+      TopoJSON.decodePoints(topology.objects, topology.transform);
+    }
   }
 
+  /*
   Utils.forEach(topology.objects, function(object, name) {
     var lyr = TopoJSON.importObject(object, opts);
 
@@ -9209,7 +9234,25 @@ MapShaper.importTopoJSON = function(topology, opts) {
     lyr.name = name;
     layers.push(lyr);
   });
+  */
+   
+  var shapes = []; 
+  var geometry_type;
+  
+  Utils.forEach(topology.objects, function(object, name) {
+    var lyr = TopoJSON.importObject(object, opts);
 
+    if (MapShaper.layerHasPaths(lyr)) {
+      MapShaper.cleanShapes(lyr.shapes, arcs, lyr.geometry_type);
+    }
+
+    shapes.push(lyr.shapes[0]);
+    geometry_type = lyr.geometry_type;
+    
+  });
+ 
+  layers.push( {'geometry_type':geometry_type, 'shapes':shapes});
+  
   var dataset = {
     layers: layers,
     arcs: arcs,
@@ -14466,6 +14509,7 @@ if (typeof define === "function" && define.amd) {
     "MapShaper": MapShaper, 
     "geom":geom,
     "Bounds":Bounds,
+    "ShapefileTable":ShapefileTable,
   });
 } else if (typeof module === "object" && module.exports) {
   module.exports = api;

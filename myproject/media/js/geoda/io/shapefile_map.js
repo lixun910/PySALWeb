@@ -198,9 +198,6 @@ ShpMap.prototype = {
     return [px, py];
   },
   
-  createContiguityWeights : function() {
-    
-  },
 };
 
 return ShpMap;

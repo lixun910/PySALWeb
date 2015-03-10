@@ -27,6 +27,7 @@ from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks, Moran
 from pysal import open as pysalOpen
 import GeoDB
 from network_cluster import NetworkCluster
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -386,6 +387,70 @@ def thematic_map(request):
                         "layer_uuid":layer_uuid,
                         "col_name" : col_name,
                         "method" : method,
+                        "bins": bins if isinstance(bins, list) else bins.tolist(),
+                        "id_array": id_array,
+                    }
+                    return HttpResponse(
+                        json.dumps(results), 
+                        content_type="application/json"
+                    )
+        except:
+            pass
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+    
+
+@login_required
+def d_thematic_map(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        var = request.GET.get("var", "")
+        table_name = request.GET.get("table_name", "")
+        method = request.GET.get("method","")
+        k = request.GET.get("k",0)
+        carto_uid = request.GET.get("carto_uid","")
+        carto_key = request.GET.get("carto_key","")
+        
+        try:
+            sql = 'select %s from %s' % (var, table_name)
+            url = 'https://%s.cartodb.com/api/v1/sql' % carto_uid
+            params = {
+                'format': 'csv' ,
+                'api_key': carto_key,
+                'q': sql,
+            }
+            r = requests.get(url, params=params, verify=False)
+            if r.ok == True:
+                y = []
+                content = r.content 
+                rows = content.split("\r\n")
+                for row in rows[1:]:
+                    if row != "":
+                        y.append(float(row))
+                    
+                k = int(k)
+                pysalFunc = None
+                if method == "quantile":
+                    pysalFunc = Quantiles
+                elif method == "equal interval":
+                    pysalFunc = Equal_Interval
+                elif method == "natural breaks":
+                    pysalFunc = Natural_Breaks
+                elif method == "fisher jenks":
+                    pysalFunc = Fisher_Jenks
+                if pysalFunc: 
+                    q = pysalFunc(np.array(y), k=k)    
+                    bins = q.bins
+                    id_array = []
+                    for i, upper in enumerate(bins):
+                        if i == 0: 
+                            id_array.append([j for j,v in enumerate(y) if v <= upper])
+                        else:
+                            id_array.append([j for j,v in enumerate(y) \
+                                             if bins[i-1] < v <= upper])
+                    results = {
+                        "k": len(bins),
                         "bins": bins if isinstance(bins, list) else bins.tolist(),
                         "id_array": id_array,
                     }
