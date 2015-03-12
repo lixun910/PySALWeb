@@ -62,10 +62,13 @@ var LayerTree = (function($) {
         for (var i=layers.length-1; i>=0; i--) {
           layer_ids.push(parseInt(layers[i].id));
         }
-        // todo
-        //gViz.UpdateLayerOrder(layer_ids);
-        //var meta_data = gViz.GetMapMeta();
-        //InitDialogs(meta_data);
+        
+        require(['ui/mapManager','ui/uiManager'], function(MapManager, UIManager){
+          var mapManager = MapManager.getInstance();
+          mapManager.Reorder(layer_ids);
+          var map = mapManager.GetMap();
+          UIManager.getInstance().UpdateFieldNames(map.fields);
+        });
       }
     });
 

@@ -68,7 +68,7 @@ function($, LayerTree, Toolbar, UIManager, MsgBox,  CartoProxy, FileDlg, MapMana
   var uid = "lixun910";
   var key = "340808e9a453af9680684a65990eb4eb706e9b56";
   
-  CartoProxy.GetVariables(uid, key, "natregimes", ["hr60","hr70"], function(data) {
+  CartoProxy.GetVariables(uid, key, "natregimes", ["hr60","hr70"], true, function(data) {
     console.log(data);
   });
   

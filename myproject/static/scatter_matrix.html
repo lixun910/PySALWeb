@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../media/css/jquery-ui.css">
+<link rel="stylesheet" href="../media/css/plots.css">
+<style>
+
+svg{
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  font-size: 14px;
+}
+canvas{
+  position: relative;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.axis {
+  shape-rendering: crispEdges;
+}
+
+.axis line {
+  stroke: #ddd;
+  stroke-width: .5px;
+}
+
+.axis path {
+  display: none;
+}
+
+rect.extent {
+  fill: #000;
+  fill-opacity: .125;
+  stroke: #fff;
+}
+
+rect.frame {
+  fill: #fff;
+  fill-opacity: .7;
+  stroke: #aaa;
+}
+
+circle {
+  fill: #ccc;
+  fill-opacity: .5;
+}
+
+.cell text {
+  pointer-events: none;
+}
+
+.highlight {
+  fill: #008;
+}
+</style>
+
+<script src="../media/js/require.js" charset="utf-8"></script>
+
+<body>
+<div id="map-container"> 
+  <svg id='graph'></svg>
+  <canvas id='paint-canvas'></canvas>
+</div>
+<canvas id='hl-canvas'></canvas>
+
+<script>
+
+require.config({
+  baseUrl: '../media/js',
+  paths: {
+    jquery: './lib/jquery.min',
+    jqueryui : 'lib/jquery-ui-1.10.4.custom.min',
+    d3: './lib/d3.v3.min',
+    colorbrewer  : './lib/colorbrewer',
+  },
+  shim : {
+    d3 : {exports : 'd3'},
+    colorbrewer: {exports : "colorbrewer"},
+  }
+});
+
+require(["./ui/cartoProxy","./ui/utils", 'colorbrewer', 'd3', 'jquery', 'jqueryui'],
+function(CartoProxy,Utils, colorbrewer, d3, $){
+
+  var uuid = Utils.getParameterByName('uuid'),
+      carto_conf = Utils.getParameterByName('carto');
+
+  if (carto_conf) {
+    carto_conf = JSON.parse(carto_conf);    
+  }
+
+  var table_name = carto_conf['table_name'],
+      fields = carto_conf['fields'],
+      carto_uid = carto_conf['carto_uid'],
+      carto_key = carto_conf['carto_key'];
+      
+  var end = 2*Math.PI;
+
+  // load data and create chart
+  CartoProxy.SetUID(carto_uid);
+  CartoProxy.SetKey(carto_key);
+  var isCSV = true;
+
+  CartoProxy.GetVariables(table_name, fields, isCSV, function(csv_content) {
+
+    var csv_data = d3.csv.parse(csv_content);
+    csv_data.forEach(function(d,i) { d.id = d.id || i; });
+  
+    // get canvas
+    var canvas = $('#paint-canvas')[0];
+    var hlcanvas = $('#hl-canvas')[0];
+      
+    function MainPlot() {
+      var margin = {top: 5, right: 10, bottom: 30, left: 10},
+        screenW = $("#map-container").width(),
+        screenH = $("#map-container").height(),
+        width = screenW - margin.left - margin.right,
+        height = screenH - margin.top - margin.bottom;
+    
+      // get canvas
+      canvas.width =  screenW;
+      canvas.height = screenH;
+      
+      hlcanvas.width =  screenW;
+      hlcanvas.height = screenH;
+      
+      var ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, screenW, screenH);
+      ctx.globalAlpha = 0.5;
+      ctx.imageSmoothingEnabled= false;
+    
+      var hlctx = hlcanvas.getContext('2d');
+      hlctx.clearRect(0, 0, screenW, screenH);
+      hlctx.globalAlpha = 0.5;
+      hlctx.imageSmoothingEnabled= false;
+      
+      // create buffer for canvas
+      var buffer = document.createElement("canvas");
+      buffer.width = screenW;
+      buffer.height = screenH;
+      var bufferctx = buffer.getContext('2d');
+      bufferctx.clearRect(0, 0, screenW, screenH);
+      bufferctx.globalAlpha = 0.5;
+      bufferctx.imageSmoothingEnabled= false;
+      
+    
+      // Size parameters for each cell
+      var n = fields.length,
+          cell_w = screenW / n,
+          cell_h = screenH / n,
+          padding = 15;
+        
+      if (cell_w < cell_h) {
+        size = cell_w - padding;
+        margin.top = (screenH - size * n) / 2.0;
+      } else {
+        size = cell_h - padding;
+        margin.left = (screenW - size * n) / 2.0;
+      }
+    
+      // Position scales.
+      var x = {}, y = {};
+      
+      fields.forEach(function(field) {
+        // values to numbers.
+        csv_data.forEach(function(d) { d[field] = +d[field]; });
+    
+        var value = function(d) { return d[field]; },
+            domain = [d3.min(csv_data, value), d3.max(csv_data, value)],
+            range = [padding / 2, size - padding / 2];
+        x[field] = d3.scale.linear().domain(domain).range(range);
+        y[field] = d3.scale.linear().domain(domain).range(range.reverse());
+      });
+  
+      // Axes.
+      var axis = d3.svg.axis()
+        .ticks(5)
+        .tickSize(size * n);
+    
+      // Brush.
+      var brush = d3.svg.brush()
+        .on("brushstart", brushstart)
+        .on("brush", brush)
+        .on("brushend", brushend);
+    
+      // Root panel.
+      var svg = d3.select("#graph")
+          .attr("width", screenW)
+          .attr("height", screenH)
+        .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+          
+      // X-axis.
+      svg.selectAll("g.x.axis")
+        .data(fields)
+      .enter().append("svg:g")
+        .attr("class", "x axis")
+        .attr("transform", function(d, i) { return "translate(" + i * size + ",0)"; })
+        .each(function(d) { d3.select(this).call(axis.scale(x[d]).orient("bottom")); });
+    
+      // Y-axis.
+      svg.selectAll("g.y.axis")
+        .data(fields)
+      .enter().append("svg:g")
+        .attr("class", "y axis")
+        .attr("transform", function(d, i) { return "translate(0," + i * size + ")"; })
+        .each(function(d) { d3.select(this).call(axis.scale(y[d]).orient("right")); });
+   
+    
+      // Cell and plot.
+      var cell = svg.selectAll("g.cell")
+        .data(cross(fields, fields))
+      .enter().append("svg:g")
+        .attr("class", "cell")
+        .attr("transform", function(d) { return "translate(" + d.i * size + "," + d.j * size + ")"; })
+        .each(plot);
+    
+      // Titles for the diagonal.
+      cell.filter(function(d) { return d.i == d.j; }).append("svg:text")
+        .attr("x", padding)
+        .attr("y", padding)
+        .attr("dy", ".71em")
+        .text(function(d) { return d.x; }); 
+    
+      // Clear the previously-active brush, if any.
+      function brushstart(p) {
+        if (brush.data !== p) {
+          cell.call(brush.clear());
+          brush.x(x[p.x]).y(y[p.y]).data = p;
+        }
+      }
+    
+      // Highlight the selected circles.
+      function brush(p) {
+        console.log("brush");
+        /*
+        var e = brush.extent();
+        var item, screenX, screenY,
+            offsetX = margin.left + (size) * p.i,
+            offsetY = margin.top + (size) * p.j;
+          
+        for (var i=0, m=csv_data.length; i<m; i++) {
+          item = csv_data[i];
+          screenX = item[p.x];
+          screenY = item[p.y];
+          if (e[0][0] <= screenX && screenX <= e[1][0]
+            && e[0][1] <= screenY && screenY <= e[1][1]) {
+            
+            screenX = offsetX + x[p.x](screenX);
+            screenY = offsetY + y[p.y](screenY);
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, 2, 0, end);
+            ctx.stroke();
+            ctx.fill();
+          }
+        }
+        */
+      }
+    
+      // If the brush is empty, select all circles.
+      function brushend() {
+        if (brush.empty()) svg.selectAll(".cell circle").attr("class", function(d) {
+          //return d.species;
+          return "";
+        });
+      }
+    
+      function cross(a, b) {
+        var c = [], n = a.length, m = b.length, i, j;
+        for (i = -1; ++i < n;) for (j = -1; ++j < m;) c.push({x: a[i], i: i, y: b[j], j: j});
+        return c;
+      }      
+    
+      function plot(p) {
+        var cell = d3.select(this);
+    
+        // Plot frame.
+        cell.append("svg:rect")
+          .attr("class", "frame")
+          .attr("x", padding / 2)
+          .attr("y", padding / 2)
+          .attr("width", size - padding)
+          .attr("height", size - padding);
+      
+        // plot dots in canvas
+        var item,
+            offsetX = margin.left + (size) * p.i,
+            offsetY = margin.top + (size) * p.j,
+            screenX,
+            screenY;
+            
+        for (var i=0, m=csv_data.length; i<m; i++) {
+          item = csv_data[i];
+          screenX = offsetX + x[p.x](item[p.x]);
+          screenY = offsetY + y[p.y](item[p.y]);
+          bufferctx.beginPath();
+          bufferctx.arc(screenX, screenY, 2, 0, end);
+          bufferctx.stroke();
+          bufferctx.fill();
+        }
+       
+        if (p.i === n -1 && p.j === n-1)
+          ctx.drawImage(buffer, 0, 0);
+        
+        // Plot brush.
+        cell.call(brush.x(x[p.x]).y(y[p.y]));
+      }     
+    }
+    
+    MainPlot();
+  
+    var resizeTimer;
+    
+    function resize() {
+      d3.select("#graph g").remove();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() {
+        console.log('resize');
+        screenW = $("#map-container").width(),
+        screenH = $("#map-container").height();
+        
+        MainPlot();
+      }, 500);
+    }
+
+    d3.select(window).on('resize', resize); 
+
+  }); // end CartoProxy.GetVariables()
+  
+});
+</script>
+
+
+
+</body>
+</html>

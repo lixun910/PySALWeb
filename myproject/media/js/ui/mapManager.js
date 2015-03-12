@@ -210,14 +210,36 @@ var Manager = (function(window){
         return numMaps;
       },
       
-      GetMapCanvas : function() {
-        var mapIdx = mapOrder[numMaps-1];
-        return mapCanvasList[mapIdx];
+      GetMapCanvas : function(idx) {
+        if (idx === undefined) idx = mapOrder[numMaps-1];
+        return mapCanvasList[idx];
       },
       
-      GetMap : function() {
-        return  this.GetMapCanvas().map;
+      GetMap : function(idx) {
+        if (idx === undefined) idx = mapOrder[numMaps-1];
+        return  this.GetMapCanvas(idx).map;
       },
+     
+      Reorder : function(newOrder) {
+        // mapOrder [2,1,3,4]
+        var n = numMaps;
+        var newExtent = newOrder[n-1]  != mapOrder[n-1];
+        mapOrder = newOrder;
+        
+        // update orders of canvas by given new order 
+        for (var i=0; i < n; i++) {
+          $('canvas[id=' + newOrder[i] + ']').appendTo(container);
+        }
+        
+        if (newExtent) {
+          var topLayerIdx = newOrder[n-1],
+              mapcanvas = mapCanvasList[topLayerIdx],
+              map = mapcanvas.map,
+              extent = map.setExtent();
+              
+          map.setLmapExtent(extent);
+        }
+      }, 
       
     };
   };

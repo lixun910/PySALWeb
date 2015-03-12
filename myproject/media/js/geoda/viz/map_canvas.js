@@ -502,17 +502,14 @@ MapCanvas.prototype = {
     
     if ( colors == undefined ) { 
       for ( var i=0, n=points.length; i<n; i++ ) {
-        part = points[i];
-        for (var j=0, m=part.length; j<m; j++) {
-          //ctx.fillRect(pt[0], pt[1], 3, 3);
-          pt = part[0];
-          if (draw_dict[pt] === undefined) {
-            ctx.beginPath();
-            ctx.arc(pt[0], pt[1], 2, 0, end, true);
-            ctx.stroke();
-            ctx.fill();
-            draw_dict[pt] = null;
-          }
+        pt = points[i];
+        //ctx.fillRect(pt[0], pt[1], 3, 3);
+        if (draw_dict[pt] === undefined) {
+          ctx.beginPath();
+          ctx.arc(pt[0], pt[1], 2, 0, end, true);
+          ctx.stroke();
+          ctx.fill();
+          draw_dict[pt] = null;
         }
       } 
     } else {
@@ -520,17 +517,14 @@ MapCanvas.prototype = {
         ctx.fillStyle = c;
         var ids = colors[c];
         for ( var i=0, n=ids.length; i< n; ++i) {
-          part = points[ids[i]];
-          for (var j=0, m=part.length; j<m; j++) {
+          pt = points[ids[i]];
+          if (draw_dict[pt] === undefined) {
             //ctx.fillRect(pt[0], pt[1], 3, 3);
-            pt = part[0];
-            if (draw_dict[pt] === undefined) {
-              //ctx.fillRect(pt[0], pt[1], 3, 3);
-              ctx.beginPath();
-              ctx.arc(pt[0], pt[1], 2, 0, end, true);
-              ctx.stroke();
-              ctx.fill();
-            }
+            ctx.beginPath();
+            ctx.arc(pt[0], pt[1], 2, 0, end, true);
+            ctx.stroke();
+            ctx.fill();
+            draw_dict[pt] = null;
           }
         } 
       }

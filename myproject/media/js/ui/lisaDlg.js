@@ -101,7 +101,7 @@ var LisaDlg = (function($){
                   that.dialog("close");
                 }
               } // end function MoranI()
-              CartoProxy.GetVariables(table_name, [sel_var], function(data){
+              CartoProxy.GetVariables(table_name, [sel_var], false, function(data){
                 moran_y = data[sel_var];
                 MoranI();
               });

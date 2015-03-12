@@ -205,7 +205,7 @@ var CartoProxy = {
     xhr.send(null);
   },
   
-  GetVariables : function(table_name, vars, onSuccess) {
+  GetVariables : function(table_name, vars, isCSV, onSuccess) {
     if (!carto_uid || !carto_key) return;
     var nvars = vars.length;
     
@@ -220,21 +220,23 @@ var CartoProxy = {
     xhr.responseType = 'text';
     xhr.onload = function(evt) {
       var content = xhr.response;
-      var rows = content.split("\n");
-      
-      var data = {};
-      for (var i=0; i<nvars; i++)  {
-        data[vars[i]] = [];
-      }
-     
-      for (var i=1, n=rows.length; i<n; i++)  {
-        var items = rows[i].split(",");
-        for (var j=0; j<nvars; j++)  {
-          if (items[j] !== "")
-            data[vars[j]].push(parseFloat(items[j]));
+      if (isCSV === true) {
+        if (onSuccess) onSuccess(content);
+      } else {
+        var rows = content.split("\n");
+        var data = {};
+        for (var i=0; i<nvars; i++)  {
+          data[vars[i]] = [];
         }
+        for (var i=1, n=rows.length; i<n; i++)  {
+          var items = rows[i].split(",");
+          for (var j=0; j<nvars; j++)  {
+            if (items[j] !== "")
+              data[vars[j]].push(parseFloat(items[j]));
+          }
+        }
+        if (onSuccess) onSuccess(data);
       }
-      if (onSuccess) onSuccess(data);
     };
     xhr.send(null);
   },

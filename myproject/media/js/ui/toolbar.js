@@ -46,7 +46,6 @@ var Toolbar = (function($, FileDlg){
       var menu = toolMenu[btn];
       OnToolMenuClick(btn, menu);
     }
-     
 
     // each button on popup menu is linking to a dialog, 
     // SetMenuButton() is used to link between button and dialog
