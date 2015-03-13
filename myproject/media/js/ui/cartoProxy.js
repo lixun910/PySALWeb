@@ -7,6 +7,8 @@ var zip = this.zip;
 var carto_uid;
 var carto_key;
 
+var data_cache = {};
+
 var CartoProxy = {
 
   GetAllTables : function(uid, key, onSuccess) {
@@ -207,10 +209,26 @@ var CartoProxy = {
   
   GetVariables : function(table_name, vars, isCSV, onSuccess) {
     if (!carto_uid || !carto_key) return;
-    var nvars = vars.length;
     
+    var data = {},
+        nvars = vars.length,
+        cached_nvars = 0;
+    
+    for (var i=0, n=nvars; i<n; i++) {
+      if (data_cache[vars[i]]) {
+        data[vars[i]] = data_cache[vars[i]].slice(0);
+        cached_nvars += 1;
+      }
+    }
+    
+    if (cached_nvars === nvars && isCSV === false) {
+      if (onSuccess) onSuccess(data);
+    }
     var sql = "SELECT ";
-    for (var i=0, n=nvars-1; i<n; i++) sql += vars[i] + ", ";
+    for (var i=0, n=nvars-1; i<n; i++) {
+      if (data_cache[vars[i]] === undefined)
+        sql += vars[i] + ", ";
+    }
     sql += vars[vars.length-1];
     sql += " FROM " + table_name;
     
@@ -224,7 +242,7 @@ var CartoProxy = {
         if (onSuccess) onSuccess(content);
       } else {
         var rows = content.split("\n");
-        var data = {};
+        
         for (var i=0; i<nvars; i++)  {
           data[vars[i]] = [];
         }
@@ -234,6 +252,9 @@ var CartoProxy = {
             if (items[j] !== "")
               data[vars[j]].push(parseFloat(items[j]));
           }
+        }
+        for (var i=0; i<nvars; i++)  {
+          data_cache[vars[i]] = data[vars[i]].slice(0);
         }
         if (onSuccess) onSuccess(data);
       }

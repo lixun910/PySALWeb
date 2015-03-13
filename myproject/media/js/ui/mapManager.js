@@ -206,6 +206,11 @@ var Manager = (function(window){
         }
       },
       
+      AddExistingMap : function(map, callback) {
+        OnAddMap(map);
+        if (callback) callback(map);
+      },
+      
       GetNumMaps : function() {
         return numMaps;
       },

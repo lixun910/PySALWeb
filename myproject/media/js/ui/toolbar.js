@@ -78,6 +78,17 @@ var Toolbar = (function($, FileDlg){
       });
     };
     
+    $('#btnVoronoiMap').click(function() {
+      require(['ui/mapManager', 'd3', 'geoda/io/voronoi_map', 'ui/basemap'], function(MapManager, d3, VoronoiMap, Basemap){
+	var map = MapManager.getInstance().GetMap();
+	var basemap = Basemap.getInstance();
+	var points = map.centroids;
+	var polygons = d3.geom.voronoi(points);
+	var vm = new VoronoiMap("test", points, polygons, map.bounds, basemap.GetL(), basemap.GetLmap(), map.prj);
+	MapManager.getInstance().AddExistingMap(vm);
+      });    
+    });
+    
     for (var btnID in buttonDialog) {
       var dlgID = buttonDialog[btnID];
       OnMenuButtonClick(btnID, dlgID);

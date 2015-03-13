@@ -129,12 +129,12 @@ function(CartoProxy, Utils, colorbrewer, d3, $){
       .style("font", "12px sans-serif");
       
     parcoords.on("brushend", function(data){
-      console.log(data);
       var ids = [];
       for (var i=0, n=data.length; i<n; i++) {
         ids.push(data[i].id);
       }
       var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
+      if (hl_ids === null) hl_ids = {};
       hl_ids[table_name] = ids;
       localStorage.setItem("HL_IDS", JSON.stringify(hl_ids));
     });

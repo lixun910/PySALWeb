@@ -24,6 +24,7 @@ require.config({
     'list' : 'lib/list.min',
     'colorbrewer'  : 'lib/colorbrewer',
     md5 : 'lib/md5.min',
+    ss : 'lib/simple_statistics',
   },
   shim : {
     kdtree : {exports: 'kdtree'},
@@ -37,7 +38,7 @@ require.config({
     "jquery.colorpicker" : {deps: ['jquery']},
     "list" : {},
     'colorbrewer': {},
-    
+    ss : {exports : 'ss'},
   },
 });
 
