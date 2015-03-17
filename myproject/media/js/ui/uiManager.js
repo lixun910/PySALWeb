@@ -16,7 +16,8 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
     var toolbar;
     
     var fileDlg, cartoDlg, choroDlg, histDlg, lisaDlg, moranDlg,
-        networkDlg, scatDlg, spacetimeDlg, spregDlg, weightsDlg;
+        networkDlg, scatDlg, spacetimeDlg, spregDlg, weightsDlg, scatMatrixDlg,
+        parcoordsDlg;
         
     var GetDialogs = function() {
       return [
@@ -29,6 +30,8 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
         spacetimeDlg,
         spregDlg, 
         weightsDlg,
+        scatMatrixDlg,
+        parcoodsDlg,
       ];
     };
     
@@ -213,6 +216,8 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
         spacetimeDlg = dlgs[8];
         spregDlg = dlgs[9];
         weightsDlg = dlgs[10];
+        scatMatrixDlg = dlgs[11];
+        parcoodsDlg = dlgs[12];
       },
     
       

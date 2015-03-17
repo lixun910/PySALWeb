@@ -44,6 +44,8 @@ urlpatterns += patterns('myproject.myapp.views_cartodb',
     url(r'^carto_get_tables/$', 'carto_get_tables', name='carto get tables'),
     url(r'^carto_download_table/$', 'carto_download_table', name='carto download table'),
     url(r'^carto_upload_table/$', 'carto_upload_table', name='carto upload tables'),
+    url(r'^carto_create_viz/$', 'carto_create_viz', name='carto create vizjson'),
+    url(r'^carto_upload_csv/$', 'carto_upload_csv', name='carto upload csv'),
 )
 
 urlpatterns += patterns('myproject.myapp.views_map',

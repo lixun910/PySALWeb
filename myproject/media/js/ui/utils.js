@@ -6,6 +6,24 @@ define(['jquery', 'd3', './msgbox', './message'], function($, d3, MsgBox, M) {
 
 return {
   // update field selector
+  addMultiCheckbox: function(name, fields, div, filter) {
+    div.empty();
+    var field_names = [];
+    for (var field in fields) {
+      field_names.push(field);
+    }
+    field_names.sort();
+    for (var field in fields) {
+      var type = fields[field];
+      if (filter && filter.indexOf(type) >= 0) {
+        $('<input/>', {type: 'checkbox', name: name, value: field, text: field}).appendTo(div);
+        $('<label/>', {text: field}).appendTo(div);
+        $('<br/>').appendTo(div);
+      }
+    }
+  },
+  
+  // update field selector
   updateSelector : function(fields, selector, filter) {
     var field_names = [];
     for (var field in fields) {
@@ -118,24 +136,31 @@ return {
   },
   
   create_legend : function(div, bins, colors) {
+    var txts = [];
     div.empty();
     div.append('<table></table>');
     var table = div.children();
-    for (var i=0, n = bins.length; i < n; i++) {
+    for (var i=0, n = colors.length; i < n; i++) {
       var txt = "";
-      if (typeof bins[i] == 'string' || bins[i] instanceof String) {
-        txt = bins[i];
+      var _bin = bins[i] === undefined ? bins[i-1] : bins[i];
+      if (typeof _bin == 'string' || _bin instanceof String) {
+        txt = _bin;
       } else {
-        var lower, upper = bins[i].toFixed(2);
-        if (i > 0) {
+        var lower, upper = _bin.toFixed(2);
+        if (i > 0 && bins[i] !== undefined) {
           lower = bins[i-1].toFixed(2);
+          txt = lower ? "(" + lower + ", " + upper + "]" : "<=" + upper;
+        } else {
+          txt = "> " + upper;
         }
-        txt = lower ? "(" + lower + ", " + upper + "]" : "<=" + upper;
       }
+      txts.push(txt);
       var html = '<tr><td><div style="height:15px;width:20px;border:1px solid black;background-color:' + colors[i] + '"></div></td><td align="left">'+ txt +'</td></tr>';
       table.append(html);
     }
     div.draggable().show();
+    
+    return txts;
   },
   
   GetJSON : function(url, successHandler, errorHandler) {
@@ -171,6 +196,9 @@ return {
       $(this).parent().remove();
     });
     main.draggable().resizable();
+    main.resize(function() {
+        $('#tool-menu-arrow, #dialog-arrow, .ui-dialog').hide();
+    });
     closeBtn.appendTo(main);
     var frame = $('<iframe />', {
       width: '100%',
@@ -188,6 +216,9 @@ return {
     });
     main.show();
     return uuid;
+  },
+  
+  map2vizJson : function() {
   },
   
 };

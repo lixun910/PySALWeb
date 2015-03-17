@@ -761,7 +761,6 @@ $(document).ready(function() {
   };
  
   // hide all divs 
-  $('#w-dist-loading, #divPop, #img-id-chk, #img-id-spin, #img-id-nochk,  .dlg-loading, #progress_bar_openfile, #progress_bar_cartodb,#progress_bar_road, #progress_bar_spacetime, #btnMultiLayer, #progress_bar_lisa, #tool-menu-arrow, #dialog-arrow, #mapInfo, #prgInfo, #legend').hide();
    
   // init message dialog 
   $( "#dlg-msg" ).dialog({

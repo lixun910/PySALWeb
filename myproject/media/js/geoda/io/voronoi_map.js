@@ -107,6 +107,8 @@ VoronoiMap.prototype = {
     for (var i=0; i<this.n; i++) {
       var poly = this.polygons[i],
           part = [];
+          
+      if (poly === undefined) continue; // could be duplicated
        var bminX = Number.POSITIVE_INFINITY,
           bmaxX = Number.NEGATIVE_INFINITY,
           bminY = Number.POSITIVE_INFINITY,
@@ -115,6 +117,9 @@ VoronoiMap.prototype = {
       for (j = 0, m=poly.length; j < m; j++ ) {
         x = poly[j][0];
         y = poly[j][1];
+        if (x === undefined || y === undefined || x === NaN || y === NaN) 
+          continue;
+          
         if (this.prj) {
           pt = this.prj.forward([x,y]);
           x = pt[0];

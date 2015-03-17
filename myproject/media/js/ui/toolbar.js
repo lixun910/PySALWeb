@@ -54,11 +54,14 @@ var Toolbar = (function($, FileDlg){
       '#btnCatMap' : '#dlg-quantile-map',
       '#btnHist' : '#dlg-histogram',
       '#btnScatter' : '#dlg-scatter-plot',
+      '#btnScatterMatrix' : '#dlg-scatter-matrix',
       '#btnMoranScatter' : '#dlg-moran-scatter-plot',
       '#btnCreateW' : '#dialog-weights',
       '#btnRoad' : '#dialog-road',
       '#btnSpaceTime' : '#dialog-spacetime',
       '#btnLISA' : '#dlg-lisa-map',
+      '#btnParcoords' : '#dlg-parcoords',
+      '#btnCarto' : '#dialog-cartodb',
     };
     
     var OnMenuButtonClick = function(btnID, dlgID) {
@@ -80,13 +83,22 @@ var Toolbar = (function($, FileDlg){
     
     $('#btnVoronoiMap').click(function() {
       require(['ui/mapManager', 'd3', 'geoda/io/voronoi_map', 'ui/basemap'], function(MapManager, d3, VoronoiMap, Basemap){
-	var map = MapManager.getInstance().GetMap();
-	var basemap = Basemap.getInstance();
-	var points = map.centroids;
-	var polygons = d3.geom.voronoi(points);
-	var vm = new VoronoiMap("test", points, polygons, map.bounds, basemap.GetL(), basemap.GetLmap(), map.prj);
+	var map = MapManager.getInstance().GetMap(),
+            basemap = Basemap.getInstance(),
+	    points = map.centroids;
+	var voronoi = d3.geom.voronoi()
+	  .clipExtent([[map.mapLeft, map.mapBottom],[map.mapRight, map.mapTop]]);
+	var polygons = voronoi(points),
+	    map_name = map.name + "(voroni)";
+	var vm = new VoronoiMap(map_name, points, polygons, map.bounds, basemap.GetL(), basemap.GetLmap(), map.prj);
+	
 	MapManager.getInstance().AddExistingMap(vm);
+	layerTree.AddMap(vm.name);
       });    
+    });
+   
+    $('#btnBubbleMap').click(function() {
+      
     });
     
     for (var btnID in buttonDialog) {
@@ -103,8 +115,10 @@ var Toolbar = (function($, FileDlg){
     });
     
     $('#btnDensity').click(function(){
-      var mapcanvas = gViz.GetMap();
-      mapcanvas.update({'heatmap': true});
+      require(['ui/mapManager', 'geoda/viz/heatmap_canvas'], function(MapManager, HeatMapCanvas) {
+	var mapcanvas = MapManager.getInstance().GetMapCanvas();
+	mapcanvas.update({'heatmap':true});
+      });
     });
   
     var toolbar_buttons = [
@@ -113,6 +127,7 @@ var Toolbar = (function($, FileDlg){
       '#btnExplore',
       '#btnSpace',
       '#btnSpreg',
+      '#btnCarto',
     ];
     
     var ToggleButtons = function(enable) {

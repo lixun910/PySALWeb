@@ -2,6 +2,8 @@
 // Author: xunli at asu.edu
 define(['jquery', './cartoProxy'], function($, CartoProxy) {
 
+var window = this;
+
 var CartoDlg = (function($, CartoProxy) {
 
   var instance;
@@ -23,11 +25,21 @@ var CartoDlg = (function($, CartoProxy) {
     
     var dlg = $( "#dialog-cartodb" );
     
+    $('#sel-carto-viz').change(function(){
+      var user_id = $(this).val();
+      var viz_name = $('#sel-carto-viz :selected').text();
+      var w = window.open(
+        '../../static/test.html?uid=' + user_id +'&vizname=' + viz_name,
+        "_blank",
+        "width=900, height=700, scrollbars=yes"
+      );
+      
+    });
     
     $('#btn-cartodb-get-all-tables').click(function(){
       // if (gViz)
-      self.dlgPrgBar.show();
-      self.GetAllTables(function(){self.dlgPrgBar.hide();});
+      dlgPrgBar.show();
+      GetAllTables(function(){dlgPrgBar.hide();});
     });
   
     var fill_carto_tables = function(tables) {
@@ -60,20 +72,49 @@ var CartoDlg = (function($, CartoProxy) {
     var OnOKClick = function() {
     
       var that = $(this);
-      var sel_id = self.dlgTabs.tabs('option','active'),
-          uid = $('#txt-carto-setup-id').val(),
-          key = $('#txt-carto-setup-key').val();
+      var sel_id = dlgTabs.tabs('option','active'),
+          uid = CartoProxy.GetUID(),
+          key = CartoProxy.GetKey();
           
-      self.dlgPrgBar.show();
+      dlgPrgBar.show();
       
       if (sel_id === 0) {
         // setup
-        self.GetAllTables(function(msg) {
-          $('#progress_bar_cartodb').hide();
-          fill_carto_tables(msg['tables']);
-        });
         
       } else if (sel_id === 1) {
+        var viz_name = $('#txt-carto-vizjson').val();
+        require(['ui/mapManager', 'ui/basemap'], function(MapManager, Basemap){
+          var mapcanvas = MapManager.getInstance().GetMapCanvas(),
+              map = mapcanvas.map,
+              basemap = Basemap.getInstance();
+              
+          $.get("../carto_create_viz/", {
+            carto_uid : uid,
+            carto_key : key,
+            viz_name : viz_name,
+            map_name : map.name,
+            map_type : mapcanvas.shpType,
+            'bounds[]' : basemap.GetBounds(),
+            'center[]' : basemap.GetCenter(),
+            zoom : basemap.GetZoom(),
+            stroke_clr : mapcanvas.STROKE_CLR,
+            fill_clr : mapcanvas.FILL_CLR,
+            stroke_width : mapcanvas.STROKE_WIDTH,
+            alpha : mapcanvas.ALPHA,
+            'bins[]' : mapcanvas.bins,
+            'colors[]' : mapcanvas.colors,
+            'legend_txts[]' : mapcanvas.legend_txts,
+            legend_field : mapcanvas.field,
+        
+          }).done(function(data){
+            console.log(data);
+            $('#sel-carto-viz').append($('<option>', {value:data.userid}).text(data.vizname));
+          });
+          
+          dlgPrgBar.hide();
+        });
+        
+      } else if (sel_id === 2) {
         // download to local disk
         var table_name = $('#sel-carto-table-download').find(':selected').text();
         gViz.CartoDownloadTable(uid, key, table_name, function(msg){
@@ -82,7 +123,8 @@ var CartoDlg = (function($, CartoProxy) {
           // create a url and download
           $.download('./cgi-bin/download.py','name='+name,'get');
         });
-      } else if (sel_id == 2) {
+        
+      } else if (sel_id == 3) {
         // upload: using uuid send command to call cartodb_upload()
         var upload_uuid = $('#sel-carto-table-upload').find(':selected').val();
         gViz.CartoUploadTable(uid, key, upload_uuid, function(msg){
@@ -97,22 +139,8 @@ var CartoDlg = (function($, CartoProxy) {
             });
           }
         });
-      } else if (sel_id == 3) {
-        // count
-        var first_layer = $('#sel-carto-table-count1').find(':selected').text(),
-            second_layer = $('#sel-carto-table-count2').find(':selected').text(),
-            col_name = $('#txt-carto-col-name').val(),
-            method = "contain";
-        gViz.CartoSpatialCount(uid, key, first_layer, second_layer, col_name, function(msg) {
-          $('#progress_bar_cartodb').hide();
-          if (msg["result"] != true) {
-            ShowMsgBox("[Error]","CartoDB spatial counts faield. Please try again or contact our administators.");
-          } else {
-            ShowMsgBox("","CartoDB spatial counts done.");
-          }
-          that.dialog( "close" );
-        });
-      }
+        
+      } 
     };
     
     dlg.dialog({

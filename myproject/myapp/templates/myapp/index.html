@@ -59,11 +59,14 @@
 	<td width=100>
 	  <div class="blockBtn" id="btnExplore"><img src="../../media/img/hist.png"/><span>Explore</span></div>
 	</td>
-	<td width=160>
+	<td width=170>
 	  <div class="blockBtn" id="btnSpace"><img src="../../media/img/moran.png"/><span>Spatial Analysis</span></div>
 	</td>
-	<td width=130>
+	<td width=125>
 	  <div class="blockBtn" id="btnSpreg"><img src="../../media/img/spreg.png"/><span>Regression</span></div>
+	</td>
+	<td width=130>
+	  <div class="blockBtn" id="btnCarto"><img src="../../media/img/cartodb_16.png"/><span>CartoDB</span></div>
 	</td>
 	</tr>
       </table>
@@ -82,14 +85,11 @@
   <div id="btnCatMap" class="image-wrap" style="background-image: url(../../media/img/wiz-cat-poly.png);">
     <span>Choropthleth Map</span>
   </div>
-  <div id="btnBubbleMap" class="image-wrap" style="background-image: url(../../media/img/wiz-bubblemap.png);">
-    <span>Bubble Map</span>
+  <div id="btnVoronoiMap" class="image-wrap" style="background-image: url(../../media/img/wiz-voronoi.png);">
+    <span>Voronoi Map</span>
   </div>
   <div id="btnDensity" class="image-wrap" style="background-image: url(../../media/img/wiz-density.jpeg);">
     <span>Density Map</span>
-  </div>
-  <div id="btnVoronoiMap" class="image-wrap" style="background-image: url(../../media/img/wiz-voronoi.png);">
-    <span>Voronoi Map</span>
   </div>
 </div>
 
@@ -103,8 +103,11 @@
   <div id="btnScatterMatrix" class="image-wrap" style="background-image: url(../../media/img/wiz-scatter-matrix.png);">
     <span>Scatter Matrix</span>
   </div>
-  <div class="image-wrap" style="background-image: url(../../media/img/wiz-pcp.png);">
+  <div id="btnParcoords" class="image-wrap" style="background-image: url(../../media/img/wiz-pcp.png);">
     <span>Parallel Coordinates</span>
+  </div>
+  <div id="btnBubbleMap" class="image-wrap" style="background-image: url(../../media/img/wiz-bubblemap.png);">
+    <span>Bubble Map</span>
   </div>
   <div class="image-wrap" style="background-image: url(../../media/img/wiz-chord.png);">
     <span>Chord Diagram</span>
@@ -210,12 +213,13 @@
 // CartoDB
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dialog-cartodb"  title="CartoDB Dialog">
+<div class="mainDlg" id="dialog-cartodb"  title="CartoDB Dialog">
   <span> <br/><img src="../../media/img/cartodb.png"><br/></span>
   <div id="tabs-dlg-cartodb">
     <ul>
       <li><a href="#tabs-1">Setup</a></li>
-      <li><a href="#tabs-2">Create Theme Map </a></li>
+      <li><a href="#tabs-2">Create&Share CartoDB Vizjson</a></li>
+      <li><a href="#tabs-3">Upload to CartoDB</a></li>
     </ul>
     <div id="tabs-1">
       <form id="cartodb-setup-form">
@@ -236,6 +240,31 @@
       </form>
     </div>
     <div id="tabs-2">
+      <form id="cartodb-vizjson-form">
+        <table>
+          <tr>
+            <td>Input name for CartoDB VizJson</td>
+            <td>
+              <input type="text" id="txt-carto-vizjson" size=55>
+            </td>
+          </tr>
+	</table>
+	<br/>
+	<br/>
+	<br/>
+	<br/>
+	<table>
+          <tr>
+            <td>View and share a CartoDB Visualization</td>
+            <td>
+              <select id="sel-carto-viz">
+              </select>
+            </td>
+          </tr>
+        </table>
+      </form>
+    </div>
+    <div id="tabs-3">
       <br><img src="../../media/img/carto_upload.png"><br><br>
       <form id="cartodb-upload-form">
         <table>
@@ -259,7 +288,7 @@
 // Road Network
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dialog-road"  title="Road Network Dialog">
+<div class="mainDlg" id="dialog-road"  title="Road Network Dialog">
   <span> <br/><img src="../../media/img/network.png"><br/><br/></span>
   <div id="tabs-dlg-road">
     <ul>
@@ -369,7 +398,7 @@
 // SpaceTime
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dialog-spacetime"  title="Space Time Aggregation">
+<div class="mainDlg"  id="dialog-spacetime"  title="Space Time Aggregation">
   <table><tr><td><img src="../../media/img/st.png"></td>
   <td>&nbsp;&nbsp;Aggregate points in time and space and apply spatial analysis.</td>
   </tr>
@@ -434,7 +463,7 @@
 //  LISA Map
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dlg-lisa-map" title="Create LISA Map">
+<div class="mainDlg"  id="dlg-lisa-map" title="Create LISA Map">
 <br><br>
   <table>
   <tr>
@@ -457,7 +486,7 @@
 // Moran Scatter Plot
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dlg-moran-scatter-plot" title="Open Moran Scatter Plot">
+<div class="mainDlg"  id="dlg-moran-scatter-plot" title="Open Moran Scatter Plot">
 <br><br>
   <table>
   <tr>
@@ -478,7 +507,7 @@
 // Scatter Plot
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dlg-scatter-plot" title="Open Scatter Plot">
+<div class="mainDlg"  id="dlg-scatter-plot" title="Open Scatter Plot">
 <br><br>
   <table>
   <tr>
@@ -496,7 +525,50 @@
  </table> 
 </div>
 
-<div id="dlg-histogram" title="Open Histogram Plot">
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Scatter Matrix Plot
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div class="mainDlg"  id="dlg-scatter-matrix" title="Open Scatter Matrix Plot">
+<br><br>
+Select variables in Matrix plot:
+<br><br>
+<div id="scattermatrix-sels"  class="left_al"></div>
+<br><br>
+  <table>
+  <tr>
+    <td>
+      <input type="checkbox" id="chk-newtab-scattermatrix" id=0>Open in new window?
+    </td>
+ </table> 
+</div>
+
+
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Parallel Coordinates
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div class="mainDlg"  id="dlg-parcoords" title="Open Parallel Coordinates">
+<br><br>
+Select variables in Parallel Coordinates:
+<br><br>
+<div id="parcoords-sels" class="left_al"></div>
+<br><br>
+  <table>
+  <tr>
+    <td>
+      <input type="checkbox" id="chk-newtab-parcoords" id=0>Open in new window?
+    </td>
+ </table> 
+</div>
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Histogram
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div class="mainDlg"  id="dlg-histogram" title="Open Histogram Plot">
 <br><br>
   <table>
   <tr>
@@ -508,7 +580,12 @@
  </table> 
 </div>
 
-<div id="dlg-simple-map" title="Configure Map">
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Configure map
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div class="mainDlg"  id="dlg-simple-map" title="Configure Map">
   <br/><br/>
   <table>
   <tr>
@@ -536,7 +613,7 @@
   </tr>
  </table> 
 </div>
-<div id="dlg-save-map-conf" title="Save Map Configuration">
+<div class="mainDlg"  id="dlg-save-map-conf" title="Save Map Configuration">
   <br>
   <br>
   <br>
@@ -549,7 +626,7 @@
 // Choroplet Map
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dlg-quantile-map" title="Open Choropleth Map">
+<div class="mainDlg"  id="dlg-quantile-map" title="Open Choropleth Map">
   <br/><br/>
   <table>
   <tr>
@@ -591,7 +668,7 @@
 // Weights Creation
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dialog-weights"  title="Weights Creation Dialog">
+<div class="mainDlg"  id="dialog-weights"  title="Weights Creation Dialog">
   <style>
   </style>
   <table>
@@ -713,7 +790,7 @@
   <div class="dlg-loading"></div>
 </div> 
 
-<div id="dlg-add-uniqid" title="Add Unique ID">
+<div class="mainDlg"  id="dlg-add-uniqid" title="Add Unique ID">
   <label for="name">Input an unique ID name:</label>
   <input type="text" id="uniqid_name" class="text ui-widget-content ui-corner-all">
 </div>
@@ -723,7 +800,7 @@
 // Spatial Regression
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dialog-regression" title="Spatial Regression Dialog"> 
+<div class="mainDlg"  id="dialog-regression" title="Spatial Regression Dialog"> 
   <p style="text-align: left">
   <button id="btn_open_model">Open Model</button>
   <button id="btn_save_model">Save Model</button>
@@ -888,7 +965,7 @@
     </tr>
   </table> 
 </div>
-<div id="dialog-spreg-result" title="Spatial Regression Result">
+<div class="mainDlg"  id="dialog-spreg-result" title="Spatial Regression Result">
   <div id="spreg-result-tabs">
     <ul>
       <li><a href="#tabs-1">Report</a></li>
@@ -905,7 +982,7 @@
   </div>
 </div>
 
-<div id="dialog-preference" title="Preference">
+<div class="mainDlg"  id="dialog-preference" title="Preference">
   <form id="form-pref">
   <div id="tabs">
     <ul>
@@ -1048,12 +1125,12 @@
   </form>
 </div>
 
-<div id="dlg-save-model" title="Save Spreg Model">
+<div class="mainDlg"  id="dlg-save-model" title="Save Spreg Model">
     <label for="name">Input a model name:</label>
     <input type="text" id="model_name" class="text ui-widget-content ui-corner-all">
 </div>
 
-<div id="dlg-open-model" title="Open Spreg Model">
+<div class="mainDlg"  id="dlg-open-model" title="Open Spreg Model">
     <label for="name">Select a spreg model:</label>
     <select id="open_spreg_model">
     </select>
@@ -1063,7 +1140,7 @@
 // Other Dialogs
 ///////////////////////////////////////////////////////////////////////////////
 -->
-<div id="dlg-msg" title="Message">
+<div class="mainDlg"  id="dlg-msg" title="Message">
   <div class="text-align:left;">
     <p class="font-weight:bold;" id="msg-title"></p>
     <p id="msg-content" class="text-align:left;"></p>

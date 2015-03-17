@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PySAL | CartoDB.js | CartoDB</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <link rel="shortcut icon" href="http://cartodb.com/assets/favicon.ico" />
+ 
+    <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css" />
+ 
+    <style>
+      html, body, #map {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+      }
+    </style>
+ 
+  </head>
+  <body>
+    <div id="map"></div>
+ 
+    <!-- include cartodb.js library -->
+    <script src="http://libs.cartocdn.com/cartodb.js/v3/cartodb.js"></script>
+ 
+    <!-- Place your code in the script tags below -->
+    <script>
+    
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == undefined ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+    window.onload = function() {
+    var user_id = getParameterByName('uid');
+    var viz_name = getParameterByName('vizname');
+    var vizjson_url = '../media/temp/' + user_id + '/' + viz_name + '.json'; // <-- Paste viz.json URL between quotes
+
+    cartodb.createVis("map", vizjson_url) // <-- Change map_id to 'map'
+        .done(function(vis, layers) {
+            // do stuff
+            console.log("Map successfully created");
+        })
+        .error(function(err) {
+            // report error
+            console.log("An error occurred: " + err);
+        });
+}
+    </script>
+  </body>
+</html>

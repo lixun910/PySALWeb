@@ -25,6 +25,7 @@ require.config({
     'colorbrewer'  : 'lib/colorbrewer',
     md5 : 'lib/md5.min',
     ss : 'lib/simple_statistics',
+    //zip : 'lib/zip/zip',
   },
   shim : {
     kdtree : {exports: 'kdtree'},
@@ -39,6 +40,7 @@ require.config({
     "list" : {},
     'colorbrewer': {},
     ss : {exports : 'ss'},
+    //zip : {},
   },
 });
 

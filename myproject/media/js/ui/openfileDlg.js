@@ -76,7 +76,7 @@ var OpenFileDlg = (function() {
           });
         } 
         */
-        require(['ui/openfileDlg', 'ui/choroplethDlg', 'ui/histogramDlg', 'ui/lisaDlg', 'ui/moranDlg', 'ui/networkDlg', 'ui/scatterDlg', 'ui/spacetimeDlg', 'ui/spregDlg', 'ui/weightsDlg'], function(FileDlg, ChoroplethDlg, HistogramDlg, LisaDlg, MoranDlg, NetworkDlg, ScatterDlg, SpacetimeDlg, SpregDlg, WeightsDlg){
+        require(['ui/openfileDlg', 'ui/choroplethDlg', 'ui/histogramDlg', 'ui/lisaDlg', 'ui/moranDlg', 'ui/networkDlg', 'ui/scatterDlg', 'ui/spacetimeDlg', 'ui/spregDlg', 'ui/weightsDlg', 'ui/scattermatrixDlg', 'ui/parcoordsDlg'], function(FileDlg, ChoroplethDlg, HistogramDlg, LisaDlg, MoranDlg, NetworkDlg, ScatterDlg, SpacetimeDlg, SpregDlg, WeightsDlg, ScatterMatrixDlg, ParcoordsDlg){
           var fileDlg = FileDlg.getInstance();
           var cartoDlg = CartoDlg.getInstance();
           var choroDlg = ChoroplethDlg.getInstance();
@@ -88,9 +88,11 @@ var OpenFileDlg = (function() {
           var spacetimeDlg = SpacetimeDlg.getInstance();
           var spregDlg = SpregDlg.getInstance();
           var wDlg = WeightsDlg.getInstance();
+          var scatMatrixDlg = ScatterMatrixDlg.getInstance();
+          var parcoordsDlg = ParcoordsDlg.getInstance();
          
           var ui = UIManager.getInstance(); 
-          ui.RegistDialogs([fileDlg, cartoDlg, choroDlg, histoDlg, lisaDlg, moranDlg, netwDlg, scatDlg, spacetimeDlg, spregDlg, wDlg]); 
+          ui.RegistDialogs([fileDlg, cartoDlg, choroDlg, histoDlg, lisaDlg, moranDlg, netwDlg, scatDlg, spacetimeDlg, spregDlg, wDlg, scatMatrixDlg, parcoordsDlg]); 
 
         });
       }

@@ -163,25 +163,21 @@ var Manager = (function(window){
       // create a HTML5 canvas object for this map
       var canvas = $('<canvas/>', {'id':numMaps}).attr('class','paint-canvas');
       container.append(canvas);
-     
       var  params = {};
       // assign default fill color
       if (params['fill_color'] === undefined) {
         params['fill_color'] = layerColors[numMaps % 6];
       }
-      
       var mapCanvas = new MapCanvas(map, canvas, hlcanvas, params);
-      
       for (var i=0; i<mapCanvasList.length; i++) {
         mapCanvasList[i].updateExtent(map);
       }
-      
       mapCanvasList.push(mapCanvas);
       mapOrder.push(numMaps);
       numMaps += 1;
-      
       SetupBasemapEvent();
     }
+    
     
     window.addEventListener('keydown', OnKeyDown, true);
     window.addEventListener('keyup', OnKeyUp, true);

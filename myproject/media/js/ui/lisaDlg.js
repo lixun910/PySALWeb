@@ -19,12 +19,13 @@ var LisaDlg = (function($){
       for ( var i=0, n = result.id_array.length; i<n; i++ ) {
         colorTheme[colors[i]] = result.id_array[i];
       }
-      mapCanvas.updateColor(colorTheme);
+      var txts = Utils.create_legend($('#legend'), result.bins, colors); 
+      mapCanvas.updateColor(colorTheme, result.col_name, [0,1,2,3,4], colors, txts);
       var type = " (" + result.col_name + ", LISA)",
         curTreeItem = $($('#sortable-layers li')[0]);
         newLayerName = $('#btnMultiLayer span').text() + type;
       $(curTreeItem.children()[1]).text(newLayerName);
-      Utils.create_legend($('#legend'), result.bins, colors); 
+      
     } 
   
     $("#dlg-lisa-map").dialog({
@@ -89,6 +90,7 @@ var LisaDlg = (function($){
                       else if (q[i] === 4) cluster4.push(i);
                     } else {
                       not_sig.push(i);
+                      q[i] = 0;
                     }
                   }
                   ProcessLisaMap({
@@ -99,6 +101,8 @@ var LisaDlg = (function($){
                   });
                   prg_bar.hide();
                   that.dialog("close");
+                  
+                  CartoProxy.AddField("lisa", "integer", q);
                 }
               } // end function MoranI()
               CartoProxy.GetVariables(table_name, [sel_var], false, function(data){

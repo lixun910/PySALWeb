@@ -88,4 +88,8 @@ class Jobs(models.Model):
     log = models.TextField()
     time = models.FloatField(null=True, blank=True)
     
+class CartoViz(models.Model):
+    uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
+    userid = models.CharField(max_length=80)
+    name = models.CharField(max_length=255)
     

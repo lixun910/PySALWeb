@@ -7,6 +7,8 @@ var zip = this.zip;
 var carto_uid;
 var carto_key;
 
+var csrftoken = this.csrftoken;
+
 var data_cache = {};
 
 var CartoProxy = {
@@ -15,7 +17,7 @@ var CartoProxy = {
     carto_uid = uid;
     carto_key = key;
     var sql = "SELECT table_name FROM information_schema.tables WHERE table_schema='public'";
-    var url = "http://" + uid + ".cartodb.com/api/v2/sql?api_key=" + key + "&q=" + sql;
+    var url = "https://" + uid + ".cartodb.com/api/v2/sql?api_key=" + key + "&q=" + sql;
     var that = this;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
@@ -51,7 +53,7 @@ var CartoProxy = {
   
   GetGeomType : function(table_name, onSuccess) {
     var sql = "SELECT GeometryType(the_geom) FROM " + table_name + " LIMIT 1";
-    var url = "http://" + carto_uid + ".cartodb.com/api/v2/sql?api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'json';
@@ -75,7 +77,7 @@ var CartoProxy = {
   
   DownloadTable2TopoJson : function(table_name, onSuccess) {
     var sql = "SELECT the_geom FROM " + table_name;
-    var url = "http://" + carto_uid + ".cartodb.com/api/v2/sql?format=topojson&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=topojson&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'text';
@@ -109,7 +111,7 @@ var CartoProxy = {
   
   DownloadTable: function(table_name, onSuccess) {
     var sql = "SELECT the_geom FROM " + table_name;
-    var url = "http://" + carto_uid + ".cartodb.com/api/v2/sql?format=shp&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=shp&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.responseType = 'blob';
@@ -179,7 +181,7 @@ var CartoProxy = {
   
   GetFields: function(table_name, onSuccess) {
     var sql = "SELECT column_name as a, data_type as b FROM information_schema.columns WHERE table_name='" + table_name + "'";
-    var url = "http://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'json';
@@ -232,7 +234,7 @@ var CartoProxy = {
     sql += vars[vars.length-1];
     sql += " FROM " + table_name;
     
-    var url = "http://" + carto_uid + ".cartodb.com/api/v2/sql?format=csv&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=csv&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'text';
@@ -286,7 +288,7 @@ var CartoProxy = {
    
     sql = sql.replace(/natregimes/g, table_name);
     
-    var url = "http://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'json';
@@ -317,7 +319,7 @@ var CartoProxy = {
     sql = sql.replace(/natregimes/g, table_name);
     sql = sql.replace("dist_threshold", w_conf.dist_value);
     
-    var url = "http://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'json';
@@ -348,7 +350,7 @@ var CartoProxy = {
     sql = sql.replace(/natregimes/g, table_name);
     sql = sql.replace("kk", parseInt(w_conf.dist_value));
     
-    var url = "http://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'json';
@@ -373,7 +375,7 @@ var CartoProxy = {
    
     sql = sql.replace(/natregimes/g, table_name);
     
-    var url = "http://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'json';
@@ -384,10 +386,77 @@ var CartoProxy = {
     xhr.send(null);
   },
 
+  AddField : function(table_name, field_name, field_type, callback) {
+    var sql = "ALTER TABLE " + table_name +" ADD COLUMN " + field_name + " " + field_type;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url);
+    xhr.responseType = 'json';
+    xhr.onload = function(evt) {
+      var data = xhr.response;
+      callback();      
+    };
+    xhr.send(null);
+  },
+  
+  AddFieldWithValues : function(table_name, field_name, field_type, values) {
+    var temp_table_name = "lisa_temp";
+    
+    function OnTempTableCreated() {
+      this.AddField(table_name, field_name, field_type, function(data){
+        var sql = "UPDATE " + table_name + " t1 SET " + field_name + "=t2." + field_name + " FROM " + temp_table_name + " t2 WHERE t1.cartodb_id=t2.cartodb_id";
+        var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url);
+        xhr.responseType = 'json';
+        xhr.onload = function(evt) {
+          console.log(xhr.response);
+        };
+        xhr.send(null);
+      });
+    }
+    
+    function OnZipCreated(zippedBlob)  {
+      var formData = new FormData();
+      formData.append('userfile', zippedBlob, "upload.zip");
+      formData.append('carto_uid', carto_uid);
+      formData.append('carto_key', carto_key);
+      formData.append('table_name', temp_table_name);
+      formData.append('csrfmiddlewaretoken', csrftoken);
+      
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", "../carto_upload_csv/");
+      xhr.responseType = 'json';
+      xhr.onload = function(evt) {
+        console.log(xhr.response);
+        if (xhr.response['table_name']) {
+          OnTempTableCreated();
+        }
+      };
+      xhr.send(formData);
+    }
+    
+    // create zipped csv file
+    var FILE_NAME = temp_table_name + ".csv";
+    var TEXT_CONTENT = "cartodb_id, lisa\n";
+    for (var i=0, n=values.length; i<n; i++) {
+      TEXT_CONTENT += i + "," + values[i] + "\n";
+    }
+    var blob = new Blob([TEXT_CONTENT], {type: "text/plain"});
+    zip.createWriter(new zip.BlobWriter(), function(zipWriter){
+      zipWriter.add(FILE_NAME, new zip.BlobReader(blob), function(){
+        zipWriter.close(OnZipCreated);
+      })
+    });
+   
+    /*
+    */
+  },
  
   GetQuantileBins : function(table_name, var_name, k, onSuccess)  {
     var sql = "SELECT CDB_QuantileBins(array_agg(" + var_name +"), "+k+") FROM " + table_name;
-    var url = "http://" + carto_uid + ".cartodb.com/api/v2/sql?format=csv&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=csv&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'json';
@@ -425,6 +494,8 @@ var CartoProxy = {
       setTimeout(function(){self.CartoSpatialCount(uid, key, first_layer, second_layer, count_col_name, successHandler)}, 10);
     }
   },
+  
+  
   
 };
 

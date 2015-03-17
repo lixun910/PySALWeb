@@ -168,13 +168,13 @@ var HistogramDlg = (function($){
         }
       
         function updateUI(col_name, k, bins) {
-          mapCanvas.updateColor(colorTheme);
+          var txts = Utils.create_legend($('#legend'), bins, colors); 
+          mapCanvas.updateColor(colorTheme, col_name, bins, colors, txts);
           var type = " (" + col_name + ",k=" + k + ")",
               curTreeItem = $($('#sortable-layers li')[0]);
               newLayerName = $('#btnMultiLayer span').text() + type;
               
           $(curTreeItem.children()[1]).text(newLayerName);
-          Utils.create_legend($('#legend'), bins, colors); 
         }
       
         if (sel_method === "quantile" || sel_method === "fisher jenks" ||
@@ -246,13 +246,14 @@ var HistogramDlg = (function($){
             for ( var i=0, n = data.id_array.length; i<n; i++ ) {
               colorTheme[colors[i]] = data.id_array[i];
             }
-            mapCanvas.updateColor(colorTheme);
+            var legend_txts = Utils.create_legend($('#legend'), data.bins, colors); 
+            mapCanvas.updateColor(colorTheme, sel_var, data.bins, colors, legend_txts);
+            
             var type = " (" + data.col_name + ",k=" + data.k + ")",
               curTreeItem = $($('#sortable-layers li')[0]);
               newLayerName = $('#btnMultiLayer span').text() + type;
             $(curTreeItem.children()[1]).text(newLayerName);
           
-            Utils.create_legend($('#legend'), data.bins, colors); 
         
             that.dialog("close");
           });

@@ -108,6 +108,22 @@ var GDABasemap = (function($, L, cartodb){
         return isHide;
       },
   
+      GetBounds : function() {
+        var bounds = lmap.getBounds(),
+            sw = bounds.getSouthWest(),
+            ne = bounds.getNorthEast();
+        return [sw.lat, sw.lng, ne.lat, ne.lng];
+      },
+      
+      GetCenter : function() {
+        var center = lmap.getCenter();
+        return [center.lat, center.lng];
+      },
+      
+      GetZoom : function() {
+        return lmap.getZoom();
+      },
+      
       ShowCartoDBMap : function(uid, key, table_name, geo_type) {
       
         var css = "";

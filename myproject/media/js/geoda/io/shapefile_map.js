@@ -84,6 +84,9 @@ ShpMap.prototype = {
   },
   
   fitScreen : function(screenWidth, screenHeight, marginLeft, marginTop, moveX, moveY) {
+    this.screenWidth = screenWidth;
+    this.screenHeight = screenHeight;
+    
     if (moveX) this.moveX = moveX;
     if (moveY) this.moveY = moveY;
     // convert raw points to screen coordinators
