@@ -14,8 +14,10 @@ import logging, os, zipfile, shutil, time
 from hashlib import md5
 from views_utils import *
 from views_utils import Save_new_shapefile
+from views_cartodb import carto_upload_csv
 from Jobs import job_google_search
 import multiprocessing as mp
+import google
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +84,41 @@ def get_geoda_data(request):
         content_type="application/json"
     )
 
+
+@login_required
+def google_search_carto(request):
+    # check user login
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+
+    if request.method == 'GET': 
+        q = request.GET.get("q", None)
+        bounds = request.GET.getlist("bounds[]", [])
+        gkey = request.GET.get("gkey", None)
+        name = request.GET.get("name", None)
+        carto_uid = request.GET.get("carto_uid", None)
+        carto_key = request.GET.get("carto_key", None)
+    
+        bounds = [float(i) for i in bounds]
+        user_uuid = md5(userid).hexdigest()
+        opath = os.path.join(
+            settings.MEDIA_ROOT, 'temp', user_uuid, 
+            name+".json"
+        )
+        findings = {}
+        status = google.searchByKeyword(q, bounds, gkey, findings)
+        if status == "OK":
+            google.saveGeoJSON(findings, ofile=opath)
+       
+            # call to upload the file to CartoDB
+            table_name = carto_upload_csv(open(opath, 'rb'), carto_uid, carto_key)
+            
+            rsp = {'status': status, 'table_name' : table_name}
+            return HttpResponse(json.dumps(rsp), content_type="application/json")    
+        
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
+                
 @login_required
 def google_search(request):
     # check user login

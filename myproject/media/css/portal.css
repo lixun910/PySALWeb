@@ -123,7 +123,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   width: 160px;
   height: 100%;
   margin: 10px 0 0 10px;
-  background: url("../img/pysalweb-logo.png") no-repeat;
+  background: url("../img/pysalweb-carto-logo.png") no-repeat;
   float: left;
   cursor: pointer;
 }
@@ -169,6 +169,9 @@ border: 1px solid #aaa;margin: 1px 10px;
 /**/
 .ui-dialog {
  z-index: 10003 !important;
+}
+.ui-autocomplete{
+ z-index: 10004 !important;
 }
 .tool-menu {
   background-image: url("../img/menu-bg.png");

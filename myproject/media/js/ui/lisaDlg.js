@@ -1,6 +1,6 @@
 
 // Author: xunli at asu.edu
-define(['jquery', './utils','./mapManager','./cartoProxy','colorbrewer'], function($, Utils, MapManager, CartoProxy) {
+define(['jquery', './msgbox','./utils','./mapManager','./cartoProxy','colorbrewer'], function($, MsgBox, Utils, MapManager, CartoProxy) {
 
 var LisaDlg = (function($){
   var instance;
@@ -14,18 +14,34 @@ var LisaDlg = (function($){
     
     function ProcessLisaMap(result) {
       var mapCanvas = MapManager.getInstance().GetMapCanvas(),
+          map = mapCanvas.map,
+          table_name = mapCanvas.map.name,
+          field_name = "lisa",
           colors = colorbrewer['Lisa'][5],
           colorTheme = {};
+          
       for ( var i=0, n = result.id_array.length; i<n; i++ ) {
         colorTheme[colors[i]] = result.id_array[i];
       }
+      
       var txts = Utils.create_legend($('#legend'), result.bins, colors); 
-      mapCanvas.updateColor(colorTheme, result.col_name, [0,1,2,3,4], colors, txts);
+      mapCanvas.updateColor(colorTheme, field_name, [0,1,2,3,4], colors, txts);
+     
+      // update Tree item 
       var type = " (" + result.col_name + ", LISA)",
-        curTreeItem = $($('#sortable-layers li')[0]);
-        newLayerName = $('#btnMultiLayer span').text() + type;
+          curTreeItem = $($('#sortable-layers li')[0]);
+          newLayerName = $('#btnMultiLayer span').text() + type;
+          
       $(curTreeItem.children()[1]).text(newLayerName);
       
+      // add a field with LISA values
+      CartoProxy.AddFieldWithValues(table_name, field_name, "integer", result.q, function() {
+        require(['ui/uiManager'], function(UIManager){
+          map.fields.push(field_name);
+          UIManager.getInstance().UpdateFieldNames(map.fields);
+          MsgBox.getInstance().Show("Information", "The LISA results have been saved to the CartoDB table.");
+        });
+      });
     } 
   
     $("#dlg-lisa-map").dialog({
@@ -45,8 +61,9 @@ var LisaDlg = (function($){
       buttons: {
         "Open": function() {
           prg_bar.show();
-          var sel_var = $('#sel-lisa-var').val();
-          var map = MapManager.getInstance().GetMap(); 
+          var sel_var = $('#sel-lisa-var').val(),
+              map = MapManager.getInstance().GetMap(),
+              that = $(this);
   
           if (map.uuid)  {
             // to PySAL server
@@ -55,7 +72,6 @@ var LisaDlg = (function($){
               "var": sel_var, 
               "w": sel_w,
             };
-            var that = $(this);
             $.get('../lisa_map/', params).done(function(result) {
               ProcessLisaMap(result);
               prg_bar.hide();
@@ -98,6 +114,7 @@ var LisaDlg = (function($){
                     'col_name': sel_var,
                     'bins': ["Not Significant","High-High","Low-High","Low-Low","Hight-Low"],
                     'id_array': [not_sig, cluster1, cluster2, cluster3, cluster4],
+                    'q' : q,
                   });
                   prg_bar.hide();
                   that.dialog("close");

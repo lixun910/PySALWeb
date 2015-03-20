@@ -220,6 +220,9 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
         parcoodsDlg = dlgs[12];
       },
     
+      IsDialogSetup : function() {
+        return fileDlg === undefined || fileDlg === null;
+      },
       
       UpdateFieldNames : function(fields) {
         var dialogs = GetDialogs();

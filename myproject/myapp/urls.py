@@ -32,6 +32,7 @@ urlpatterns += patterns('myproject.myapp.views_opendata',
     url(r'^open_data/$', 'open_data', name='open data portal'),
     url(r'^google_search/$', 'google_search', name='google search'),
     url(r'^geoda_data/$', 'get_geoda_data', name='get geoda data'),
+    url(r'^google_search_carto/$', 'google_search_carto', name='google search to CartoDB'),
 )
 
 urlpatterns += patterns('myproject.myapp.views_plots',
@@ -43,9 +44,9 @@ urlpatterns += patterns('myproject.myapp.views_plots',
 urlpatterns += patterns('myproject.myapp.views_cartodb',
     url(r'^carto_get_tables/$', 'carto_get_tables', name='carto get tables'),
     url(r'^carto_download_table/$', 'carto_download_table', name='carto download table'),
-    url(r'^carto_upload_table/$', 'carto_upload_table', name='carto upload tables'),
+    url(r'^carto_upload_file/$', 'carto_upload_file', name='carto upload tables'),
     url(r'^carto_create_viz/$', 'carto_create_viz', name='carto create vizjson'),
-    url(r'^carto_upload_csv/$', 'carto_upload_csv', name='carto upload csv'),
+    url(r'^carto_add_field_from_file/$', 'carto_add_field_from_file', name='carto field from csv file'),
 )
 
 urlpatterns += patterns('myproject.myapp.views_map',

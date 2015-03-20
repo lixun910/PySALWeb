@@ -157,8 +157,9 @@
   <div id="tabs-dlg-open-file">
     <ul>
       <li><a href="#tabs-1">CartoDB</a></li>
-      <li><a href="#tabs-2">Local Disk</a></li>
-      <li><a href="#tabs-3">Dropbox</a></li>
+      <li><a href="#tabs-2">Google Maps</a></li>
+      <li><a href="#tabs-3">Local Disk</a></li>
+      <li><a href="#tabs-4">Dropbox</a></li>
     </ul>
     <div id="tabs-1">
       <form id="cartodb-form">
@@ -192,6 +193,24 @@
       </form>
     </div>
     <div id="tabs-2">
+      <div style="text-align: left">
+	<p> Please use your own Google Maps API key to search data from Google Maps.</p>
+	<br/><br/>
+	<table>
+	  <tr><td>Your Google Maps API key: </td>
+	  <td><input id="google-key" type="text" size=45 value="AIzaSyBDqDw7hBlO0EkzlbYeiP3UpS2jpEzSDfE"></td>
+	  </tr>
+	  <tr><td>Input a search keyword:</td>
+	  <td><input id="keywords" type="text" placeholder="Keywords (e.g. Liquor Stores)" size=30/> </td>
+	  </tr>
+	</table>
+	<br/>
+	<br/>
+	<br/>
+	<a href=> Tips: search keywords supported by Google Maps </a>
+      </div>
+    </div>
+    <div id="tabs-3">
       <div id="drop_zone">Drop files here
         <p style="font-size:12px;"><label id="lbl-drop-json">.json</label>&nbsp;&nbsp;or &nbsp;&nbsp;
         <label  id="lbl-drop-shp">.shp</label>&nbsp;<label id="lbl-drop-dbf">.dbf</label>
@@ -200,7 +219,7 @@
       </div>
       <div id="progress_bar"><div class="percent">0%</div></div>
     </div>
-    <div id="tabs-3">
+    <div id="tabs-4">
       <div id="dropbox_div"></div>
     </div>
   </div>
@@ -258,6 +277,7 @@
             <td>View and share a CartoDB Visualization</td>
             <td>
               <select id="sel-carto-viz">
+		<option></option>
               </select>
             </td>
           </tr>
@@ -1176,6 +1196,7 @@ Select variables in Parallel Coordinates:
 
 <div id="legend" class="info" style="z-index:9999;position:fixed;top:200px;right:5px;">Legend</div>
 
+<div id="googlemap" style="display: none"></div>
 <script src="../../media/js/require.js"></script>
 <script src="../../media/js/index.js"></script>
 </html>

@@ -86,13 +86,16 @@ var CartoDlg = (function($, CartoProxy) {
         require(['ui/mapManager', 'ui/basemap'], function(MapManager, Basemap){
           var mapcanvas = MapManager.getInstance().GetMapCanvas(),
               map = mapcanvas.map,
-              basemap = Basemap.getInstance();
+              basemap = Basemap.getInstance(),
+              fields = [];
+          for (var fld in map.fields) fields.push(fld);
               
           $.get("../carto_create_viz/", {
             carto_uid : uid,
             carto_key : key,
             viz_name : viz_name,
             map_name : map.name,
+            'fields[]': fields,
             map_type : mapcanvas.shpType,
             'bounds[]' : basemap.GetBounds(),
             'center[]' : basemap.GetCenter(),

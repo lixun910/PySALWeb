@@ -2,7 +2,7 @@
 // Author: xunli at asu.edu
 define(['jquery', './utils','./cartoProxy', './mapManager', 'd3', 'ss', 'jquery.colorpicker','colorbrewer'], function($, Utils, CartoProxy, MapManager, d3, ss) {
 
-var HistogramDlg = (function($){
+var ChoroplethDlg = (function($){
   var instance;
 
   function init() {
@@ -284,5 +284,5 @@ var HistogramDlg = (function($){
 
 })($);
 
-return HistogramDlg;
+return ChoroplethDlg;
 });

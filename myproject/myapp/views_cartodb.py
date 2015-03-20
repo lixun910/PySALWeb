@@ -133,70 +133,96 @@ def carto_download_table(request):
     return HttpResponse(RSP_FAIL, content_type="application/json")    
 
 @login_required
-def carto_upload_table(request):
-    # check user login
-    userid = request.user.username
-    if not userid:
-        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
-
-    if request.method == 'GET': 
-        cartodb_uid = request.GET.get("cartodb_uid", None)
-        cartodb_key = request.GET.get("cartodb_key", None)
-        table_name = request.GET.get("cartodb_table_name", None)
-        if cartodb_key and cartodb_uid and table_name:
-            return HttpResponse(
-                RSP_OK,
-                content_type="application/json"
-            )
-    return HttpResponse(RSP_FAIL, content_type="application/json")    
-
-
-@login_required
-def carto_upload_csv(request):
+def carto_upload_file(request):
     # check user login
     userid = request.user.username
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
 
     if request.method == 'POST': 
+        uid = request.GET.get("carto_uid", None)
+        key = request.GET.get("carto_key", None)
+        filelist = request.FILES.getlist('userfile')
+        if key and uid:
+            table_name = carto_upload_csv(filelist[0], uid, key)
+            rsp = {'table_name':table_name}
+            return HttpResponse(
+                json.dumps(rsp),
+                content_type="application/json"
+            )
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
+
+@login_required
+def carto_add_field_from_file(request):
+    # check user login
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    
+    if request.method == 'POST': 
         filelist = request.FILES.getlist('userfile')
         uid = request.POST.get("carto_uid", None)
         key = request.POST.get("carto_key", None)
         table_name = request.POST.get('table_name', None)
+        field_name = request.POST.get('field_name', None)
+        field_type = request.POST.get('field_type', None)
+        file_name = request.POST.get('file_name', None)
+ 
+        # upload zipped file to cartodb and get returned_table_name
+        returned_table_name = carto_upload_csv(filelist[0], uid, key)
         
-        cartodb_drop_table(table_name, uid, key)
-            
-        # upload new_lisa_table : none-geometry table
-        fileObj = filelist[0]
-        import_url = "https://%s.cartodb.com/api/v1/imports/?api_key=%s" % (uid,key)
-        r = requests.post(import_url, files={'file': fileObj}, verify=False)
-        data = r.json()
+        # add field with field_name to destinated table_name
+        carto_add_field_only(table_name, field_name, field_type, uid, key)
         
-        complete = False
-        last_state = ''
-        while not complete: 
-            import_url = "https://%s.cartodb.com/api/v1/imports/%s?api_key=%s" % (uid, data['item_queue_id'], key)
-            req = requests.get(import_url, verify=False)
-            d = req.json()
-            if last_state!=d['state']:
-                last_state=d['state']
-                if d['state']=='uploading':
-                    print 'Uploading file...'
-                elif d['state']=='importing':
-                    print 'Importing data...'
-                elif d['state']=='complete':
-                    complete = True
-                    print 'Table "%s" created' % d['table_name']
-            if d['state']=='failure':
-                print d
-                return HttpResponse(RSP_FAIL, content_type="application/json")    
-                
-        rsp = {"sucess" : 1, 'table_name' : d['table_name'] }
+        # copy the field in returned_table_name to destinated table_name
+        sql = 'UPDATE %s t1 SET %s=t2.%s FROM %s t2 WHERE t1.cartodb_id=t2.cartodb_id' % (table_name, field_name, field_name, returned_table_name)
+        url = 'https://%s.cartodb.com/api/v2/sql' % uid
+        params = { 'api_key': key, 'q': sql}
+        r = requests.get(url, params=params, verify=False)
+        
+        # drop this temporay table created by zip file        
+        cartodb_drop_table(returned_table_name, uid, key)
+        
+        rsp = {"sucess" : 1, 'table_name' : returned_table_name}
         return HttpResponse(json.dumps(rsp), content_type="application/json")    
     return HttpResponse(RSP_FAIL, content_type="application/json")    
 
+def carto_add_field_only(table_name, field_name, field_type, uid, key):
+    sql = 'ALTER TABLE %s ADD COLUMN %s %s' % (table_name, field_name, field_type)
+    url = 'https://%s.cartodb.com/api/v2/sql' % uid
+    params = { 'api_key': key, 'q': sql}
+    r = requests.get(url, params=params, verify=False)
+    try:
+        #content = r.json()    
+        print "Add field done"
+    except:
+        print "Add field faield"
+        
+def carto_upload_csv(fileObj, uid, key):
+    url = "https://%s.cartodb.com/api/v1/imports/?api_key=%s" % (uid,key)
+    r = requests.post(url, files={'file': fileObj}, verify=False)
+    data = r.json()
+    
+    complete = False
+    last_state = ''
+    while not complete: 
+        url = "https://%s.cartodb.com/api/v1/imports/%s?api_key=%s" % (uid, data['item_queue_id'], key)
+        req = requests.get(url, verify=False)
+        d = req.json()
+        if last_state!=d['state']:
+            last_state=d['state']
+            if d['state']=='uploading':
+                print 'Uploading file...'
+            elif d['state']=='importing':
+                print 'Importing data...'
+            elif d['state']=='complete':
+                complete = True
+                print 'Table "%s" created' % d['table_name']
+                return d['table_name']
+        if d['state']=='failure':
+            return None
+
 def cartodb_drop_table(table_name, uid, key):
-    import requests
     # delete existing lisa_table 
     sql = 'DROP TABLE %s' % (table_name)
     url = 'https://%s.cartodb.com/api/v1/sql' % uid
@@ -211,7 +237,6 @@ def cartodb_drop_table(table_name, uid, key):
     except:
         print "Nothing dropped"
     
-
 @login_required
 def carto_create_viz(request):
     # check user login
@@ -249,6 +274,16 @@ def carto_create_viz(request):
             
         if zoom:
             zoom = int(zoom)
+            
+        if fields:
+            new_fields = []
+            for i, fld in enumerate(fields):
+                info = {}
+                info['name'] = fld
+                info['title'] = True
+                info['position'] = i
+                new_fields.append(info)
+            fields = new_fields
             
         def _get_css(clr):
             css = ""
@@ -373,7 +408,7 @@ def carto_create_viz(request):
                                     "infowindow": {
                                         "fields": fields,
                                         "template_name": "table/views/infowindow_light",
-                                        "template": "",
+                                        "template": "<div class=\"cartodb-popup v2\">\n  <a href=\"#close\" class=\"cartodb-popup-close-button close\">x</a>\n  <div class=\"cartodb-popup-content-wrapper\">\n    <div class=\"cartodb-popup-content\">\n      {{#content.fields}}\n        {{#title}}<h4>{{title}}</h4>{{/title}}\n        {{#value}}\n          <p {{#type}}class=\"{{ type }}\"{{/type}}>{{{ value }}}</p>\n        {{/value}}\n        {{^value}}\n          <p class=\"empty\">null</p>\n        {{/value}}\n      {{/content.fields}}\n    </div>\n  </div>\n  <div class=\"cartodb-popup-tip-container\"></div>\n</div>\n",
                                         "alternative_names": {},
                                         "width": 226,
                                         "maxHeight": 180

@@ -71,7 +71,7 @@ function($, LayerTree, Toolbar, UIManager, MsgBox,  CartoProxy, FileDlg, MapMana
   CartoProxy.SetUID(uid);
   CartoProxy.SetKey(key);
   
-  CartoProxy.AddFieldWithValues('natregimes', 'lisa', 'integer', [1,2,3,4,5,6,7,8,9,10]);
+  //CartoProxy.AddFieldWithValues('natregimes', 'lisa', 'integer', [1,2,3,4,5,6,7,8,9,10]);
   
   // UI Manager 
   var ui = UIManager.getInstance();

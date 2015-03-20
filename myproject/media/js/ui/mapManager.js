@@ -178,10 +178,37 @@ var Manager = (function(window){
       SetupBasemapEvent();
     }
     
+    function GetMapCanvasByName(name) {
+      for (var i=0; i<mapCanvasList.length; i++) {
+        if (mapCanvasList[i].map.name === name)
+          return mapCanvasList[i];
+      }
+      return undefined;
+    }
     
     window.addEventListener('keydown', OnKeyDown, true);
     window.addEventListener('keyup', OnKeyUp, true);
     window.addEventListener('resize', OnResize, true);
+    
+    
+    window.addEventListener('storage', function(e) {
+      console.log("map storage");
+      var hl_ids = JSON.parse(localStorage.getItem('HL_IDS')),
+          hl_ext = JSON.parse(localStorage.getItem('HL_MAP'));
+      for ( var uuid in hl_ids ) {
+        var map = GetMapCanvasByName(uuid);
+        if (map) {
+          var ids = hl_ids[uuid];
+          if ( hl_ext && uuid in hl_ext ) {
+            map.highlightExt(ids, hl_ext[uuid]);
+          } else if ( hl_ids && uuid in hl_ids ) {
+            var context = undefined;
+            var nolinking = true;
+            map.highlight(hl_ids[uuid], context, nolinking);
+          }
+        }
+      }
+    }, false);
     
     return {
       // public

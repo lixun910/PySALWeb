@@ -50,7 +50,7 @@ var GDABasemap = (function($, L, cartodb){
       $('#mapInfo').toggle();
     });
     
-    var CreateBaseLayer = function(){
+    function CreateBaseLayer() {
       // remove previous basemap
       if (baselayer) {
         lmap.removeLayer(baselayer);
@@ -73,7 +73,7 @@ var GDABasemap = (function($, L, cartodb){
       baselayer = L.tileLayer(currentTileUrl, options);
       lmap.addLayer(baselayer);
       return baselayer;
-    };
+    }
   
     baselayer = CreateBaseLayer();
     
@@ -86,7 +86,6 @@ var GDABasemap = (function($, L, cartodb){
         currentTileUrl = tileUrls[parseInt($(this).attr('id'))];
         
         baselayer = CreateBaseLayer();
-        
       });
     }
     

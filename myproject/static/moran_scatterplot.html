@@ -151,16 +151,17 @@ function(CartoProxy, Utils, Moran, colorbrewer, d3, $){
       }
     }
     // clean up select rect since it's ids only
+    var key = uuid ? uuid : table_name;
     if (localStorage["HL_MAP"] ) {
       hm = JSON.parse(localStorage["HL_MAP"]);
-      delete hm[uuid];
+      delete hm[key];
       localStorage["HL_MAP"] = JSON.stringify(hm);
     }
     var hl = {};
     if ( localStorage["HL_IDS"] ){ 
       hl = JSON.parse(localStorage["HL_IDS"]);
     }
-    hl[uuid] = selected_ids;
+    hl[key] = selected_ids;
     localStorage["HL_IDS"] = JSON.stringify(hl);
   }
   
@@ -458,9 +459,10 @@ function(CartoProxy, Utils, Moran, colorbrewer, d3, $){
   }
   
   $(window).bind('storage', function(e) {
+    var key = uuid ? uuid : table_name;
     var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
-    if ( uuid in hl_ids ) {
-      var ids = hl_ids[uuid];
+    if ( key in hl_ids ) {
+      var ids = hl_ids[key];
       Highlight(ids);
     }
   });
@@ -494,7 +496,8 @@ function(CartoProxy, Utils, Moran, colorbrewer, d3, $){
     
     CartoProxy.SetUID(carto_uid);
     CartoProxy.SetKey(carto_key);
-    CartoProxy.GetVariables(table_name, [fieldX], function(data){
+    var isCSV = false;
+    CartoProxy.GetVariables(table_name, [fieldX], isCSV, function(data){
       moran_y = data[fieldX];
       MoranI();
     });

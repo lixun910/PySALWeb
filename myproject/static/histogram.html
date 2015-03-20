@@ -217,7 +217,8 @@ function(CartoProxy,Utils, colorbrewer, d3){
   if (table_name)  {
     CartoProxy.SetUID(carto_uid);
     CartoProxy.SetKey(carto_key);
-    CartoProxy.GetVariables(table_name, [var_x], function(data){
+    var isCSV = false;
+    CartoProxy.GetVariables(table_name, [var_x], isCSV, function(data){
       ProcessData(var_x, data);
     });
   } else if (uuid) {

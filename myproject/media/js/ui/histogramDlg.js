@@ -12,7 +12,7 @@ var HistogramDlg = (function($){
       width: 300,
       height: 300,
       autoOpen: false,
-      modal: true,
+      modal: false,
       resizable:  false,
       draggable: false,
       beforeClose: function(event,ui){

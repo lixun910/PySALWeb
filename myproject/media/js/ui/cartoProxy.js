@@ -72,7 +72,6 @@ var CartoProxy = {
       if (onSuccess) onSuccess(geotype);
     };
     xhr.send(null);
-    
   },
   
   DownloadTable2TopoJson : function(table_name, onSuccess) {
@@ -400,38 +399,28 @@ var CartoProxy = {
     xhr.send(null);
   },
   
-  AddFieldWithValues : function(table_name, field_name, field_type, values) {
-    var temp_table_name = "lisa_temp";
-    
-    function OnTempTableCreated() {
-      this.AddField(table_name, field_name, field_type, function(data){
-        var sql = "UPDATE " + table_name + " t1 SET " + field_name + "=t2." + field_name + " FROM " + temp_table_name + " t2 WHERE t1.cartodb_id=t2.cartodb_id";
-        var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
-        xhr.responseType = 'json';
-        xhr.onload = function(evt) {
-          console.log(xhr.response);
-        };
-        xhr.send(null);
-      });
-    }
+  AddFieldWithValues : function(table_name, field_name, field_type, values, onSuccess) {
+    var temp_table_name = "temp_field_" + Utils.guid();
     
     function OnZipCreated(zippedBlob)  {
       var formData = new FormData();
+      formData.append('csrfmiddlewaretoken', csrftoken);
       formData.append('userfile', zippedBlob, "upload.zip");
       formData.append('carto_uid', carto_uid);
       formData.append('carto_key', carto_key);
-      formData.append('table_name', temp_table_name);
-      formData.append('csrfmiddlewaretoken', csrftoken);
+      formData.append('table_name', table_name);
+      formData.append('field_name', field_name);
+      formData.append('field_type', field_type);
+      formData.append('file_name', temp_table_name);
       
       var xhr = new XMLHttpRequest();
-      xhr.open("POST", "../carto_upload_csv/");
+      xhr.open("POST", "../carto_add_field_from_file/");
       xhr.responseType = 'json';
       xhr.onload = function(evt) {
         console.log(xhr.response);
         if (xhr.response['table_name']) {
-          OnTempTableCreated();
+          if (onSuccess)
+            onSuccess(field_name);
         }
       };
       xhr.send(formData);
@@ -441,7 +430,7 @@ var CartoProxy = {
     var FILE_NAME = temp_table_name + ".csv";
     var TEXT_CONTENT = "cartodb_id, lisa\n";
     for (var i=0, n=values.length; i<n; i++) {
-      TEXT_CONTENT += i + "," + values[i] + "\n";
+      TEXT_CONTENT += (i+1) + "," + values[i] + "\n";
     }
     var blob = new Blob([TEXT_CONTENT], {type: "text/plain"});
     zip.createWriter(new zip.BlobWriter(), function(zipWriter){
@@ -449,9 +438,6 @@ var CartoProxy = {
         zipWriter.close(OnZipCreated);
       })
     });
-   
-    /*
-    */
   },
  
   GetQuantileBins : function(table_name, var_name, k, onSuccess)  {

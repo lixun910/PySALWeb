@@ -42,7 +42,7 @@ return {
   },
   
   shrinkText : function(text, maxlength) {
-    if (!maxlength) maxlength = 22;
+    if (!maxlength) maxlength = 18;
     if (text.length > maxlength) {
       text = text.slice(0, maxlength -2);
       return text + "...";
@@ -56,8 +56,8 @@ return {
                  .toString(16)
                  .substring(1);
     }
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-           s4() + '-' + s4() + s4() + s4();
+    //return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+    return s4() + s4() + '_' + s4();
   },
 
   getParameterByName : function(name) {
@@ -219,6 +219,25 @@ return {
   },
   
   map2vizJson : function() {
+  },
+  
+  ShowYesNoDlg : function(msg, onYes) {
+    $('<div></div>').appendTo('body')
+    .html('<br/><div>'+msg+'</div>')
+    .dialog({
+      modal: true,
+      title: "Confirmation required",
+      buttons: {
+        Yes: function() {
+          if (onYes) onYes();
+          $(this).dialog("close");
+        },
+        No: function() {
+          $(this).dialog("close");
+        }
+      },
+      close: function( evt, ui) { $(this).remove(); }
+    });
   },
   
 };

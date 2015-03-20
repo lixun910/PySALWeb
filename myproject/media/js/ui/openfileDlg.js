@@ -1,8 +1,8 @@
 
 
 // Author: xunli at asu.edu
-define(['jquery','./msgbox', './message', './cartoProxy', './cartodbDlg', './mapManager', './uiManager'], 
-function($, MsgBox, M, CartoProxy, CartoDlg, MapManager, UIManager) {
+define(['jquery','./utils','./msgbox', './message', './cartoProxy', './cartodbDlg', './mapManager', './uiManager'], 
+function($, Utils, MsgBox, M, CartoProxy, CartoDlg, MapManager, UIManager) {
 
 var OpenFileDlg = (function() {
 
@@ -12,12 +12,20 @@ var OpenFileDlg = (function() {
     // singleton
     
     // private
-    var dlg = $("#dialog-open-file");
-    var dlgPrgBar = $('#progress_bar_openfile');
-    var dlgTabs = $('#tabs-dlg-open-file').tabs();
-    var idEl = $('#txt-carto-id');
-    var keyEl = $('#txt-carto-key');
+    var dlg = $("#dialog-open-file"),
+        dlgPrgBar = $('#progress_bar_openfile'),
+        dlgTabs = $('#tabs-dlg-open-file').tabs(),
+        idEl = $('#txt-carto-id'),
+        keyEl = $('#txt-carto-key'),
+        googleKeywords = $('#keywords'),
+        googleKeyEl = $('#google-key');
     
+    var google_types = ["accounting", "airport", "amusement_park","aquarium","art_gallery","atm","bakery","bank","bar","beauty_salon","bicycle_store","book_store","bowling_alley","bus_station","cafe","campground","car_dealer","car_rental","car_repair","car_wash","casino","cemetery","church","city_hall","clothing_store","convenience_store","courthouse","dentist","department_store","doctor","electrician","electronics_store","embassy","establishment","finance","fire_station","florist","food","funeral_home","furniture_store","gas_station","general_contractor","grocery_or_supermarket","gym","hair_care","hardware_store","health","hindu_temple","home_goods_store","hospital","insurance_agency","jewelry_store","laundry","lawyer","library","liquor_store","local_government_office","locksmith","lodging","meal_delivery","meal_takeaway","mosque","movie_rental","movie_theater","moving_company","museum","night_club","painter","park","parking","pet_store","pharmacy","physiotherapist","place_of_worship","plumber","police","post_office","real_estate_agency","restaurant","roofing_contractor","rv_park","school","shoe_store","shopping_mall","spa","stadium","storage","store","subway_station","synagogue","taxi_stand","train_station","travel_agency","university","veterinary_care","zoo",];
+    
+    googleKeywords.autocomplete({
+      source: google_types
+    });
+
     // detect if user's space empty -- show drag&drag tab
     if($('#tabs-1').text().indexOf('a') > 0) {
       dlgTabs.tabs('option','active', 0);
@@ -42,40 +50,24 @@ var OpenFileDlg = (function() {
       GetCartoTables();
     });
   
-    // hookup file dialog OK button 
-    var OnOKClick = function() {
-      var sel_id = dlgTabs.tabs('option','active');
-      if (sel_id === 0) {
-        var table_name = $('#sel-file-carto-tables').find(':selected').text(),
-            geo_type = $('#sel-file-carto-tables').find(':selected').val();
-        if (table_name === "")  {
-          MsgBox.getInstance().Show(M.m100001, M.m100002);
-          return;
-        }
-        dlgPrgBar.show();
-        CartoProxy.DownloadTable(table_name, function(data){
-          require(['ui/mapManager'], function(MapManager){
-            dlgPrgBar.hide();
-            MapManager.getInstance().AddMap(data, function(map){
-              CartoProxy.GetFields(table_name, function(fields){
-                map.fields = fields;
-                UIManager.getInstance().SetupMap(map);
-              });
+    function AddCartoDBTableAsMap(table_name) {
+      dlgPrgBar.show();
+      CartoProxy.DownloadTable(table_name, function(data){
+        require(['ui/mapManager'], function(MapManager){
+          dlgPrgBar.hide();
+          MapManager.getInstance().AddMap(data, function(map){
+            CartoProxy.GetFields(table_name, function(fields){
+              map.fields = fields;
+              UIManager.getInstance().SetupMap(map);
             });
           });
         });
-        /*
-        if ($('#chk-carto-download').is(':checked')) {
-          $.get('../carto_download_table/', {uid:uid, key:key, table:table_name})
-          .done(function(data) {
-          });
-        } else {
-          CartoProxy.GetGeomType(uid, key, table_name, function(geotype){
-            var basemap = Basemap.getInstance();
-            basemap.ShowCartoDBMap(uid, key, table_name, geotype);
-          });
-        } 
-        */
+      });
+    }
+ 
+    function InitDialogs() {
+      var ui = UIManager.getInstance(); 
+      if (ui.IsDialogSetup()) {
         require(['ui/openfileDlg', 'ui/choroplethDlg', 'ui/histogramDlg', 'ui/lisaDlg', 'ui/moranDlg', 'ui/networkDlg', 'ui/scatterDlg', 'ui/spacetimeDlg', 'ui/spregDlg', 'ui/weightsDlg', 'ui/scattermatrixDlg', 'ui/parcoordsDlg'], function(FileDlg, ChoroplethDlg, HistogramDlg, LisaDlg, MoranDlg, NetworkDlg, ScatterDlg, SpacetimeDlg, SpregDlg, WeightsDlg, ScatterMatrixDlg, ParcoordsDlg){
           var fileDlg = FileDlg.getInstance();
           var cartoDlg = CartoDlg.getInstance();
@@ -91,9 +83,56 @@ var OpenFileDlg = (function() {
           var scatMatrixDlg = ScatterMatrixDlg.getInstance();
           var parcoordsDlg = ParcoordsDlg.getInstance();
          
-          var ui = UIManager.getInstance(); 
           ui.RegistDialogs([fileDlg, cartoDlg, choroDlg, histoDlg, lisaDlg, moranDlg, netwDlg, scatDlg, spacetimeDlg, spregDlg, wDlg, scatMatrixDlg, parcoordsDlg]); 
-
+        });
+      }
+    } 
+    
+    // hookup file dialog OK button 
+    var OnOKClick = function() {
+      var sel_id = dlgTabs.tabs('option','active');
+      if (sel_id === 0) {
+        var table_name = $('#sel-file-carto-tables').find(':selected').text(),
+            geo_type = $('#sel-file-carto-tables').find(':selected').val();
+        if (table_name === "")  {
+          MsgBox.getInstance().Show(M.m100001, M.m100002);
+          return;
+        }
+        AddCartoDBTableAsMap(table_name);
+        InitDialogs();
+        
+      } else if (sel_id === 1) {
+        var key = googleKeyEl.val();
+        if (key === "" || key === undefined) {
+          MsgBox.getInstance().Show("", "Please input Google Maps API key");
+          return;
+        }
+        var keyword = googleKeywords.val();
+        if (keyword === "" || keyword === undefined) {
+          MsgBox.getInstance().Show("", "Please input a search keyword");
+          return;
+        }
+        require(['ui/basemap'], function(Basemap){
+          try {
+            var bounds = Basemap.getInstance().GetBounds();
+            //return [sw.lat, sw.lng, ne.lat, ne.lng];
+            dlgPrgBar.show();
+            $.get('../google_search_carto/', {
+              'bounds[]' : bounds,
+              'gkey' : key,
+              'name' : keyword + Utils.guid(),
+              'q' : keyword,
+              'carto_uid' : CartoProxy.GetUID(),
+              'carto_key' : CartoProxy.GetKey(),
+            }).done(function(data){
+              console.log(data);
+              AddCartoDBTableAsMap(data.table_name);
+              //data.status;
+            });
+          } catch(e) {
+            console.log(e);
+            MsgBox.getInstance().Show("", "Please load a map first.");
+          }
         });
       }
     };
