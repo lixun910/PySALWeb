@@ -11,11 +11,11 @@ __author__ = "Luc Anselin <luc.anselin@asu.edu, Xun Li <xun.li@asu.edu"
 
 import urllib2
 import json, math
-from multiprocessing import Pool, Queue, Manager
+from multiprocessing import Pool, Queue, Manager, Process, pool
 
 __all__ = ['querypoints','queryradius','googlepoints','ptdict2geojson']
 
-
+    
 # degree to radian conversion
 d2r = lambda x: x * math.pi / 180.0
 
@@ -78,29 +78,109 @@ def googlepoints(p, apikey, sradius, q, findings):
     return status
 
 def async_googlepoints(args):
-    lat, lng, lat_seg_range, lng_seg_range, q, apikey, sradius, findings = args
+    lat, lng, lat_seg_range, lng_seg_range, q, apikey, sradius, result_q, status_q = args
+    print "googlepoints: %s,%s" % (lat, lng)
+    
     q = q.replace(" ", "%20")
     url = 'https://maps.googleapis.com/maps/api/place/radarsearch/json?location=%s,%s&radius=%s&keyword=%s&key=%s' % (lat, lng, sradius, q, apikey)
-    
-    status = 'OK' 
     
     rsp = urllib2.urlopen(url)
     content = rsp.read()
     data = json.loads(content)
+    
+    status = data['status']
+    
     if 'results' in data:         # avoid empty records
         results = data['results']
-        if data['status'] != 'OVER_QUERY_LIMIT':
-            if len(results) == 200:
-                status = 'FINER_QUERY_NEEDED'
-                print "WARNING: query truncated at 200"
-            for item in results:
-                place_id = item['place_id']
-                loc = item['geometry']['location']
-                # use place id as key in the dictionary
-                findings.put[status, place_id, loc]
+        if len(results) == 200:
+            status = "FINER_QUERY_NEEDED"
+            print "WARNING: query truncated at 200"
+        for item in results:
+            place_id = item['place_id']
+            loc = item['geometry']['location']
+            # use place id as key in the shared queue
+            result_q.put([place_id, loc])
             
-    return status, lat, lng, lat_seg_range, lng_seg_range, q, apikey, findings
+    status_q.put([status, (lat, lng, lat_seg_range, lng_seg_range, q, apikey)])
+            
+def async_searchByKeyword(pool, q, bounds, apikey, findings, k=None):
+    # bounds [sw.lat, sw.lng, ne.lat, ne.lng]
+    lat_range = bounds[2] - bounds[0]
+    lng_range = bounds[3] - bounds[1]
+ 
+    if k == None: 
+        deltas = getDeltaDegreesByDist({'lat': bounds[0], 'lng' : bounds[1]}) 
+        lat_seg_range = deltas['lat']
+        lng_seg_range = deltas['lng']
+        if lat_seg_range > lat_range: 
+            lat_seg_range = lat_range
+        if lng_seg_range > lng_range: 
+            lng_seg_range = lng_range
+            
+        sradius = 5000.0
+    else:
+        k = float(k) 
+        seg_range = lat_range / k if lat_range < lng_range else lng_range /k
+        lat_seg_range = seg_range
+        lng_seg_range = seg_range
+        sradius = queryradius(
+          {'lat':bounds[0], 'lng':bounds[1]}, 
+          {'lat':bounds[0]+lat_seg_range/2.0, 'lng':bounds[1]+lng_seg_range/2.0}
+        );
+        
+    # from sw.lng to ne.lng
+    lng_points = []
+    next_lng = bounds[1]
     
+    while next_lng < bounds[3]:
+        next_lng += lng_seg_range
+        lng_points.append(next_lng - lng_seg_range/2.0)
+        
+    # from sw.lat to ne.lat
+    lat_points = []
+    next_lat = bounds[0]
+    
+    while next_lat < bounds[2]:
+        next_lat += lat_seg_range
+        lat_points.append(next_lat - lat_seg_range/2.0)
+        
+    #allCount = len(lng_points) * len(lat_points)
+    # location= lat, lon
+    
+    manager = Manager()
+    result_q = manager.Queue()
+    status_q = manager.Queue()
+
+    param_list = []    
+    for lng in lng_points:
+        for lat in lat_points:
+            param_list.append([
+                lat, lng, lat_seg_range, lng_seg_range,
+                q, apikey, sradius, result_q, status_q
+            ])
+    pool.map(async_googlepoints, param_list)
+    
+    final_status = "OK"
+    while not status_q.empty():
+        status, params = status_q.get()
+        if status == "OVER_QUERY_LIMIT":
+            final_status = status
+        elif status == "FINER_QUERY_NEEDED":
+            lat, lng, lat_seg_range, lng_seg_range, q, apikey = params
+            finer_bounds = [
+                lat - lat_seg_range/2.0, 
+                lng - lng_seg_range/2.0, 
+                lat + lat_seg_range/2.0, 
+                lng + lng_seg_range/2.0
+            ]
+            async_searchByKeyword(pool, q, finer_bounds, apikey, findings, k=2)
+            
+    while not result_q.empty(): 
+        place_id, location = result_q.get()
+        findings[place_id] = location
+        
+    return final_status
+
 def searchByKeyword(q, bounds, apikey, findings, k=None):
     # bounds [sw.lat, sw.lng, ne.lat, ne.lng]
     lat_range = bounds[2] - bounds[0]
@@ -163,20 +243,6 @@ def searchByKeyword(q, bounds, apikey, findings, k=None):
                 
     return final_status
 
-def query_callback(args):
-    status, lat, lng, lat_seg_range, lng_seg_range, q, apikey, findings = args 
-    if status == "OVER_QUERY_LIMIT":
-        final_status = status
-    elif status == "FINER_QUERY_NEEDED":
-        finer_bounds = [
-            lat - lat_seg_range/2.0, 
-            lng - lng_seg_range/2.0, 
-            lat + lat_seg_range/2.0, 
-            lng + lng_seg_range/2.0
-        ]
-        searchByKeyword(q, finer_bounds, apikey, findings, k=2)
-    
-                
 def saveGeoJSON(d,values=[],ofile="output.geojson"):
     # initialize geo dictionary for point features
     geo = {"type": "FeatureCollection","features":[]}
@@ -196,4 +262,14 @@ def saveGeoJSON(d,values=[],ofile="output.geojson"):
         json.dump(geo,outfile,sort_keys=True,indent=4,ensure_ascii=False)
     outfile.close()
 
+def f(x):
+    print "start" + str(x)
+    return x*x
+def f1(x):
+    print "start" + str(x*x)
+    return x*x*x
 
+if __name__ == '__main__':
+    pool = Pool(processes=4)              # start 4 worker processes
+    print pool.map(f, range(10))          # prints "[0, 1, 4,..., 81]"
+    print pool.map(f1, range(10))          # prints "[0, 1, 4,..., 81]"

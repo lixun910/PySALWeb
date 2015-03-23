@@ -107,7 +107,11 @@ def google_search_carto(request):
             name+".json"
         )
         findings = {}
-        status = google.searchByKeyword(q, bounds, gkey, findings)
+        pool = mp.Pool(10)
+        status = google.async_searchByKeyword(pool, q, bounds, gkey, findings)
+        pool.close()
+        pool.join()
+        
         if status == "OK":
             google.saveGeoJSON(findings, ofile=opath)
        

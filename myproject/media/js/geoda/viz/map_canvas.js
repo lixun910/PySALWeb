@@ -484,7 +484,7 @@ MapCanvas.prototype = {
         inside = true;
       }
       
-      if (this.shpType != "Point" && this.shpType != "MultiPoint") {
+      if (this.shpType != "POINT" && this.shpType != "MULTIPOINT") {
         // fine polygons on border of rect
         var bx = this.map.bbox[i]; 
         if (bx === undefined) continue;
@@ -522,7 +522,7 @@ MapCanvas.prototype = {
       ctx.drawImage( this.buffer, 0, 0);
       ctx.restore(); // restore from clipping, and draw reset
       
-      if (this.shpType != "Point" && this.shpType != "MultiPoint") {
+      if (this.shpType != "POINT" && this.shpType != "MULTIPOINT") {
         // for polygons and lines
         if ( hdraw.length + ddraw.length == 0) 
           return false;

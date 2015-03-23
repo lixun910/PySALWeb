@@ -84,6 +84,8 @@ ShpMap.prototype = {
   },
   
   fitScreen : function(screenWidth, screenHeight, marginLeft, marginTop, moveX, moveY) {
+    this.centroids = [];
+    this.bbox = [];
     this.screenWidth = screenWidth;
     this.screenHeight = screenHeight;
     
