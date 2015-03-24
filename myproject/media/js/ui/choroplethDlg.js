@@ -105,7 +105,6 @@ var ChoroplethDlg = (function($){
         'transparency' : parseFloat($('#opacity').text()),
         'conf_name' : conf_name,
         };
-        console.log(params);
         $.get('../save_map_conf/', params).done(function(results){
           if ('success' in results && results.success == 1) {
             if ($("#sel-map-conf option[value='"+conf_name+"']").length == 0) {
@@ -217,7 +216,6 @@ var ChoroplethDlg = (function($){
                
               } 
               for (var i=0, n=data.length; i<n; i++) {
-                console.log(i, data[i], scale(data[i]));
                 colorTheme[ scale(data[i]) ].push(i);	      
               }
             }

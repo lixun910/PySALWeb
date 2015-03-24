@@ -112,14 +112,13 @@ def google_search_carto(request):
         pool.close()
         pool.join()
         
-        if status == "OK":
-            google.saveGeoJSON(findings, ofile=opath)
-       
-            # call to upload the file to CartoDB
-            table_name = carto_upload_csv(open(opath, 'rb'), carto_uid, carto_key)
-            
-            rsp = {'status': status, 'table_name' : table_name}
-            return HttpResponse(json.dumps(rsp), content_type="application/json")    
+        google.saveGeoJSON(findings, ofile=opath)
+   
+        # call to upload the file to CartoDB
+        table_name = carto_upload_csv(open(opath, 'rb'), carto_uid, carto_key)
+        
+        rsp = {'status': status, 'table_name' : table_name}
+        return HttpResponse(json.dumps(rsp), content_type="application/json")    
         
     return HttpResponse(RSP_FAIL, content_type="application/json")    
                 

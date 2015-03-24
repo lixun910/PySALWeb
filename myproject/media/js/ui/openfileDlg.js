@@ -26,13 +26,6 @@ var OpenFileDlg = (function() {
       source: google_types
     });
 
-    // detect if user's space empty -- show drag&drag tab
-    if($('#tabs-1').text().indexOf('a') > 0) {
-      dlgTabs.tabs('option','active', 0);
-    }  else {
-      dlgTabs.tabs('option','active', 1);
-    }
-    
     function GetCartoTables() {
       dlgPrgBar.show();
       var uid = idEl.val(),
@@ -143,15 +136,11 @@ var OpenFileDlg = (function() {
       autoOpen: false,
       modal: false,
       dialogClass: "dialogWithDropShadow",
-      buttons: [{
-        text: "OK",
-        click: OnOKClick,
-      },{
-        text: "Close",
-        click: function() { $( this ).dialog( "close" );},
-      }]
+      buttons: [
+        {text: "OK",click: OnOKClick,},
+        {text: "Close",click: function() { $( this ).dialog( "close" );}}
+      ]
     });
-    
     dlg.dialog('open');
     
     var dropZone = document.getElementById('drop_zone');
@@ -161,7 +150,7 @@ var OpenFileDlg = (function() {
       console.log( 'File API not available.');
     }
     
-    var UpdateProgress = function(evt) {
+    function UpdateProgress(evt) {
       // evt is an ProgressEvent.
       if (evt.lengthComputable) {
         var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
@@ -171,55 +160,58 @@ var OpenFileDlg = (function() {
           progress.textContent = percentLoaded + '%';
         }
       }
-    };
+    }
     
-    var UploadFilesToServer = function(files, precall, callback) {
-      if (typeof precall === "function") {
-        ShowPrgDiv('uploading...', true);
-        precall();
-      }
-      // zip files
+    function UploadZipToCarto(blob, callback) {
+        var formData = new FormData();
+        formData.append('userfile', blob, "upload.zip");
+        formData.append('csrfmiddlewaretoken', csrftoken);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '../upload_to_carto/');
+        xhr.onload = function() {
+          console.log("[Upload]", this.responseText);
+          try{
+            var metadata = JSON.parse(this.responseText);
+            InitDialogs(metadata);
+          } catch(e){
+            console.log("[Error][Upload Files]", e);
+          }
+          ShowPrgDiv('', false);
+          if (callback) callback();
+        }; 
+        xhr.upload.onprogress = UpdateProgress;
+        xhr.send(formData);
+    }
+    
+    function ProcessDropFiles(files, callback) {
+      ShowPrgDiv('uploading...', true);
       var n = files.length,
           fileCnt = 0,
           zipWriter;
-      var addFile = function(f, onend) {
-          zipWriter.add(f.name, new zip.BlobReader(f), onend); 
-      };
-      var OnAddFile = function() {
+          
+      function addFile(f, onend) {
+        zipWriter.add(f.name, new zip.BlobReader(f), onend); 
+      }
+      
+      function OnAddFile() {
         fileCnt += 1; 
         if (fileCnt < n) {
           addFile(files[fileCnt], OnAddFile);
         } else {
           zipWriter.close(function(blob){
-            var formData = new FormData();
-            formData.append('userfile', blob, "upload.zip");
-            formData.append('csrfmiddlewaretoken', csrftoken);
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '../upload/');
-            xhr.onload = function() {
-              console.log("[Upload]", this.responseText);
-              try{
-                var metadata = JSON.parse(this.responseText);
-                InitDialogs(metadata);
-              } catch(e){
-                console.log("[Error][Upload Files]", e);
-              }
-              if (typeof callback === "function") {
-                ShowPrgDiv('', false);
-                callback();
-              }
-            }; 
-            xhr.upload.onprogress = UpdateProgress;
-            xhr.send(formData);
+            UploadZipToCarto(blob, callback);
           });
         }
-      };
-      
+      }
       zip.createWriter(new zip.BlobWriter(), function(writer){
         zipWriter = writer;
         addFile(files[0], OnAddFile);
       });
-    };
+    }
+    
+    function HandleDropZipFile(f) {
+      // find .shp file and .json file and .csv file and show map
+    }
     
     dropZone.ondragover = function(evt) {
       $("#"+evt.target.id).css("color", "black");
@@ -238,30 +230,32 @@ var OpenFileDlg = (function() {
       progress.style.opacity = 1;
       progress.style.width = '0%';
       progress.textContent = '0%';
+      
+      var files = evt.dataTransfer.files, // FileList object.
+          bShp=0, shpFile, dbfFile, shxFile, prjFile, proj,
+          bJson=0, jsonFile,
+          bCsv=0, csvFile;
+      
       var reader = new FileReader();
       reader.onload = function(e) {
         console.log(reader.result);
         // read *.prj file
         var ip = reader.result;
-        gPrj = proj4(ip, proj4.defs('WGS84'));
+        proj = proj4(ip, proj4.defs('WGS84'));
       };
-      gHasProj = false;
-      var files = evt.dataTransfer.files, // FileList object.
-          bShp=0, shpFile, dbfFile, shxFile, 
-          bJson=0, jsonFile;
+          
       for (var i=0, n=files.length; i<n; i++) {
         var f = files[i],
             name = f.name,
             suffix = getSuffix(name);
+            
         if (suffix === "zip") { // extract zip file
-          ProcessDropZipFile(f);
-          UploadFilesToServer([f], function(){
-            document.getElementById('progress_bar').className = 'uploading...';
-          },function(){
+          HandleDropZipFile(f);
+          UploadZipToCarto(f, function(){
             // Ensure that the progress bar displays 100% at the end.
             progress.style.width = '100%';
             progress.textContent = '100%';
-            setTimeout("document.getElementById('progress_bar').className='';", 2000);
+            setTimeout("document.getElementById('progress_bar').className='';", 1000);
           });
           return;
         } 
@@ -278,27 +272,24 @@ var OpenFileDlg = (function() {
           bShp += 1;
           dbfFile = f;
         } else if (suffix === "prj") {
-          gHasProj = true;
+          bShp += 1;
+          prjFile = f;
           reader.readAsText(f);
         }     
       }
+      
       // check files
-      if (bJson < 1 && bShp < 3) {
-        ShowMsgBox("Error", "Please drag&drop either one json/geojson file, or ESRI Shapefiles (*.shp, *.dbf, *.shx and *.prj) ");
-        return false;
-      } else if (bJson < 1 && bShp < 3) {
+      if (bJson < 1 && bShp > 0 && bShp < 4) {
         ShowMsgBox("Error", "Please drag&drop three files (*.shp, *.dbf, *.shx and *.prj)  at the same time. (Tips: use ctrl (windows) or command (mac) to select multiple files.)");
         return false;
       } 
-      if (bShp >= 3 && !gHasProj ) {
-        gProjSwitchOn = false;
-        ShowMsgBox("Info", "The *.prj file is not found. The map will not be shown using Leaflet. You can still use the swtich button to display the map on Leaflet."); 
+      if (proj) {
+        ShowMsgBox("Info", "The *.prj file is not valid."); 
+        return;
       }
       // compress the file to zip? no, let users to zip the files if they want 
       // to upload fast
-      UploadFilesToServer(files, function(){
-        document.getElementById('progress_bar').className = 'uploading...';
-      },function(){
+      UploadFilesToCarto(files, function(){
         // Ensure that the progress bar displays 100% at the end.
         progress.style.width = '100%';
         progress.textContent = '100%';
