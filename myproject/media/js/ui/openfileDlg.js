@@ -85,6 +85,7 @@ var OpenFileDlg = (function() {
     var OnOKClick = function() {
       var sel_id = dlgTabs.tabs('option','active');
       if (sel_id === 0) {
+        $(this).attr("disabled", "disabled");
         var table_name = $('#sel-file-carto-tables').find(':selected').text(),
             geo_type = $('#sel-file-carto-tables').find(':selected').val();
         if (table_name === "")  {
@@ -163,24 +164,24 @@ var OpenFileDlg = (function() {
     }
     
     function UploadZipToCarto(blob, callback) {
-        var formData = new FormData();
-        formData.append('userfile', blob, "upload.zip");
-        formData.append('csrfmiddlewaretoken', csrftoken);
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '../upload_to_carto/');
-        xhr.onload = function() {
-          console.log("[Upload]", this.responseText);
-          try{
-            var metadata = JSON.parse(this.responseText);
-            InitDialogs(metadata);
-          } catch(e){
-            console.log("[Error][Upload Files]", e);
-          }
-          ShowPrgDiv('', false);
-          if (callback) callback();
-        }; 
-        xhr.upload.onprogress = UpdateProgress;
-        xhr.send(formData);
+      var formData = new FormData();
+      formData.append('userfile', blob, "upload.zip");
+      formData.append('csrfmiddlewaretoken', csrftoken);
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '../upload_to_carto/');
+      xhr.onload = function() {
+        console.log("[Upload]", this.responseText);
+        try{
+          var metadata = JSON.parse(this.responseText);
+          InitDialogs(metadata);
+        } catch(e){
+          console.log("[Error][Upload Files]", e);
+        }
+        ShowPrgDiv('', false);
+        if (callback) callback();
+      }; 
+      xhr.upload.onprogress = UpdateProgress;
+      xhr.send(formData);
     }
     
     function ProcessDropFiles(files, callback) {

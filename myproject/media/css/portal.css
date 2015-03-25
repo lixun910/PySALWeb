@@ -413,8 +413,8 @@ border: 1px solid #aaa;margin: 1px 10px;
 .asu-geoda {
   position: absolute; 
   right: 0; 
-  bottom: 40px;
-  opacity: 0.2;
+  bottom: 60px;
+  opacity: 0.5;
 }
 .novis {
   visibility :hidden;
@@ -543,7 +543,7 @@ ol li:hover {
   width: 90%;
 }
 #w_catalog_model {
-  width: 100%; 
+  width: 90%; 
 }
 #model_spec { 
   width: 600px; 
@@ -554,10 +554,12 @@ ol li:hover {
 #y_catalog {
   width: 48%; 
   float: left;
+  height: 280px;
 }
 #x_catalog {
   width: 50%; 
   float: right;
+  height: 200px;
 }
 #x_catalog.x_box {
   height: 200px;
@@ -568,15 +570,15 @@ ol li:hover {
 /* style the list to maximize the droppable hitarea */
 .drop_box ol { 
   list-style-type: circle; 
-  height: 100px; 
+  height: 130px; 
   margin: 0; 
   padding: 1em 0 1em 2em; 
 }
 #x_box ol {
   height: 215px;
 }
-#model-weights-plugin, #kernel-weights-plugin {
-  height: 200px;
+#model-weights-plugin-container, #kernel-weights-plugin {
+  height: 180px;
 }
 #estimation { 
   width: 600px; 
@@ -594,10 +596,10 @@ ol li:hover {
   padding-left: 5px;
 }
 .est_tab p { 
-  margin: -5px 0 5px 5px; 
+  margin: 5px 0 5px 5px; 
   background-color: ; 
   width: 100px; 
-  text-align:center; 
+  text-align:left; 
   font-weight: bold;
 }
 .est_tab input { 

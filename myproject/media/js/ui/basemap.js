@@ -41,10 +41,9 @@ var GDABasemap = (function($, L, cartodb){
     
     var mapProvider = $('#mapproviders');
     var mapProviders = mapProvider.children();
-    var currentTileUrl = tileUrls[1];
-    $(mapProviders[1]).css({'border':'2px solid orange'});
+    var currentTileUrl = tileUrls[0];
+    $(mapProviders[0]).css({'border':'2px solid orange'});
     
-     
     // basemap buton on the right side of top bar
     $('.basemap').click(function(){
       $('#mapInfo').toggle();
@@ -72,11 +71,11 @@ var GDABasemap = (function($, L, cartodb){
       
       baselayer = L.tileLayer(currentTileUrl, options);
       lmap.addLayer(baselayer);
+      lmap.setView(new L.LatLng(33.419457, -111.937404), 12);
       return baselayer;
     }
   
     baselayer = CreateBaseLayer();
-    
     
     for (var i=0, n = mapProviders.length; i<n; i++) {
       $(mapProviders[i]).click(function(){

@@ -1,6 +1,6 @@
 
 // Author: xunli at asu.edu
-define(['jquery', './utils','list'], function($, Utils, List) {
+define(['jquery', './utils', './cartoProxy', './mapManager', 'list'], function($, Utils, CartoProxy, MapManager, List) {
 
 var SpregDlg = (function($){
   var instance;
@@ -48,12 +48,12 @@ var SpregDlg = (function($){
           param;
       $('#txt-spreg-predy').children("table").each(function(i,tbl) {
         var content = $(tbl).html().replace(/\<th\>|\<\/th\>|\<tbody\>|\<\/tbody\>|\<tr\>|\<\/tr\>|\<\/td\>/g,"").replace(/\<td\>/g,",");
-        if (param == undefined) param = {};
+        if (param == undefined) 
+          param = {};
         param["predy" + i] = content;
         count = i;
       });
-      var layer_uuid = gViz.GetUUID();
-      if (param && layer_uuid) {
+      if (param) {
         param["n"] = count+1;
         param["layer_uuid"] = layer_uuid;
         param["csrfmiddlewaretoken"] = csrftoken;
@@ -75,7 +75,7 @@ var SpregDlg = (function($){
     });
     
     // reset Spreg dialog
-    var restSpreg = function() {
+    function resetSpreg() {
       $.each($('#x_box li, #y_box li, #ye_box li, #inst_box li, #r_box li'), function(i, v) { $(v).dblclick();});
       $('input[name="model_type"][value="0"]').prop('checked', true)
       $('input[name="method"]').prop('disabled', true)
@@ -83,19 +83,16 @@ var SpregDlg = (function($){
       $('input:checkbox[name=stderror]').each(function(i,obj){
         $(obj).prop('checked', false);
       });
-    };
+    }
     
     // init Spreg dialg: tabs
-    $( "#y_catalog" ).accordion();
-    $( "#x_catalog" ).accordion();
-    $( "#w_catalog_model" ).accordion({
-      active : 1
-    });
-    
-    $( "#tabs-kernel-weights").tabs();
-    $( "#vars ul li" ).draggable({ helper: "clone"});
-    $( ".drop_box ol li" ).dblclick(function() {});
-    $( ".drop_box ol" ).droppable({
+    $("#y_catalog").accordion({heightStyle : "content"});
+    $("#x_catalog").accordion({heightStyle : "content"});
+    $("#w_catalog_model").accordion({active : 1});
+    $("#tabs-kernel-weights").tabs();
+    $("#vars ul li").draggable({ helper: "clone"});
+    $(".drop_box ol li").dblclick(function() {});
+    $(".drop_box ol").droppable({
       activeClass: "ui-state-default",
       hoverClass: "ui-state-hover",
       accept: ":not(div)",
@@ -190,6 +187,7 @@ var SpregDlg = (function($){
         },
       }
     });
+    
     $( "#dialog-spreg-result" ).dialog({
       height: 500,
       width: 800,
@@ -222,6 +220,9 @@ var SpregDlg = (function($){
     var options = { valueNames: ['name'] };
     var varList = new List('vars', options);
     
+    var model_w_el = '#model-weights-plugin',
+        kernel_w_el = '#tabs-kernel-weights';
+        
     $( "#dialog-regression" ).dialog({
       dialogClass: "dialogWithDropShadow",
       width: 900,
@@ -229,54 +230,41 @@ var SpregDlg = (function($){
       autoOpen: false,
       modal: false,
       open: function(event, ui) {
-        $('#tabs-dlg-weights').appendTo('#model-weights-plugin');
+        $('#tabs-dlg-weights').appendTo(model_w_el);
       },
     });
-    $('#btn-w-add-uid').click(function(){
-      $('#dlg-add-uniqid').dialog('open');
-    });
-    $( "#dlg-add-uniqid" ).dialog({
-      dialogClass: "dialogWithDropShadow",
-      width: 400,
-      height: 200,
-      autoOpen: false,
-      modal: true,
-      buttons: {
-        "Add": function() {
-          var that = $(this);
-          if (gViz && gViz.GetUUID()) {
-            var layer_uuid = gViz.GetUUID(),
-                name = $('#uniqid_name').val(),
-                conti = true;
-            $.each($('#sel-w-id').children(), function(i,j) { 
-              if( name == $(j).text()) {
-                ShowMsgBox("","Input unique ID field already exists.");
-                conti = false;
-                return;
-              }
-            })
-            if (conti == true) {
-              params = {
-                'layer_uuid': layer_uuid, 
-                'name': name,
-                'csrfmiddlewaretoken' : csrftoken,
-              };
-              $.post("../add_UID/", params, function() {}).done(function(data) { 
-                console.log("add_uid", data); 
-                if (data["success"] == 1) {
-                  LoadFieldNames(function() {
-                    $('#sel-w-id').val(name).change();
-                  });
-                  that.dialog( "close" );
-                  ShowMsgBox("", "Add uniue ID successful.");
-                }
-              });
-            }
-          }
-        },
-        Cancel: function() {$(this).dialog("close");},
+  
+    function toggleWeightsDiv(el, disable){
+      if (disable === undefined || disable === false) {
+        $(el).css('opacity', 1);
+      } else {
+        $(el).css('opacity', 0.2);
+      }
+    } 
+    
+    toggleWeightsDiv(model_w_el, true);
+    toggleWeightsDiv(kernel_w_el, true);
+    
+    var sel_kernel_w_el = $('input:checkbox[name=spreg-check-kernel-w]');
+    var sel_model_w_el = $('input:checkbox[name=spreg-check-model-w]');
+    
+    sel_model_w_el.click(function(){
+      var that = $(this);
+      if ($(that).is(':checked')) {
+        toggleWeightsDiv(model_w_el);
+      } else {
+        toggleWeightsDiv(model_w_el, true);
       }
     });
+    sel_kernel_w_el.click(function(){
+      var that = $(this);
+      if ($(that).is(':checked')) {
+        toggleWeightsDiv(kernel_w_el);
+      } else {
+        toggleWeightsDiv(kernel_w_el, true);
+      }
+    });
+    
     $( "#dlg-save-model" ).dialog({
       dialogClass: "dialogWithDropShadow",
       width: 400,
@@ -328,6 +316,7 @@ var SpregDlg = (function($){
         Cancel: function() {$( this ).dialog( "close" );},
       }
     });
+    
     $("#dlg-open-model").dialog({
       dialogClass: "dialogWithDropShadow",
       width: 400,
@@ -389,10 +378,35 @@ var SpregDlg = (function($){
         Cancel: function() {$( this ).dialog( "close" );},
       },
     });
-   $( "#btn_run" ).button({icons: {primary: "ui-icon-circle-triangle-e",}})
+    
+    function GetKernelWeightsConf() {
+      var active = $('#tabs-kernel-weights').tabs("option","active"),
+          param = {};
+      if (active === 0) {
+        var dist_value = "",
+            dist_metric = $('#spreg-sel-dist-metr').val(),
+            dist_method =$('input:radio[name=spreg-rdo-dist]:checked').attr("id");
+        if ( dist_method == 0 ) {
+          dist_value = $('#spreg-spn-dist-knn').val();
+        } else if ( dist_method == 1 ) {
+          dist_value = $('#spreg-txt-dist-thr').val();
+        } else if ( dist_method == 2 ) {
+          dist_value = $('#spreg-txt-dist-thr').val();
+          param['pow_idist'] = parseInt($('#spreg-spn-pow-idst').val());
+        } 
+        param['dist_metric'] = dist_metric;
+        param['dist_method'] = dist_method;
+        param['dist_value'] = parseFloat(dist_value);
+      } else if (active === 1) {
+        param['kernel_type'] = $("#spreg-sel-kel-type").val(); 
+        param['kernel_nn'] = parseInt($("#spreg-txt-kel-nn").val());
+      }
+      param['w_type'] = active +1;
+      return param;
+    }
+    
+    $( "#btn_run" ).button({icons: {primary: "ui-icon-circle-triangle-e",}})
     .click(function() {
-      if (!gViz|| !gViz.GetUUID()) return;
-      var layer_uuid = gViz.GetUUID();
       //var w_list = $.GetValsFromObjs($('#sel-model-w-files :selected'));
       //var wk_list = $.GetValsFromObjs($('#sel-kernel-w-files :selected'));
       var model_type = $('input:radio[name=model_type]:checked').val();
@@ -412,75 +426,87 @@ var SpregDlg = (function($){
         if (obj.checked){ 
           error[i] = 1;
           if (i==1 && w_list.length==0) {
-            ShowMsgBox("","Please select weights file for model.");
+            ShowMsgBox("","Please configure a model weights.");
             conti = false;
             return;
           }
           if (i==1 && wk_list.length==0) {
-            ShowMsgBox("","Please select kernel weights file for model.");
+            ShowMsgBox("","Please configure kernel weights.");
             conti = false;
             return;
           }
         }
       });
-      if (conti==false) return;
+      if (conti==false) 
+        return;
       // run model
       $('#dlg-run').dialog("open").html('<img src="img/loading.gif"/><br/>Loading ...');
       $('#dlg-run').siblings('.ui-dialog-titlebar').hide();
-      params = {
-        'command': 'spatial_regression', 
-        'layer_uuid': layer_uuid, 'w': w_list, 'wk': wk_list, 
-        'type': model_type, 'method': method, 'error': error, 
-        'x': x, 'y': y, 'ye': ye, "h": h, "r": r, "t": t,
-        'csrfmiddlewaretoken': csrftoken,
-      };
-      $.post("../spatial_regression/", params, function() {
-        $('#btn_result').hide();
-      }).done(function(data) {
-        $('#dlg-run').dialog("close");
-        try {
-          data = JSON.parse(data);
-          if (data['success']==1) {
-            $('#btn_result').show();
-            if (data['report']) {
-              var predy = "", 
-                  summary = "", 
-                  cnt= 0;
-              $.each(data['report'], function(id, result) { 
-                cnt+=1;
-              });
-              cnt = cnt.toString();
-              $.each(data['report'], function(id, result) {
-                var idx = parseInt(id) + 1;
-                summary += "Report " + idx + "/" + cnt + 
-                  "\n\n"+result['summary'] + "\n\n";
-                predy += "<b>Report " + idx + "/" + cnt +"</b><br/><br/>";
-                predy += "<table border=1 width=100% id='predy" + id + 
-                  "'><tr><th>Predicted Values</th><th>Residuals</th></tr>";
-                var n = result['predy'][0].length;
-                for ( var i=0; i< n; i++ ) {
-                  predy += "<tr><td>" + result['predy'][0][i] + "</td><td>" + 
-                    result['residuals'][0][i] + "</td></tr>";
-                }
-                predy += "</table><br/><br/>";
-              });
-              $('#txt-spreg-predy').html(predy);
-              $('#txt-spreg-summary').text(summary);
+      var map = MapManager.getInstance().GetMap();
+      require(['ui/weightsDlg'], function(WeightsDlg) {
+        var model_w_conf = WeightsDlg.getInstance().GetCartoWeights(),
+            kernel_w_conf = GetKernelWeightsConf(),
+            params = {
+              'carto_uid': CartoProxy.GetUID(),
+              'carto_key': CartoProxy.GetKey(),
+              'carto_table_name': map.name,
+              'is_w' : sel_model_w_el.is(':checked'),
+              'is_wk' : sel_kernel_w_el.is(':checked'),
+              'w': JSON.stringify(model_w_conf), 
+              'wk': JSON.stringify(kernel_w_conf), 
+              'type': model_type, 
+              'method': method, 
+              'error': error, 
+              'x': x, 'y': y, 'ye': ye, "h": h, "r": r, "t": t,
+              'csrfmiddlewaretoken': csrftoken,
+            };
+        $.post("../spatial_regression_carto/", params, function() {
+          $('#btn_result').hide();
+        }).done(function(data) {
+          $('#dlg-run').dialog("close");
+          try {
+            data = JSON.parse(data);
+            if (data['success']==1) {
+              $('#btn_result').show();
+              if (data['report']) {
+                var predy = "", 
+                    summary = "", 
+                    cnt= 0;
+                $.each(data['report'], function(id, result) { 
+                  cnt+=1;
+                });
+                cnt = cnt.toString();
+                $.each(data['report'], function(id, result) {
+                  var idx = parseInt(id) + 1;
+                  summary += "Report " + idx + "/" + cnt + 
+                    "\n\n"+result['summary'] + "\n\n";
+                  predy += "<b>Report " + idx + "/" + cnt +"</b><br/><br/>";
+                  predy += "<table border=1 width=100% id='predy" + id + 
+                    "'><tr><th>Predicted Values</th><th>Residuals</th></tr>";
+                  var n = result['predy'][0].length;
+                  for ( var i=0; i< n; i++ ) {
+                    predy += "<tr><td>" + result['predy'][0][i] + "</td><td>" + 
+                      result['residuals'][0][i] + "</td></tr>";
+                  }
+                  predy += "</table><br/><br/>";
+                });
+                $('#txt-spreg-predy').html(predy);
+                $('#txt-spreg-summary').text(summary);
+              }
+              $('#btn_result').popupDiv('#divPop','Click this button to see result.');
             }
-            $('#btn_result').popupDiv('#divPop','Click this button to see result.');
+          } catch (e) {
+            console.log(e);
           }
-        } catch (e) {
-          console.log(e);
-        }
-      })
-      .fail(function(data){ 
-        $('#dlg-run').dialog("close");
-        ShowMsgBox("Erro","Spatial regression failed.");
+        })
+        .fail(function(data){ 
+          $('#dlg-run').dialog("close");
+          ShowMsgBox("Erro","Spatial regression failed.");
+        });
       });
-    });
-       
         
         
+      });
     return {
       // public methods/vars
       UpdateFields : function(fields) {

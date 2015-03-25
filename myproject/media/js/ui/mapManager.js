@@ -28,10 +28,11 @@ var Manager = (function(window){
     var hlcanvas = $('.hl-canvas');
     
     var resizeTimer;
-    
    
     function OnResize( evt ) {
-      $('canvas, .ui-dialog, .down-arrow').hide();
+      if (numMaps) {
+        $('canvas, .down-arrow').hide();
+      }
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(function(){
         console.log('resize');
@@ -189,7 +190,6 @@ var Manager = (function(window){
     window.addEventListener('keydown', OnKeyDown, true);
     window.addEventListener('keyup', OnKeyUp, true);
     window.addEventListener('resize', OnResize, true);
-    
     
     window.addEventListener('storage', function(e) {
       console.log("map storage");

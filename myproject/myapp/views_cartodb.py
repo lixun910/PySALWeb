@@ -236,6 +236,81 @@ def cartodb_drop_table(table_name, uid, key):
         print "Drop table " + table_name + "done:" + json.dumps(content)
     except:
         print "Nothing dropped"
+       
+def _format_wegihts(content):
+    neighbors = {}
+    rows = data['rows']
+    n = len(rows)
+    for row in rows:
+        id = int(row["id"])
+        nn = [int(i) for i in row["nn"]]
+        neighbors[id] = nn
+    w = W(neighbors)
+    
+def cartodb_contiguity_w(table_name, uid, key, w_conf):
+    sql = "select b.cartodb_id-1 as id, ARRAY(SELECT a.cartodb_id-1 FROM %s as a WHERE a.cartodb_id <> b.cartodb_id AND st_intersects(a.the_geom, b.the_geom)) as nn from %s as b" % (table_name, table_name)
+    url = 'https://%s.cartodb.com/api/v1/sql' % uid
+    params = { 'api_key': key, 'q': sql,}
+    r = requests.get(url, params=params, verify=False)
+    w = {}
+    try:
+        content = r.json()
+        return _format_wegihts(content)
+    except:
+        print "cartodb_contiguity_w() error"
+        return None
+    
+def cartodb_distance_w(table_name, uid, key, w_conf):
+    if w_conf['pow_idist'] == None:
+        sql = "select b.cartodb_id-1 as id, ARRAY(SELECT a.cartodb_id-1 FROM %s as a WHERE a.cartodb_id <> b.cartodb_id AND a.the_geom<->b.the_geom < %s)) as nn from %s as b" % (table_name, dist_threshold, table_name)
+    else:
+        sql = "select a.cartodb_id-1 as aid, b.cartodb_id-1 as bid, power(1.0/a.the_geom<->b.the_geom, %s) as dist from %s as a join %s as b on a.the_geom<->b.the_geom<%s and a.cartodb_id<>b.cartodb_id" % (pow_idx, table_name, table_name, dist_threshold)
+        
+    url = 'https://%s.cartodb.com/api/v1/sql' % uid
+    params = { 'api_key': key, 'q': sql,}
+    r = requests.get(url, params=params, verify=False)
+    w = {}
+    try:
+        content = r.json()
+        return _format_wegihts(content)
+    except:
+        print "cartodb_contiguity_w() error"
+        return None
+    
+def cartodb_kernel_w(table_name, uid, key, w_conf):
+    sql = "select b.cartodb_id-1 as id, ARRAY(SELECT a.cartodb_id-1 FROM %s as a WHERE a.cartodb_id <> b.cartodb_id AND st_intersects(a.the_geom, b.the_geom)) as nn from %s as b" % (table_name, table_name)
+    url = 'https://%s.cartodb.com/api/v1/sql' % uid
+    params = { 'api_key': key, 'q': sql,}
+    r = requests.get(url, params=params, verify=False)
+    w = {}
+    try:
+        content = r.json()
+        return _format_wegihts(content)
+    except:
+        print "cartodb_contiguity_w() error"
+        return None
+    
+def cartodb_get_columns(table_name, uid, key, col_names):
+    sql = "SELECT %s FROM %s" % (",".join(col_names), table_name)
+    url = 'https://%s.cartodb.com/api/v1/sql' % uid
+    params = { 'api_key': key, 'q': sql, 'format': 'csv'}
+    r = requests.get(url, params=params, verify=False)
+    data = {}
+    content = r.text
+    rows = content.split("\n")
+    for name in col_names:
+        data[name] = []
+    n = len(col_names)
+    for row in rows[1:-1]:
+        items = row.strip().split(",")
+        for i in range(n):
+            item = items[i]
+            if item != "":
+                data[col_names[i]].append(float(item))
+            else:
+                data[col_names[i]].append(0)
+    return data
+
     
 @login_required
 def carto_create_viz(request):

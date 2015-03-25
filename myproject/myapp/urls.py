@@ -91,4 +91,5 @@ urlpatterns += patterns('myproject.myapp.views_spreg',
     url(r'^get_spreg_models/$', 'get_spreg_model_names', name='get spreg model names'),
     url(r'^save_spreg_result/$', 'save_spreg_result', name='save spreg result'),
     url(r'^spatial_regression/$', 'spatial_regression', name='spatial regression'),
+    url(r'^spatial_regression_carto/$', 'spatial_regression_carto', name='spatial regression cartodb'),
 )    

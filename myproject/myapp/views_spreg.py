@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 
 from myproject.myapp.models import Weights, Geodata, Preference,SpregModel
+from views_cartodb import cartodb_contiguity_w, cartodb_distance_w, cartodb_kernel_w, cartodb_get_columns
 
 import logging
 import numpy as np
@@ -301,4 +302,179 @@ def spatial_regression(request):
     result['success'] = 1
     return HttpResponse(json.dumps(result))
 
+def create_w_cartodb(table_name, uid, key, w_conf):
+    w = None
+    w_type = w_conf['w_type']
+    if w_type == 0:
+        w = cartodb_contiguity_w(table_name, uid, key, w_conf)
+    elif w_type == 1:
+        w = cartodb_distance_w(table_name, uid, key, w_conf)
+    elif w_type == 2:
+        w = cartodb_kernel_w(table_name, uid, key, w_conf)
+    return w
     
+@login_required
+def spatial_regression_carto(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+         
+    result = {"success":0}
+    
+    if request.method != 'POST':
+        return HttpResponse(json.dumps(result))
+    
+    # Get param
+    carto_uid = request.POST.get("carto_uid")
+    carto_key = request.POST.get("carto_key")
+    table_name = request.POST.get("carto_table_name")
+    is_w = request.POST.get("is_w")
+    is_wk = request.POST.get("is_wk")
+    w = request.POST.get("w")
+    wk = request.POST.get("wk")
+    model_type = request.POST.get("type",None)
+    model_method = request.POST.get("method", None) #*
+    error = request.POST.getlist("error[]")
+    name_y = request.POST.get("y",None)
+    name_x = request.POST.getlist("x[]")
+    name_ye = request.POST.getlist("ye[]")
+    name_h = request.POST.getlist("h[]")
+    name_r = request.POST.get("r",None) # one col
+    name_t = request.POST.get("t",None) # one col
+  
+    is_w = True if is_w == 'true' else False
+    is_wk = True if is_wk == 'true' else False
+    if model_type: 
+        model_type = int(model_type)
+    if model_method: 
+        model_method = int(model_method)
+    if len(error)==0: 
+        error = [0,0,0]
+    white = int(error[0])
+    hac = int(error[1])
+    kp_het = int(error[2])
+       
+    if not name_y and not name_x \
+       and model_type not in [0,1,2,3] and model_method not in [0,1,2]:
+        result["message"] = "Parameters are not legal."
+        return HttpResponse(json.dumps(result))
+    
+    request_col_names = [n for n in name_x]
+    request_col_names.append(name_y)
+    if name_ye: request_col_names += name_ye
+    if name_h: request_col_names += name_h
+    if name_r: request_col_names.append(name_r)
+    if name_t: request_col_names.append(name_t)
+    
+    # get data from CartoDB
+    data = cartodb_get_columns(table_name, carto_uid, carto_key, request_col_names)
+
+    # get w from CartoDB   
+    w_list = []
+    wk_list = []
+    if is_w:
+        model_w_conf = json.loads(w) 
+        model_w = create_w_cartodb(table_name, carto_uid, carto_key, model_w_conf)
+        w_list.append(model_w)
+    
+    
+    # when data&w are retrieved
+    # These options are not available yet....
+    s = None
+    name_s = None
+    mtypes = {
+        0: 'Standard', 
+        1: 'Spatial Lag', 
+        2: 'Spatial Error', 
+        3: 'Spatial Lag+Error'
+    }    
+    model_type = mtypes[model_type]
+    method_types = {0: 'ols', 1: 'gm', 2: 'ml'}
+    method = method_types[model_method]
+    LM_TEST = False
+    if len(w_list) > 0 and model_type in ['Standard', 'Spatial Lag']:
+        LM_TEST = True
+    if data == None: 
+        result["message"] = "Retrieve data from database error."
+        return HttpResponse(json.dumps(result))
+    
+    y = np.array([data[name_y]]).T
+    ye = np.array([data[name] for name in name_ye]).T if name_ye else None
+    x = np.array([data[name] for name in name_x]).T
+    h = np.array([data[name] for name in name_h]).T if name_h else []
+    r = np.array(data[name_r]) if name_r else None
+    t = np.array(data[name_t]) if name_t else None
+    
+    try:
+        preference = Preference.objects.get(userid=userid)
+        config = json.loads(preference.spreg)
+        config['ml_epsilon'] = float(config['ml_epsilon'][0])
+        config['ml_full'] = config['ml_full'][0]
+        config['gmm_epsilon'] = float(config['gmm_epsilon'][0])
+        config['gmm_inv_method'] = config['gmm_inv_method'][0]
+        config['gmm_max_iter'] = int(config['gmm_max_iter'][0])
+        config['instruments_w_lags'] = int(config['instruments_w_lags'][0])
+        config['other_missingValue'] = config['other_missingValue'][0]
+        if config['other_missingValue']:
+            config['other_missingValue'] = float(config['other_missingValue'])
+    except:
+        config = DEFAULT_SPREG_CONFIG
+        
+    predy_resid = None # not write to file
+    models = Spmodel(
+        name_ds=table_name,
+        w_list=w_list,
+        wk_list=wk_list,
+        y=y,
+        name_y=name_y,
+        x=x,
+        name_x=name_x,
+        ye=ye,
+        name_ye=name_ye,
+        h=h,
+        name_h=name_h,
+        r=r,
+        name_r=name_r,
+        s=s,
+        name_s=name_s,
+        t=t,
+        name_t=name_t,
+        model_type=model_type,  # data['modelType']['endogenous'],
+        # data['modelType']['spatial_tests']['lm'],
+        spat_diag=LM_TEST,
+        white=white,
+        hac=hac,
+        kp_het=kp_het,
+        # config.....
+        sig2n_k_ols=config['sig2n_k_ols'],
+        sig2n_k_tsls=config['sig2n_k_2sls'],
+        sig2n_k_gmlag=config['sig2n_k_gmlag'],
+        max_iter=config['gmm_max_iter'],
+        stop_crit=config['gmm_epsilon'],
+        inf_lambda=config['gmm_inferenceOnLambda'],
+        comp_inverse=config['gmm_inv_method'],
+        step1c=config['gmm_step1c'],
+        instrument_lags=config['instruments_w_lags'],
+        lag_user_inst=config['instruments_lag_q'],
+        vc_matrix=config['output_vm_summary'],
+        predy_resid=predy_resid,
+        ols_diag=config['other_ols_diagnostics'],
+        moran=config['other_residualMoran'],
+        white_test=config['white_test'],
+        regime_err_sep=config['regimes_regime_error'],
+        regime_lag_sep=config['regimes_regime_lag'],
+        cores=config['other_numcores'],
+        ml_epsilon=config['ml_epsilon'],
+        ml_method=config['ml_method'],
+        ml_diag=config['ml_diagnostics'],
+        method=method
+    ).output
+    model_result = {} 
+    for i,model in enumerate(models):
+        model_id = i
+        #if len(w_list) == len(models):
+        #    model_id = w_list[i].name
+        model_result[model_id] = {'summary':model.summary,'predy':model.predy.T.tolist(),'residuals':model.u.T.tolist()}
+    result['report'] = model_result
+    result['success'] = 1
+    return HttpResponse(json.dumps(result))

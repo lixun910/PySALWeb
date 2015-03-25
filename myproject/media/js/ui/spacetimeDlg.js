@@ -12,17 +12,14 @@ var SpacetimeDlg = (function($){
     $('#datepicker-start').datepicker();
     $('#datepicker-end').datepicker();
     $('#tabs-dlg-spacetime').tabs();
-    $( "#spacetime_catalog" ).accordion({
-      autoHeight: false});
-    $( "#dialog-spacetime" ).dialog({
+    $("#spacetime_catalog").accordion({heightStyle : "content"});
+    $("#dialog-spacetime").dialog({
       height: 490,
       width: 580,
       autoOpen: false,
       modal: false,
       dialogClass: "dialogWithDropShadow",
-      beforeClose: function(event,ui){
-          $('#dialog-arrow').hide();
-      },
+      beforeClose: function(event,ui){$('#dialog-arrow').hide();},
       buttons: [{
         text: "OK",
         click: function() {
@@ -49,9 +46,7 @@ var SpacetimeDlg = (function($){
         },
       },{
         text: "Close",
-        click: function() {
-          $( this ).dialog( "close" );
-        },
+        click: function() { $( this ).dialog( "close" ); },
       }]
     });
     
