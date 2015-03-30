@@ -58,20 +58,43 @@ var CartoProxy = {
     xhr.open("GET", url);
     xhr.responseType = 'json';
     xhr.onload = function(evt) {
-      var data = xhr.response;
-      var geotype = data.rows[0].geometrytype;
-      if (geotype) {
-        if (geotype.indexOf("POINT") >= 0 ) {
-          geotype = "Point";
-        } else if (geotype.indexOf("LINE") >= 0 ) {
-          geotype = "Line";
-        } else if (geotype.indexOf("POLY") >= 0 ) {
-          geotype = "Polygon";
+      var data = xhr.response,
+          row = data.rows[0];
+      var geotype = "";
+      if (row && row['geometrytype']) {
+        geotype = row.geometrytype;
+        if (geotype) {
+          if (geotype.indexOf("POINT") >= 0 ) {
+            geotype = "Point";
+          } else if (geotype.indexOf("LINE") >= 0 ) {
+            geotype = "Line";
+          } else if (geotype.indexOf("POLY") >= 0 ) {
+            geotype = "Polygon";
+          }
         }
       }
-      if (onSuccess) onSuccess(geotype);
+      if (onSuccess) onSuccess(table_name, geotype);
     };
     xhr.send(null);
+  },
+  
+  GetGeomTypes : function(table_names, callback) {
+    var tables = [];
+    for (var tbl in table_names)
+      tables.push(tbl);
+      
+    var n = tables.length,
+        ii = 0,
+        table_geo = {};
+    for (var i=0; i<n; i++) {
+      this.GetGeomType(tables[i], function(table_name, geotype){
+        table_geo[table_name] = geotype;
+        ii += 1;
+        if (ii === n) {
+          if (callback) callback(table_geo);
+        }
+      });
+    }
   },
   
   DownloadTable2TopoJson : function(table_name, onSuccess) {
@@ -466,22 +489,20 @@ var CartoProxy = {
     }
   },
   
-  SpatialCount : function(uid, key, first_layer, second_layer, count_col_name, successHandler) {
-    var msg = {"command":"cartodb_spatial_count"};
-    if (uid) msg["uid"] = uid;
-    if (key) msg["key"] = key;
-    msg["firstlayer"] = first_layer;
-    msg["secondlayer"] = second_layer;
-    msg["columnname"] = count_col_name;
-    if (this.socket && this.socket.readyState == 1) {
-      this.socket.send(JSON.stringify(msg));
-      this.callback_SpatialCount = successHandler;
-    } else {
-      setTimeout(function(){self.CartoSpatialCount(uid, key, first_layer, second_layer, count_col_name, successHandler)}, 10);
-    }
+  SpatialCount : function(poly_table, point_table, field_name, callback) {
+    this.AddField(poly_table, field_name, "integer", function() {
+      var sql = "UPDATE "+poly_table+" SET "+field_name+"= (SELECT count(*) FROM "+point_table+" WHERE ST_Intersects("+point_table+".the_geom, "+poly_table+".the_geom))";
+      var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?api_key=" + carto_key + "&q=" + sql;
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", url);
+      xhr.responseType = 'json';
+      xhr.onload = function(evt) {
+        var data = xhr.response;
+        if (callback) callback(data);
+      };
+      xhr.send(null);
+    });
   },
-  
-  
   
 };
 

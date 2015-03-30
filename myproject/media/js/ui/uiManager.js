@@ -41,7 +41,6 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
         html_check_img = "<img src=../../media/img/checkmark.png>",
         html_uncheck_img = "<img src=../../media/img/uncheckmark.png>";
     
-    
     // Read zip file 
     var ProcessDropZipFile = function(f, callback) {
       var bShp=0;
@@ -173,27 +172,6 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
       '#sel-spacetime-table-point':[1],
     };
     
-    // get all map names/uuid from server
-    var LoadMapNames = function(){
-      $('#w-dist-loading').show();
-      $.get("../get_map_names/", {})
-      .done( function(nameDict) {
-        $('#w-dist-loading').hide();
-        for (var sel in local_map_names_sel) {
-          var map_types =  local_map_names_sel[sel];
-          $(sel).find('option').remove().end();
-          for(var uuid in nameDict) {
-            var name = nameDict[uuid][0],
-                type = nameDict[uuid][1];
-            if (map_types.indexOf(type) >= 0) {
-              $(sel).append($('<option>', {value: uuid}).text(name));
-            }
-          }
-        }
-      });
-    };
-    
-    
     return {
       // public
       
@@ -247,8 +225,6 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
         if (map.uuid)
           $('#btnShowTable span').html('<a href="../get_table/?layer_uuid=' + map.uuid + '" target=_blank>Table</a>');
           
-        LoadMapNames();
-        
         this.UpdateFieldNames(map.fields);
         
         toolbar.Show(map);

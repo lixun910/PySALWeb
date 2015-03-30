@@ -251,6 +251,8 @@ GRect.prototype = {
   },
 };
 
+var self;
+
 var MapCanvas = function(map, canvas, hlcanvas, params) {
   // color scheme
   this.color_theme = undefined;
@@ -331,6 +333,10 @@ MapCanvas.version = "0.1";
 
 // member functions
 MapCanvas.prototype = {
+
+  SetDefaultMap : function() {
+    self = this;
+  },
 
   updateParameters: function(params) {
     if (params == undefined) 
@@ -559,20 +565,19 @@ MapCanvas.prototype = {
   },
   
   fadeCanvas : function(obj, is_highlight) {
-    var el = $(obj);
-    var nn = el.parent().children();
-    for (var i=0, n=nn.length; i<n; i++) {
-      var can = nn[i];
-      if ($(can).is("canvas")) {
-        var ctx = can.getContext("2d");
-        ctx.clearRect(0, 0, can.width, can.height);
-        if (is_highlight===true)
-          ctx.globalAlpha = this.HL_ALPHA;
-        else
-          ctx.globalAlpha = this.ALPHA;
-        if (!this.noForeground) {
-          ctx.drawImage( this.buffer, 0, 0);
-        }
+    var el = $(obj),
+        nn = el.parent().children(),
+        idx = nn.length - 1,
+        can = nn[idx];
+    if ($(can).is("canvas")) {
+      var ctx = can.getContext("2d");
+      ctx.clearRect(0, 0, can.width, can.height);
+      if (is_highlight===true)
+        ctx.globalAlpha = this.HL_ALPHA;
+      else
+        ctx.globalAlpha = this.ALPHA;
+      if (!this.noForeground) {
+        ctx.drawImage( this.buffer, 0, 0);
       }
     }
   },

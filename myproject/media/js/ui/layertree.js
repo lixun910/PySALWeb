@@ -18,7 +18,7 @@ var LayerTree = (function($) {
     // set position of multi-layer tree div and hide it
     PositionLayerTree().hide();
     
-    var PlaceLayerName = function(name) {
+    function PlaceLayerName(name) {
       $('#btnMultiLayer').parent().width(200);
       $('#btnMultiLayer span').attr('title', name);
       $('#btnMultiLayer span').attr('title', name);
@@ -26,15 +26,16 @@ var LayerTree = (function($) {
       $('#btnMultiLayer').show();
     };
     
-    var SwitchLayer = function(elm, idx) {
-      if ($(elm).css('background-image').indexOf('off')>0) {
+    function SwitchLayer(elm, idx) {
+      if ($(elm[0]).css('background-image').indexOf('off')>0) {
         $($('canvas')[idx]).show();
-        $(elm).css({'background-image':'url("../../media/img/switch-on.png")'})
+        $(elm[0]).css({'background-image':'url("../../media/img/switch-on.png")'})
       } else {
         $($('canvas')[idx]).hide();
-        $(elm).css({'background-image':'url("../../media/img/switch-off.png")'})
+        $(elm[0]).css({'background-image':'url("../../media/img/switch-off.png")'})
       }
-    };
+    }
+    
     
     $( "#sortable-layers" ).sortable({
       start: function(event, ui) {
@@ -63,10 +64,14 @@ var LayerTree = (function($) {
           layer_ids.push(parseInt(layers[i].id));
         }
         
-        require(['ui/mapManager','ui/uiManager'], function(MapManager, UIManager){
+        require(['ui/mapManager','ui/uiManager','geoda/viz/map_canvas'], function(MapManager, UIManager, MapCanvas){
           var mapManager = MapManager.getInstance();
           mapManager.Reorder(layer_ids);
-          var map = mapManager.GetMap();
+          var map = mapManager.GetMap(),
+              mapcanvas = mapManager.GetMapCanvas();
+          mapcanvas.SetDefaultMap();
+          mapManager.UpdateExtent(map);
+          
           UIManager.getInstance().UpdateFieldNames(map.fields);
         });
       }
@@ -82,11 +87,16 @@ var LayerTree = (function($) {
       AddMap: function(name) {
         // add item in layer-tree
         var nMaps = mapManager.GetNumMaps() - 1;
-        var elm = '<li id="' +nMaps+ '" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><span class="leaf-name" title="'+name+'">' + name + '</span><span class="tree-item-delete"></span><span class="tree-item-eye" onclick="SwitchLayer(this, ' + nMaps +')"></span></li>';
+        var elm = '<li id="' +nMaps+ '" class="ui-state-default"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span><span class="leaf-name" title="'+name+'">' + name + '</span><span  id="'+nMaps+'"  class="tree-item-delete"></span><span id="'+nMaps+'" class="tree-item-eye"></span></li>';
+        
         $(elm).prependTo($('#sortable-layers'));
+        
         PositionLayerTree();
         // change current layer name
         PlaceLayerName(name);
+        $('.tree-item-eye[id='+nMaps+']').click(function() {
+          SwitchLayer($(this), $(this).attr("id"));
+        });
       },
       
     };

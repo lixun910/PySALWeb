@@ -1,8 +1,8 @@
 
 
 // Author: xunli at asu.edu
-define(['jquery','./utils','./msgbox', './message', './cartoProxy', './cartodbDlg', './mapManager', './uiManager'], 
-function($, Utils, MsgBox, M, CartoProxy, CartoDlg, MapManager, UIManager) {
+define(['jquery','./utils','./msgbox', './message', './cartoProxy', './mapManager', './uiManager'], 
+function($, Utils, MsgBox, M, CartoProxy, MapManager, UIManager) {
 
 var OpenFileDlg = (function() {
 
@@ -32,7 +32,13 @@ var OpenFileDlg = (function() {
           key = keyEl.val();
       CartoProxy.GetAllTables(uid, key, function(tables) {
         dlgPrgBar.hide();
-        CartoDlg.getInstance().UpdateTableSel(tables);
+        require(['ui/cartodbDlg', 'ui/spacetimeDlg'], function(CartoDlg, SpacetimeDlg){
+          CartoDlg.getInstance().UpdateTableSel(tables);
+          CartoProxy.GetGeomTypes(tables, function(tbl_geo){
+            console.log(tbl_geo);
+            SpacetimeDlg.getInstance().UpdateTableSel(tbl_geo);
+          });
+        });
       });
     } 
     
@@ -43,7 +49,7 @@ var OpenFileDlg = (function() {
       GetCartoTables();
     });
   
-    function AddCartoDBTableAsMap(table_name) {
+    function AddCartoDBTableAsMap(table_name, callback) {
       dlgPrgBar.show();
       CartoProxy.DownloadTable(table_name, function(data){
         require(['ui/mapManager'], function(MapManager){
@@ -52,6 +58,7 @@ var OpenFileDlg = (function() {
             CartoProxy.GetFields(table_name, function(fields){
               map.fields = fields;
               UIManager.getInstance().SetupMap(map);
+              if (callback) callback();
             });
           });
         });
@@ -61,7 +68,7 @@ var OpenFileDlg = (function() {
     function InitDialogs() {
       var ui = UIManager.getInstance(); 
       if (ui.IsDialogSetup()) {
-        require(['ui/openfileDlg', 'ui/choroplethDlg', 'ui/histogramDlg', 'ui/lisaDlg', 'ui/moranDlg', 'ui/networkDlg', 'ui/scatterDlg', 'ui/spacetimeDlg', 'ui/spregDlg', 'ui/weightsDlg', 'ui/scattermatrixDlg', 'ui/parcoordsDlg'], function(FileDlg, ChoroplethDlg, HistogramDlg, LisaDlg, MoranDlg, NetworkDlg, ScatterDlg, SpacetimeDlg, SpregDlg, WeightsDlg, ScatterMatrixDlg, ParcoordsDlg){
+        require(['ui/openfileDlg', 'ui/cartodbDlg', 'ui/choroplethDlg', 'ui/histogramDlg', 'ui/lisaDlg', 'ui/moranDlg', 'ui/networkDlg', 'ui/scatterDlg', 'ui/spacetimeDlg', 'ui/spregDlg', 'ui/weightsDlg', 'ui/scattermatrixDlg', 'ui/parcoordsDlg'], function(FileDlg, CartoDlg, ChoroplethDlg, HistogramDlg, LisaDlg, MoranDlg, NetworkDlg, ScatterDlg, SpacetimeDlg, SpregDlg, WeightsDlg, ScatterMatrixDlg, ParcoordsDlg){
           var fileDlg = FileDlg.getInstance();
           var cartoDlg = CartoDlg.getInstance();
           var choroDlg = ChoroplethDlg.getInstance();
@@ -83,16 +90,19 @@ var OpenFileDlg = (function() {
     
     // hookup file dialog OK button 
     var OnOKClick = function() {
-      var sel_id = dlgTabs.tabs('option','active');
+      var sel_id = dlgTabs.tabs('option','active'),
+          that = $(this);
       if (sel_id === 0) {
-        $(this).attr("disabled", "disabled");
+        that.attr("disabled", "disabled");
         var table_name = $('#sel-file-carto-tables').find(':selected').text(),
             geo_type = $('#sel-file-carto-tables').find(':selected').val();
         if (table_name === "")  {
           MsgBox.getInstance().Show(M.m100001, M.m100002);
           return;
         }
-        AddCartoDBTableAsMap(table_name);
+        AddCartoDBTableAsMap(table_name, function(){
+          that.dialog("close");
+        });
         InitDialogs();
         
       } else if (sel_id === 1) {
@@ -122,6 +132,7 @@ var OpenFileDlg = (function() {
               console.log(data);
               AddCartoDBTableAsMap(data.table_name);
               //data.status;
+              that.dialog("close");
             });
           } catch(e) {
             console.log(e);

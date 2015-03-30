@@ -1,6 +1,6 @@
 
 // Author: xunli at asu.edu
-define(['jquery', './utils'], function($, Utils) {
+define(['jquery', './msgbox', './utils'], function($, MsgBox, Utils) {
 
 var SpacetimeDlg = (function($){
   var instance;
@@ -9,12 +9,16 @@ var SpacetimeDlg = (function($){
     // singleton
     
     // private methods/vars
+    var sel_table_poly = '#sel-spacetime-table-poly',
+        sel_table_point = '#sel-spacetime-table-point';
+        
     $('#datepicker-start').datepicker();
     $('#datepicker-end').datepicker();
     $('#tabs-dlg-spacetime').tabs();
     $("#spacetime_catalog").accordion({heightStyle : "content"});
+    
     $("#dialog-spacetime").dialog({
-      height: 490,
+      height: 450,
       width: 580,
       autoOpen: false,
       modal: false,
@@ -23,26 +27,27 @@ var SpacetimeDlg = (function($){
       buttons: [{
         text: "OK",
         click: function() {
-          var poly_uuid = $('#sel-spacetime-table-poly').find(':selected').val(),
-              point_uuid = $('#sel-spacetime-table-point').find(':selected').val(),
-              count_col_name = $('#txt-spacetime-col-name').val();
-          var params = {
-            'poly_uuid' : poly_uuid,
-            'point_uuid' : point_uuid,
-            'count_col_name' : count_col_name
-          };
-          $.get('../spacetime/', params, function(){
+          var poly_tbl = $(sel_table_poly).find(':selected').text(),
+              point_tbl = $(sel_table_point).find(':selected').text(),
+              col_name = $('#txt-spacetime-col-name').val();
+          require(['ui/cartoProxy', 'ui/mapManager','ui/uiManager'], function(CartoProxy, MapManager, UIManager){
             $('#progress_bar_spacetime').show();
-          }).done( function( data ) {
-            $('#progress_bar_spacetime').hide();
-            if ( data["success"] == 1 ) {
-              ShowMsgBox("","Space(time) aggregation done.");
-              LoadFieldNames();
-            } else {
-              ShowMsgBox("Error","Space(time) aggregation failed.");
-            }
+            CartoProxy.SpatialCount(poly_tbl, point_tbl, col_name, function(data){
+              $('#progress_bar_spacetime').hide();
+              if (data["error"]) {
+                MsgBox.getInstance().Show("Error","Spatial counting failed."); 
+              } else {
+                MsgBox.getInstance().Show("","Spatial counting done.");
+                var mapManager = MapManager.getInstance(),
+                    map = mapManager.GetMapByName(poly_tbl);
+                if (map) {
+                  map.fields[col_name] = "integer";
+                  console.log(map.fields);
+                  UIManager.getInstance().UpdateFieldNames(map.fields);
+                }
+              }
+            });
           });
-          $( this ).dialog( "close" );
         },
       },{
         text: "Close",
@@ -54,6 +59,21 @@ var SpacetimeDlg = (function($){
     return {
       // public methods/vars
       UpdateFields : function() {
+      },
+      
+      UpdateTableSel: function(table_geo) {
+        var carto_table_sel = {}
+        carto_table_sel[sel_table_point] = 'Point';
+        carto_table_sel[sel_table_poly] =  'Polygon';
+        
+        for (var sel in carto_table_sel) {
+          $(sel).find('option').remove().end();
+          for (var table_name in table_geo) {
+            var geo_type = table_geo[table_name];
+            if (geo_type === carto_table_sel[sel])
+              $(sel).append($('<option>', {value: geo_type}).text(table_name));
+          }
+        }
       },
     };
   };

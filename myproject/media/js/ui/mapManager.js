@@ -234,20 +234,35 @@ var Manager = (function(window){
         if (callback) callback(map);
       },
       
+      UpdateExtent : function(map) {
+        for (var i=0; i<mapCanvasList.length; i++) {
+          mapCanvasList[i].updateExtent(map);
+        }
+      },
+      
       GetNumMaps : function() {
         return numMaps;
       },
       
       GetMapCanvas : function(idx) {
         if (idx === undefined) idx = mapOrder[numMaps-1];
-        return mapCanvasList[idx];
+        return mapCanvasList[mapOrder[idx]];
       },
       
       GetMap : function(idx) {
-        if (idx === undefined) idx = mapOrder[numMaps-1];
         return  this.GetMapCanvas(idx).map;
       },
      
+      GetMapByName : function(name) {
+        for (var i=0; i<mapCanvasList.length; i++) {
+          var mapcanvas = mapCanvasList[i],
+              map = mapcanvas.map;
+          if (map.name === name) 
+            return map;
+        }
+        return undefined;
+      },
+      
       Reorder : function(newOrder) {
         // mapOrder [2,1,3,4]
         var n = numMaps;
