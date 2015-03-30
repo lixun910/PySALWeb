@@ -30,6 +30,7 @@ var GDABasemap = (function($, L, cartodb){
     'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     ];
       
+    var tileIdx = 0;
     var tileProviders = {};
     tileProviders[tileUrls[0]] = cartodb_att;
     tileProviders[tileUrls[1]] = esri_att;
@@ -41,7 +42,7 @@ var GDABasemap = (function($, L, cartodb){
     
     var mapProvider = $('#mapproviders');
     var mapProviders = mapProvider.children();
-    var currentTileUrl = tileUrls[0];
+    var currentTileUrl = tileUrls[tileIdx];
     $(mapProviders[0]).css({'border':'2px solid orange'});
     
     // basemap buton on the right side of top bar
@@ -82,7 +83,8 @@ var GDABasemap = (function($, L, cartodb){
         // update UI
         mapProviders.css({'border':'none'});
         $(this).css({'border':'2px solid orange'});
-        currentTileUrl = tileUrls[parseInt($(this).attr('id'))];
+        tileIdx = parseInt($(this).attr('id'));
+        currentTileUrl = tileUrls[tileIdx];
         
         baselayer = CreateBaseLayer();
       });
@@ -90,6 +92,10 @@ var GDABasemap = (function($, L, cartodb){
     
     return {
       // public
+      GetTileIdx : function() {
+        return tileIdx;
+      },
+      
       GetL : function() {
         return L;
       },

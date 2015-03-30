@@ -12,6 +12,20 @@ var SpregDlg = (function($){
         
     var prev_obj;
 
+    $.fn.popupDiv = function (divToPop, text) {
+      var pos=$(this).offset();
+      var h=$(this).height();
+      var w=$(this).width();
+      if (w == 0) w = 40;
+      if ( text != undefined ) {
+        $(divToPop).html(text);
+      }
+      $(divToPop).css({ left: pos.left + w , top: pos.top - h });
+      $(divToPop).show(function() {
+        setTimeout(function(){ $(divToPop).fadeOut('slow');}, 2000);
+      });
+    };
+
     // kernel weights itesm    
     $('#spreg-spn-pow-idst, #spreg-spn-dist-knn').spinner();
     $('#spreg-dist-slider').slider({
@@ -71,7 +85,7 @@ var SpregDlg = (function($){
     
     // save spreg result to csv
     $('#btn-export-predy').on('click', function(event) {
-      exportTableToCSV.apply(this, [$('#txt-spreg-predy>table'),'export.csv']);
+      Utils.exportTableToCSV.apply(this, [$('#txt-spreg-predy>table'),'export.csv']);
     });
     
     // reset Spreg dialog
@@ -196,22 +210,17 @@ var SpregDlg = (function($){
       dialogClass: "dialogWithDropShadow",
       buttons: {
         "Save to pdf": function() {
-          //$( this ).dialog( "close" );
-          if (gViz && gViz.GetUUID()) {
-            var layer_uuid = gViz.GetUUID(),
-                txt = $('#txt-spreg-summary').text();
-            txt = txt.replace(/"/g, '');
-            txt = txt.replace(/<br>/g, '\n');
-            txt = txt.replace(/<\/tr>/g, '\n');
-            txt = txt.replace(/<\/td>/g, '    ');
-            console.log(txt);
-            var inputs = '';
-            inputs += '<input type="hidden" name="layer_uuid" value="' + layer_uuid + '" />';
-            inputs += '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrftoken+'" />';
-            inputs += '<input type="hidden" name="text" value="' + txt + '" />';
-            jQuery('<form action="../save_pdf/" method="post">' + inputs + '</form>')
-            .appendTo('body').submit().remove();
-          }
+          var txt = $('#txt-spreg-summary').text();
+          txt = txt.replace(/"/g, '');
+          txt = txt.replace(/<br>/g, '\n');
+          txt = txt.replace(/<\/tr>/g, '\n');
+          txt = txt.replace(/<\/td>/g, '    ');
+          var inputs = '';
+          inputs += '<input type="hidden" name="layer_uuid" value="' + layer_uuid + '" />';
+          inputs += '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrftoken+'" />';
+          inputs += '<input type="hidden" name="text" value="' + txt + '" />';
+          $('<form action="../save_pdf/" method="post">' + inputs + '</form>')
+          .appendTo('body').submit().remove();
         },
         Cancel: function() {$( this ).dialog( "close" );},
       }
@@ -264,6 +273,9 @@ var SpregDlg = (function($){
         toggleWeightsDiv(kernel_w_el, true);
       }
     });
+    
+    $('#btn-save-predy').button();
+    $('#btn-export-predy').button();
     
     $( "#dlg-save-model" ).dialog({
       dialogClass: "dialogWithDropShadow",

@@ -47,20 +47,6 @@ function($, LayerTree, Toolbar, UIManager, MsgBox,  CartoProxy, FileDlg, MapMana
     return vals;
   };
   
-  $.fn.popupDiv = function (divToPop, text) {
-    var pos=$(this).offset();
-    var h=$(this).height();
-    var w=$(this).width();
-    if (w == 0) w = 40;
-    if ( text != undefined ) {
-      $(divToPop).html(text);
-    }
-    $(divToPop).css({ left: pos.left + w , top: pos.top - h });
-    $(divToPop).show(function() {
-      setTimeout(function(){ $(divToPop).fadeOut('slow');}, 2000);
-    });
-  };
-
   String.prototype.endsWith = function(suffix) {
       return this.indexOf(suffix, this.length - suffix.length) !== -1;
   };

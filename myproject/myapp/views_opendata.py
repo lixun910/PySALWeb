@@ -107,7 +107,7 @@ def google_search_carto(request):
             name+".json"
         )
         findings = {}
-        pool = mp.Pool(10)
+        pool = mp.Pool(5)
         status = google.async_searchByKeyword(pool, q, bounds, gkey, findings)
         pool.close()
         pool.join()

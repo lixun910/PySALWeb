@@ -82,33 +82,46 @@ var CartoDlg = (function($, CartoProxy) {
         // setup
         
       } else if (sel_id === 1) {
-        var viz_name = $('#txt-carto-vizjson').val();
-        require(['ui/mapManager', 'ui/basemap'], function(MapManager, Basemap){
-          var mapcanvas = MapManager.getInstance().GetMapCanvas(),
-              map = mapcanvas.map,
-              basemap = Basemap.getInstance(),
-              fields = [];
-          for (var fld in map.fields) fields.push(fld);
+        var title = $('#txt-carto-vizjson').val();
+        require(['ui/mapManager', 'ui/basemap'], function(MapManager, Basemap) {
+          var mapManager = MapManager.getInstance(),
+              n_maps = mapManager.GetNumMaps(),
+              basemap =  Basemap.getInstance(),
+              viz_confs = [];
+                    
+          for (var i=0; i<n_maps; i++) {
+            var mapcanvas = mapManager.GetMapCanvas(i),
+                map = mapcanvas.map,
+                fields = [];
+                
+            for (var fld in map.fields) 
+              fields.push(fld);
+            
+            viz_confs.push({
+              'map_name' : map.name,
+              'map_type' : mapcanvas.shpType,
+              'fields' : fields,
+              'legend_name' : map.name,
+              'legend_field' : mapcanvas.field,
+              'legend_txts' : mapcanvas.legend_txts,
+              'bins' : mapcanvas.bins,
+              'colors' : mapcanvas.colors,
+              'stroke_clr' : mapcanvas.STROKE_CLR,
+              'fill_clr' : mapcanvas.FILL_CLR,
+              'stroke_width' : mapcanvas.STROKE_WIDTH,
+              'alpha' : mapcanvas.ALPHA,
+            });
+          }
               
           $.get("../carto_create_viz/", {
-            carto_uid : uid,
-            carto_key : key,
-            viz_name : viz_name,
-            map_name : map.name,
-            'fields[]': fields,
-            map_type : mapcanvas.shpType,
+            'carto_uid' : uid,
+            'carto_key' : key,
+            'title' : title,
             'bounds[]' : basemap.GetBounds(),
             'center[]' : basemap.GetCenter(),
-            zoom : basemap.GetZoom(),
-            stroke_clr : mapcanvas.STROKE_CLR,
-            fill_clr : mapcanvas.FILL_CLR,
-            stroke_width : mapcanvas.STROKE_WIDTH,
-            alpha : mapcanvas.ALPHA,
-            'bins[]' : mapcanvas.bins,
-            'colors[]' : mapcanvas.colors,
-            'legend_txts[]' : mapcanvas.legend_txts,
-            legend_field : mapcanvas.field,
-        
+            'zoom' : basemap.GetZoom(),
+            'tile_idx' : basemap.GetTileIdx(),
+            'viz_confs' : JSON.stringify(viz_confs),
           }).done(function(data){
             console.log(data);
             $('#sel-carto-viz').append($('<option>', {value:data.userid}).text(data.vizname));
