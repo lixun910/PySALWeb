@@ -46,8 +46,8 @@ var ParcoordsDlg = (function($){
 	    }
 	    url += 'carto=' + JSON.stringify(carto_param);
 	  }
-	  //var newWindow = $('#chk-newtab-scatter').is(':checked');
-	  var frame_uuid = Utils.popFrame(url);
+	  var newWindow = $('#chk-newtab-parcoords').is(':checked');
+	  var frame_uuid = Utils.popFrame(url, newWindow);
 	}, 
       },
     });

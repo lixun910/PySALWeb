@@ -17,7 +17,7 @@ var CartoProxy = {
     carto_uid = uid;
     carto_key = key;
     var sql = "SELECT table_name FROM information_schema.tables WHERE table_schema='public'";
-    var url = "https://" + uid + ".cartodb.com/api/v2/sql?api_key=" + key + "&q=" + sql;
+    var url = "https://" + uid + ".cartodb.com/api/v2/sql?api_key=" + key + "&q=" + sql + '&' + Utils.guid();
     var that = this;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
@@ -132,7 +132,7 @@ var CartoProxy = {
   },
   
   DownloadTable: function(table_name, onSuccess) {
-    var sql = "SELECT the_geom FROM " + table_name;
+    var sql = "SELECT the_geom FROM " + table_name + " ORDER BY cartodb_id";
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=shp&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
@@ -203,7 +203,7 @@ var CartoProxy = {
   
   GetFields: function(table_name, onSuccess) {
     var sql = "SELECT column_name as a, data_type as b FROM information_schema.columns WHERE table_name='" + table_name + "'";
-    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql + '&' + Utils.guid();
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'json';
@@ -256,7 +256,7 @@ var CartoProxy = {
     sql += vars[vars.length-1];
     sql += " FROM " + table_name;
     
-    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=csv&api_key=" + carto_key + "&q=" + sql;
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=csv&api_key=" + carto_key + "&q=" + sql + '&' + Utils.guid();
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.responseType = 'text';
@@ -270,11 +270,13 @@ var CartoProxy = {
         for (var i=0; i<nvars; i++)  {
           data[vars[i]] = [];
         }
-        for (var i=1, n=rows.length; i<n; i++)  {
+        for (var i=1, n=rows.length-1; i<n; i++)  {
           var items = rows[i].split(",");
           for (var j=0; j<nvars; j++)  {
             if (items[j] !== "")
               data[vars[j]].push(parseFloat(items[j]));
+            else
+              data[vars[j]].push(0);
           }
         }
         for (var i=0; i<nvars; i++)  {
@@ -409,7 +411,7 @@ var CartoProxy = {
   },
 
   AddField : function(table_name, field_name, field_type, callback) {
-    var sql = "ALTER TABLE " + table_name +" ADD COLUMN " + field_name + " " + field_type;
+    var sql = "ALTER TABLE " + table_name +" ADD COLUMN " + field_name + " " + field_type + " DEFAULT 0";
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     
     var xhr = new XMLHttpRequest();
@@ -417,7 +419,7 @@ var CartoProxy = {
     xhr.responseType = 'json';
     xhr.onload = function(evt) {
       var data = xhr.response;
-      callback();      
+      if (callback) callback();      
     };
     xhr.send(null);
   },
@@ -451,7 +453,7 @@ var CartoProxy = {
     
     // create zipped csv file
     var FILE_NAME = temp_table_name + ".csv";
-    var TEXT_CONTENT = "cartodb_id, lisa\n";
+    var TEXT_CONTENT = "id, lisa\n";
     for (var i=0, n=values.length; i<n; i++) {
       TEXT_CONTENT += (i+1) + "," + values[i] + "\n";
     }
@@ -503,7 +505,36 @@ var CartoProxy = {
       xhr.send(null);
     });
   },
-  
+ 
+  /*
+With lcnt AS (
+  SELECT lid, count(*) as cnt FROM (
+    SELECT b.cartodb_id As pp, (
+      SELECT a.cartodb_id as id
+      FROM man_road AS a
+      ORDER BY a.the_geom<->b.the_geom 
+      LIMIT 1
+      ) AS lid
+    FROM man_points AS b
+  ) AS p2l GROUP BY lid
+)
+UPDATE man_road SET xun = (select cnt from lcnt where lcnt.lid=man_road.cartodb_id)
+  */
+  SnapPointsToLines : function(line_table, point_table, field_name, callback) {
+    this.AddField(line_table, field_name, "integer", function() {
+      var sql = "With lcnt AS (SELECT lid, count(*) as cnt FROM (SELECT b.cartodb_id As pp, (SELECT a.cartodb_id as id FROM "+line_table+" AS a ORDER BY a.the_geom<->b.the_geom LIMIT 1) AS lid FROM "+point_table+" AS b) AS p2l GROUP BY lid) UPDATE "+line_table+" SET "+field_name+"=(select cnt from lcnt where lcnt.lid="+line_table+".cartodb_id)";
+      var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?api_key=" + carto_key + "&q=" + sql;
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", url);
+      xhr.responseType = 'json';
+      xhr.onload = function(evt) {
+        var data = xhr.response;
+        if (callback) callback(data);
+      };
+      xhr.send(null);
+    });
+    
+  },
 };
 
 return CartoProxy;

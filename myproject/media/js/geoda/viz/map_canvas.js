@@ -588,7 +588,7 @@ MapCanvas.prototype = {
     if ( localStorage["HL_IDS"] ){ 
       hl = JSON.parse(localStorage["HL_IDS"]);
     }
-    hl[this.uuid] = select_ids;//this.selected;
+    hl[this.map.name] = select_ids;//this.selected;
     localStorage["HL_IDS"] = JSON.stringify(hl);
   
     var hl_map = {}; 
@@ -668,69 +668,60 @@ MapCanvas.prototype = {
     }
   },
  
-  drawArcs : function(ctx, arcs)  {
-    var cnt =0, x, y,
-        iter, arcs, arcId;
-        
-    for (var i=0, n=arcs.length; i<n; i++) {
-      arcId = arcs[i];
-      iter = this.map.arcs.getArcIter(arcId);
-      if (iter.hasNext()) {
-      }
-      while (iter.hasNext()) {
-        if (cnt === 0) {
-          px = iter.x;
-          py = iter.y;
-          ctx.moveTo(px, py);
-        } else {
-          x = iter.x;
-          y = iter.y;
-          if ( x !== px || y !== py ) {
-            ctx.lineTo(x, y);
-            px = x;
-            py = y;
-          }
-        }
-        cnt+=1;
-      }
-    }
-  },
-  
   drawLines: function( ctx, lines, colors ) {
     if ( lines == undefined || lines.length == 0 )
       return;
-    var arcs, arc, parts;
     if ( colors == undefined ) { 
-      for (var i=0, n=lines.length; i<n; i++) {
-        ctx.beginPath();
-        parts = lines[i];
-        for (var j=0,m=parts.length; j<m;j++) {
-          arcs = parts[j];
-          this.drawArcs( ctx, arcs);
+      ctx.beginPath();
+      for ( var i=0, n=lines.length; i<n; i++ ) {
+        var obj = lines[i];
+        if ( Array.isArray(obj[0][0]) ) {
+          // multi parts 
+          for ( var j=0, nParts=obj.length; j<nParts; j++ ) {
+            ctx.moveTo(obj[j][0][0], obj[j][0][1]);
+            for ( var k=1, nPoints=obj[j].length; k<nPoints; k++) {
+              var x = obj[j][k][0], y = obj[j][k][1];
+              ctx.lineTo(x, y);
+            }
+          }
+        } else {
+          ctx.moveTo(obj[0][0], obj[0][1]);
+          for ( var k=1, nPoints=obj.length; k<nPoints; k++) {
+            var x = obj[k][0], y = obj[k][1];
+            ctx.lineTo(x, y);
+          }
         }
-        if (this.shpType === "POLYGON") ctx.fill();
-        ctx.stroke();
-      }
+      } 
+      ctx.stroke();
     } else {
-      var ids;
       for ( var c in colors ) {
-        ids = colors[c];
+        var ids = colors[c];
         ctx.strokeStyle = c;
-        
         for ( var i=0, n=ids.length; i< n; ++i) {
           ctx.beginPath();
-          parts = lines[ids[i]];
-          
-          for (var i=0,n=parts.length; i<n;i++) {
-            arcs = parts[i];
-            this.drawArc(ctx, arcs);
+          var obj = lines[ids[i]];
+          if ( Array.isArray(obj[0][0]) ) {
+            // multi parts 
+            for ( var j=0, nParts=obj.length; j<nParts; j++ ) {
+              ctx.moveTo(obj[j][0][0], obj[j][0][1]);
+              for ( var k=1, nPoints=obj[j].length; k<nPoints; k++) {
+                var x = obj[j][k][0], y = obj[j][k][1];
+                ctx.lineTo(x, y);
+              }
+            }
+          } else {
+            ctx.moveTo(obj[0][0], obj[0][1]);
+            for ( var k=1, nPoints=obj.length; k<nPoints; k++) {
+              var x = obj[k][0], y = obj[k][1];
+              ctx.lineTo(x, y);
+            }
           }
-          if (this.shpType === "POLYGON") ctx.fill();
           ctx.stroke();
         }
       }
     }  
   },
+  
   
   drawPoints: function( ctx, points, colors ) {
     var end = 2*Math.PI,

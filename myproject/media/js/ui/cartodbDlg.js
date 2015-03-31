@@ -1,6 +1,6 @@
 
 // Author: xunli at asu.edu
-define(['jquery', './cartoProxy'], function($, CartoProxy) {
+define(['jquery', './utils','./cartoProxy'], function($, Utils, CartoProxy) {
 
 var window = this;
 
@@ -12,6 +12,26 @@ var CartoDlg = (function($, CartoProxy) {
     // singleton
     
     // private
+    var userid = null;
+    var viz_dict = {}; // vizname: viztitle
+    var viztype_dict = {}; // vizname: viztype
+    
+    function GetCartoViz() {
+      $.get("../carto_get_viz/", {}).done(function(data){
+        for (var i=0, n=data.length; i<n; i++) {
+          var row = data[i];
+          if (viz_dict[row.vizname] === undefined) {
+            $('#sel-carto-viz').append($('<option>', {value:row.vizname}).text(row.viztitle));
+          }
+          userid = row.userid;
+          viz_dict[row.vizname] = row.viztitle;
+          viztype_dict[row.vizname] = row.viztype;
+        }
+      });
+    }
+    
+    GetCartoViz();
+    
     var carto_table_sel = [
       '#sel-carto-table-download', 
       '#sel-file-carto-tables', 
@@ -24,16 +44,28 @@ var CartoDlg = (function($, CartoProxy) {
     var dlgTabs = $('#tabs-dlg-cartodb').tabs();
     
     var dlg = $( "#dialog-cartodb" );
+   
+    function OpenVizWindow(vizname, viztitle)  {
+      var viztype = viztype_dict[vizname];
+      if (viztype == 0) {
+        window.open(
+          '../../static/test.html?uid='+userid+'&vizname='+vizname+'&'+Utils.guid(),
+          "_blank",
+          "width=900, height=700, scrollbars=yes"
+        );
+      } else {
+        window.open(
+          '../../static/cartoviz.html?uid='+userid+'&vizname='+vizname+'&'+Utils.guid(),
+          "_blank",
+          "width=900, height=700, scrollbars=yes"
+        );
+      }
+    }
     
     $('#sel-carto-viz').change(function(){
-      var user_id = $(this).val();
-      var viz_name = $('#sel-carto-viz :selected').text();
-      var w = window.open(
-        '../../static/test.html?uid=' + user_id +'&vizname=' + viz_name,
-        "_blank",
-        "width=900, height=700, scrollbars=yes"
-      );
-      
+      var viz_name= $(this).val(),
+          viz_title= $('#sel-carto-viz :selected').text();
+      OpenVizWindow(viz_name, viz_title, 0);
     });
     
     $('#btn-cartodb-get-all-tables').click(function(){
@@ -122,9 +154,19 @@ var CartoDlg = (function($, CartoProxy) {
             'zoom' : basemap.GetZoom(),
             'tile_idx' : basemap.GetTileIdx(),
             'viz_confs' : JSON.stringify(viz_confs),
+            'viz_type' : 0,
           }).done(function(data){
             console.log(data);
-            $('#sel-carto-viz').append($('<option>', {value:data.userid}).text(data.vizname));
+            userid = data.userid;
+            var vizname = data.vizname,
+                viztitle = data.viztitle,
+                viztype = data.viztype;
+            if (viz_dict[vizname] === undefined) {
+              $('#sel-carto-viz').append($('<option>', {value:vizname}).text(viztitle));
+              viz_dict[vizname] = viztitle;
+              viztype_dict[vizname] = viztype;
+            }
+            OpenVizWindow(vizname, viztitle, viztype);
           });
           
           dlgPrgBar.hide();

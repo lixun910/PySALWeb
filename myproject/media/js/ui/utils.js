@@ -218,6 +218,7 @@ return {
     return uuid;
   },
   
+  
   map2vizJson : function() {
   },
   

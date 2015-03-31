@@ -45,6 +45,17 @@ html, body{
   height: -moz-calc(100% - 48px); 
   height: -webkit-calc(100% - 48px); 
   height: calc(100% - 48px); 
+  height: 500px;
+}
+.sub_section{
+  font-family: Helvetica Neue', Helvetica, sans-serif;
+  font-weight: 400;
+  text-align:left; 
+  font-size: 40px
+  color: #CCC;
+  width: 900px;
+  height: 500px;
+  margin: 0px 0px 0px 20px;
 }
 </style>
 
@@ -56,7 +67,12 @@ html, body{
 </div>
 <div style="padding-top:48px"></div>
 <div id="map"></div>
+<div style="padding-top:48px"></div>
 
+<div class="sub_section">
+<pre id="spreg_txt">
+</pre>
+</div>
 
 <!-- include cartodb.js library -->
 <script src="../media/js/cartodb.js"></script>
@@ -85,6 +101,18 @@ window.onload = function() {
       // report error
       console.log("An error occurred: " + err);
     });
+    
+  
+  var spreg_url = '../media/temp/' + user_id + '/' + viz_name + '.txt'; // <-- Paste viz.json URL between quotes
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", spreg_url);
+  xhr.responseType = 'text';
+  xhr.onload = function(evt) {
+    var txt = xhr.response;
+    var el = document.getElementById('spreg_txt');
+    el.innerText =  txt;
+  };
+  xhr.send(null);
 }
 </script>
 </body>

@@ -68,6 +68,8 @@ function(CartoProxy,Utils, colorbrewer, d3){
 
   console.log(this.window, CartoProxy, colorbrewer, d3);
   
+  var resizeTimer;
+  
   var colors = colorbrewer.Paired[10];
   
   var uuid = Utils.getParameterByName('uuid'),
@@ -165,8 +167,12 @@ function(CartoProxy,Utils, colorbrewer, d3){
         .attr("class", "y axis")
         .call(yAxis);
   };
-  
-  var OnResize = function(evt) {
+ 
+  function resize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(OnResizeDone, 500);
+  }
+  var OnResizeDone = function(evt) {
   
     screenW = parseInt(d3.select("#graph").style("width"));
     screenH = parseInt(d3.select("#graph").style("height"));
@@ -212,7 +218,7 @@ function(CartoProxy,Utils, colorbrewer, d3){
     
   };
   
-  this.window.addEventListener("resize", OnResize);
+  this.window.addEventListener("resize", resize);
   
   if (table_name)  {
     CartoProxy.SetUID(carto_uid);

@@ -46,6 +46,7 @@ urlpatterns += patterns('myproject.myapp.views_cartodb',
     url(r'^carto_download_table/$', 'carto_download_table', name='carto download table'),
     url(r'^carto_upload_file/$', 'carto_upload_file', name='carto upload tables'),
     url(r'^carto_create_viz/$', 'carto_create_viz', name='carto create vizjson'),
+    url(r'^carto_get_viz/$', 'carto_get_viz', name='carto get vizjson'),
     url(r'^carto_add_field_from_file/$', 'carto_add_field_from_file', name='carto field from csv file'),
 )
 
@@ -92,4 +93,5 @@ urlpatterns += patterns('myproject.myapp.views_spreg',
     url(r'^save_spreg_result/$', 'save_spreg_result', name='save spreg result'),
     url(r'^spatial_regression/$', 'spatial_regression', name='spatial regression'),
     url(r'^spatial_regression_carto/$', 'spatial_regression_carto', name='spatial regression cartodb'),
+    url(r'^publish_spreg_cartodb/$', 'publish_spreg_cartodb', name='publish spreg cartodb'),
 )    

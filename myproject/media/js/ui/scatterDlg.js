@@ -41,8 +41,9 @@ var ScatterDlg = (function($){
 	    url += '&carto_key=' + CartoProxy.GetKey() + '&';
 	  }
 	  url += '&x=' + var_x + '&y=' + var_y;
-	  //var newWindow = $('#chk-newtab-scatter').is(':checked');
-	  var frame_uuid = Utils.popFrame(url);
+	  var newWindow = $('#chk-newtab-scatter').is(':checked');
+	  console.log(newWindow);
+	  var frame_uuid = Utils.popFrame(url, newWindow);
 	}, 
       },
     });

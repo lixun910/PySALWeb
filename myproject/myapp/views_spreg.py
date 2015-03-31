@@ -313,6 +313,31 @@ def create_w_cartodb(table_name, uid, key, w_conf):
         w = cartodb_kernel_w(table_name, uid, key, w_conf)
     return w
     
+
+@login_required
+def publish_spreg_cartodb(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+         
+    result = {"success":0}
+    
+    if request.method != 'POST':
+        return HttpResponse(json.dumps(result))
+    
+    txt = request.POST.get('txt')
+    file_name = request.POST.get('file_name')
+    user_uuid = md5(userid).hexdigest()
+    base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
+    file_path = os.path.join(base_loc, file_name)
+    o = open(file_path, 'w')
+    o.write(txt)
+    o.close()
+       
+    result['user_id']  = user_uuid
+    return HttpResponse(json.dumps(result), content_type="application/json")    
+    
+    
 @login_required
 def spatial_regression_carto(request):
     userid = request.user.username

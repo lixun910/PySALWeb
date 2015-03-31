@@ -175,10 +175,12 @@ def carto_add_field_from_file(request):
         carto_add_field_only(table_name, field_name, field_type, uid, key)
         
         # copy the field in returned_table_name to destinated table_name
-        sql = 'UPDATE %s t1 SET %s=t2.%s FROM %s t2 WHERE t1.cartodb_id=t2.cartodb_id' % (table_name, field_name, field_name, returned_table_name)
+        sql = 'UPDATE %s SET %s=%s.%s FROM %s WHERE %s.cartodb_id=%s.id' % (table_name, field_name, returned_table_name, field_name, returned_table_name, table_name, returned_table_name)
         url = 'https://%s.cartodb.com/api/v2/sql' % uid
         params = { 'api_key': key, 'q': sql}
         r = requests.get(url, params=params, verify=False)
+        print sql
+        print r.json()
         
         # drop this temporay table created by zip file        
         cartodb_drop_table(returned_table_name, uid, key)
@@ -501,6 +503,7 @@ def carto_create_viz(request):
         alpha = request.GET.get('alpha', "0.8")
         tile_idx = request.GET.get('tile_idx', 0)
         viz_confs = request.GET.get('viz_confs', None) 
+        viz_type = request.GET.get('viz_type', None) 
         
         if (viz_confs == None):
             return HttpResponse(RSP_FAIL, content_type="application/json")    
@@ -683,12 +686,31 @@ def carto_create_viz(request):
             uuid=viz_name,
             userid=user_uuid,
             name=title,
+            type=viz_type,
         )
         new_item.save()
-        rsp = {'userid':user_uuid, "vizname" : viz_name}
+        rsp = {'userid':user_uuid, "vizname" : viz_name, "viztitle": title, "viztype" : viz_type}
         if cartodb_key and cartodb_uid:
             return HttpResponse(
                 json.dumps(rsp),
                 content_type="application/json"
             )
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
+
+
+@login_required
+def carto_get_viz(request):
+    # check user login
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+
+    if request.method == 'GET': 
+        user_uuid = md5(userid).hexdigest()
+        vizs = CartoViz.objects.filter(userid=user_uuid)
+        result = []
+        for viz in vizs:
+            result.append({'userid':user_uuid,'vizname':viz.uuid, 'viztitle':viz.name, 'viztype' :viz.type})
+        return HttpResponse(json.dumps(result), content_type="application/json")    
+    
     return HttpResponse(RSP_FAIL, content_type="application/json")    

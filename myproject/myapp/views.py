@@ -35,7 +35,7 @@ def my_login(request):
             # user.is_active
             login(request, user)
             print user.id
-            return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/main/') 
+            return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/index/') 
         else:
             error_msg = "Email or password don't match any existing record."
     return render_to_response(
@@ -67,7 +67,7 @@ def my_signup(request):
                 user.save()
                 user = authenticate(username=email, password=password)
                 login(request, user)
-                return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/main/') 
+                return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/index/') 
             
     return render_to_response(
         'myapp/login.html',{

@@ -37,7 +37,7 @@ var LisaDlg = (function($){
       // add a field with LISA values
       CartoProxy.AddFieldWithValues(table_name, field_name, "integer", result.q, function() {
         require(['ui/uiManager'], function(UIManager){
-          map.fields.push(field_name);
+          map.fields[field_name] = 'integer';
           UIManager.getInstance().UpdateFieldNames(map.fields);
           MsgBox.getInstance().Show("Information", "The LISA results have been saved to the CartoDB table.");
         });

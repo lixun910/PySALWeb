@@ -1,0 +1,41 @@
+Report 1/1
+
+REGRESSION
+----------
+SUMMARY OF OUTPUT: ORDINARY LEAST SQUARES
+-----------------------------------------
+Data set            :  sfpd_plots
+Dependent Variable  :    liquor11                Number of Observations:         654
+Mean dependent var  :      0.4969                Number of Variables   :           4
+S.D. dependent var  :      0.9273                Degrees of Freedom    :         650
+R-squared           :      0.1592
+Adjusted R-squared  :      0.1553
+Sum squared residual:     472.087                F-statistic           :     41.0336
+Sigma-square        :       0.726                Prob(F-statistic)     :   2.713e-24
+S.E. of regression  :       0.852                Log likelihood        :    -821.402
+Sigma-square ML     :       0.722                Akaike info criterion :    1650.805
+S.E of regression ML:      0.8496                Schwarz criterion     :    1668.737
+
+------------------------------------------------------------------------------------
+            Variable     Coefficient       Std.Error     t-Statistic     Probability
+------------------------------------------------------------------------------------
+            CONSTANT       0.1996915       0.0510137       3.9144697       0.0001002
+            cartheft       0.0215253       0.0063335       3.3986327       0.0007186
+               drugs      -0.0016433       0.0013852      -1.1862740       0.2359475
+             robbery       0.0308468       0.0041761       7.3865034       0.0000000
+------------------------------------------------------------------------------------
+
+REGRESSION DIAGNOSTICS
+MULTICOLLINEARITY CONDITION NUMBER            3.361
+
+TEST ON NORMALITY OF ERRORS
+TEST                             DF        VALUE           PROB
+Jarque-Bera                       2        2287.296           0.0000
+
+DIAGNOSTICS FOR HETEROSKEDASTICITY
+RANDOM COEFFICIENTS
+TEST                             DF        VALUE           PROB
+Breusch-Pagan test                3         137.253           0.0000
+Koenker-Bassett test              3          27.432           0.0000
+================================ END OF REPORT =====================================
+

@@ -32,11 +32,12 @@ var OpenFileDlg = (function() {
           key = keyEl.val();
       CartoProxy.GetAllTables(uid, key, function(tables) {
         dlgPrgBar.hide();
-        require(['ui/cartodbDlg', 'ui/spacetimeDlg'], function(CartoDlg, SpacetimeDlg){
+        require(['ui/cartodbDlg', 'ui/spacetimeDlg', 'ui/networkDlg'], function(CartoDlg, SpacetimeDlg, NetworkDlg){
           CartoDlg.getInstance().UpdateTableSel(tables);
           CartoProxy.GetGeomTypes(tables, function(tbl_geo){
             console.log(tbl_geo);
             SpacetimeDlg.getInstance().UpdateTableSel(tbl_geo);
+            NetworkDlg.getInstance().UpdateTableSel(tbl_geo);
           });
         });
       });
@@ -94,8 +95,7 @@ var OpenFileDlg = (function() {
           that = $(this);
       if (sel_id === 0) {
         that.attr("disabled", "disabled");
-        var table_name = $('#sel-file-carto-tables').find(':selected').text(),
-            geo_type = $('#sel-file-carto-tables').find(':selected').val();
+        var table_name = $('#sel-file-carto-tables').find(':selected').text();
         if (table_name === "")  {
           MsgBox.getInstance().Show(M.m100001, M.m100002);
           return;

@@ -51,7 +51,8 @@ var MoranDlg = (function($){
 	    });
 	  }
 	  
-          var frame_uuid = Utils.popFrame(url);
+	  var newWindow = $('#chk-newtab-moranscatter').is(':checked');
+          var frame_uuid = Utils.popFrame(url, newWindow);
           $(this).dialog("close");
         }, 
         Cancel: function() {$( this ).dialog( "close" );},

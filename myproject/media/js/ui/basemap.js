@@ -72,7 +72,7 @@ var GDABasemap = (function($, L, cartodb){
       
       baselayer = L.tileLayer(currentTileUrl, options);
       lmap.addLayer(baselayer);
-      lmap.setView(new L.LatLng(33.419457, -111.937404), 12);
+      //lmap.setView(new L.LatLng(33.419457, -111.937404), 12);
       return baselayer;
     }
   

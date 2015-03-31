@@ -50,16 +50,20 @@ var Moran = function(y, w) {
 Moran.Get_lagged_y = function(y, w) {
   var lagged_y = [];
   for (var i=0,n=y.length; i<n; i++) {
-    var nn = w[i],
-        nnn = nn.length,
-        norm = 1 / nnn,
-        wy = 0;
-      
-    for (var j=0; j<nnn; j++) {
-      var nid = nn[j];
-      wy += y[nid] * norm;
+    var nn = w[i];
+    if (nn) {
+      var nnn = nn.length,
+          norm = 1 / nnn,
+          wy = 0;
+        
+      for (var j=0; j<nnn; j++) {
+        var nid = nn[j];
+        wy += y[nid] * norm;
+      }
+      lagged_y.push(wy);
+    } else {
+      lagged_y.push(0);
     }
-    lagged_y.push(wy);
   }
   return lagged_y;
 };

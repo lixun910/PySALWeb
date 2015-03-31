@@ -11,6 +11,8 @@ var science = { stats: {} };
 </script>
 <script src="../media/js/loess.js" charset="utf-8"></script>
 <script src="../media/js/require.js" charset="utf-8"></script>
+<script src="../media/js/lib/jquery.min.js" charset="utf-8"></script>
+<script src="../media/js/lib/jquery-ui-1.10.4.custom.min.js" charset="utf-8"></script>
 
 <body>
 <div id="map-container"> 
@@ -40,8 +42,8 @@ require.config({
     }
 });
 
-require(["./ui/cartoProxy","./ui/utils", 'colorbrewer', 'd3', 'jquery', 'jqueryui'],
-function(CartoProxy,Utils, colorbrewer, d3, $){
+require(["./ui/cartoProxy","./ui/utils", 'colorbrewer', 'd3'],
+function(CartoProxy,Utils, colorbrewer, d3){
 
   var science = this.science;
   var ss = this.ss;

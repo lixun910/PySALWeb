@@ -12,10 +12,10 @@ var SpregDlg = (function($){
         
     var prev_obj;
 
-    $.fn.popupDiv = function (divToPop, text) {
-      var pos=$(this).offset();
-      var h=$(this).height();
-      var w=$(this).width();
+    function PopupDiv(anchor, divToPop, text) {
+      var pos=$(anchor).offset(),
+          h=$(anchor).height(),
+          w=$(anchor).width();
       if (w == 0) w = 40;
       if ( text != undefined ) {
         $(divToPop).html(text);
@@ -209,18 +209,81 @@ var SpregDlg = (function($){
       modal: true,
       dialogClass: "dialogWithDropShadow",
       buttons: {
-        "Save to pdf": function() {
-          var txt = $('#txt-spreg-summary').text();
-          txt = txt.replace(/"/g, '');
-          txt = txt.replace(/<br>/g, '\n');
-          txt = txt.replace(/<\/tr>/g, '\n');
-          txt = txt.replace(/<\/td>/g, '    ');
-          var inputs = '';
-          inputs += '<input type="hidden" name="layer_uuid" value="' + layer_uuid + '" />';
-          inputs += '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrftoken+'" />';
-          inputs += '<input type="hidden" name="text" value="' + txt + '" />';
-          $('<form action="../save_pdf/" method="post">' + inputs + '</form>')
-          .appendTo('body').submit().remove();
+        "Publish to CartoDB": function() {
+          var x = $.GetTextsFromObjs($('#x_box li')),
+              y = $.GetTextsFromObjs($('#y_box li')),
+              title = "Spatial Regression ("+y+":~"+x+")";
+          require(['ui/cartoProxy','ui/mapManager', 'ui/basemap'], function(CartoProxy, MapManager, Basemap) {
+            var mapManager = MapManager.getInstance(),
+                n_maps = mapManager.GetNumMaps(),
+                basemap =  Basemap.getInstance(),
+                viz_confs = [];
+                      
+            for (var i=0; i<n_maps; i++) {
+              var mapcanvas = mapManager.GetMapCanvas(i),
+                  map = mapcanvas.map,
+                  fields = [];
+                  
+              for (var fld in map.fields) 
+                fields.push(fld);
+              
+              viz_confs.push({
+                'map_name' : map.name,
+                'map_type' : mapcanvas.shpType,
+                'fields' : fields,
+                'legend_name' : map.name,
+                'legend_field' : mapcanvas.field,
+                'legend_txts' : mapcanvas.legend_txts,
+                'bins' : mapcanvas.bins,
+                'colors' : mapcanvas.colors,
+                'stroke_clr' : mapcanvas.STROKE_CLR,
+                'fill_clr' : mapcanvas.FILL_CLR,
+                'stroke_width' : mapcanvas.STROKE_WIDTH,
+                'alpha' : mapcanvas.ALPHA,
+              });
+            }
+
+            var uid = CartoProxy.GetUID(),
+                key = CartoProxy.GetKey();
+                
+            $.get("../carto_create_viz/", {
+              'carto_uid' : uid,
+              'carto_key' : key,
+              'title' : title,
+              'bounds[]' : basemap.GetBounds(),
+              'center[]' : basemap.GetCenter(),
+              'zoom' : basemap.GetZoom(),
+              'tile_idx' : basemap.GetTileIdx(),
+              'viz_confs' : JSON.stringify(viz_confs),
+              'viz_type' : 1,
+            }).done(function(data){
+              console.log(data);
+              var viz_name = data.vizname,
+                  file_name = viz_name+".txt",
+                  txt = $('#txt-spreg-summary').text();
+              var formData = new FormData();
+              formData.append('csrfmiddlewaretoken', csrftoken);
+              formData.append('txt', txt);
+              formData.append('file_name', file_name);
+              
+              var xhr = new XMLHttpRequest();
+              xhr.open("POST", "../publish_spreg_cartodb/");
+              xhr.responseType = 'json';
+              xhr.onload = function(evt) {
+                var data = xhr.response,
+                    user_id = data.user_id;
+                
+                var w = window.open(
+                  '../../static/cartoviz.html?uid=' + user_id +'&vizname=' + viz_name+'&'+Utils.guid(),
+                  "_blank",
+                  "width=900, height=700, scrollbars=yes"
+                );
+              };
+              xhr.send(formData);
+            });
+            
+          });
+           
         },
         Cancel: function() {$( this ).dialog( "close" );},
       }
@@ -505,7 +568,7 @@ var SpregDlg = (function($){
                 $('#txt-spreg-predy').html(predy);
                 $('#txt-spreg-summary').text(summary);
               }
-              $('#btn_result').popupDiv('#divPop','Click this button to see result.');
+              PopupDiv('#btn_result','#divPop','Click this button to see result.');
             }
           } catch (e) {
             console.log(e);

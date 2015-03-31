@@ -31,7 +31,7 @@ define( ["../utils"], function(Utils) {
     }
     
     this.quads = [1,2,3,4];
-    this.permutations = 999;    
+    this.permutations = 799;    
     this.Is = [];
     this.p_sim = [];
     this.q = [];
@@ -43,7 +43,8 @@ define( ["../utils"], function(Utils) {
   Moran_Local.prototype = {
   
     calc: function(w, z) {
-      var m_2 = this.den / this.n_1;
+      var m_2 = this.den / this.n_1,
+          half_perm = this.permutations / 2;
       
       for (var cnt=0; cnt < this.n; cnt++) {
         if (w[cnt] == undefined) {
@@ -98,12 +99,12 @@ define( ["../utils"], function(Utils) {
         }
         
         // pick the smallest
-        if (this.permutations - countLarger < countLarger) {
+        if (countLarger > half_perm) {
           countLarger = this.permutations - countLarger;
         }
         
         this.p_sim.push((countLarger + 1.0) / (this.permutations+1));
-      }
+      }      
     },
     
   };
