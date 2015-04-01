@@ -122,9 +122,10 @@ border: 1px solid #aaa;margin: 1px 10px;
   width: 160px;
   height: 100%;
   margin: 10px 0 0 10px;
-  background: url("../img/geoda-logo-part.png") no-repeat;
+  background: url("../img/geoda-logo.png") no-repeat;
   float: left;
   cursor: pointer;
+  
 }
 .header_topright {
   float: right;
