@@ -4,7 +4,7 @@
 *.shp
 
 *.shx
-
+*.txt
 *.json
 
 *.pyc
