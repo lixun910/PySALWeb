@@ -245,7 +245,7 @@ var Manager = (function(window){
       },
       
       GetMapCanvas : function(idx) {
-        if (idx === undefined) idx = mapOrder[numMaps-1];
+        if (idx === undefined) idx = numMaps-1;
         return mapCanvasList[mapOrder[idx]];
       },
       
