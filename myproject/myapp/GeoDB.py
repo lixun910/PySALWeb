@@ -1,6 +1,6 @@
 import os, json, sys, shutil
 import subprocess
-from osgeo import ogr
+#from osgeo import ogr
 from hashlib import md5
 import multiprocessing as mp
 

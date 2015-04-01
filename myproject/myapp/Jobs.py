@@ -1,6 +1,5 @@
 import os, json, sys, shutil, time
 import subprocess
-from osgeo import ogr
 from django.conf import settings
 from hashlib import md5
 

@@ -79,7 +79,6 @@ def googlepoints(p, apikey, sradius, q, findings):
 
 def async_googlepoints(args):
     lat, lng, lat_seg_range, lng_seg_range, q, apikey, sradius, result_q, status_q = args
-    print "googlepoints: %s,%s" % (lat, lng)
     
     q = q.replace(" ", "%20")
     url = 'https://maps.googleapis.com/maps/api/place/radarsearch/json?location=%s,%s&radius=%s&keyword=%s&key=%s' % (lat, lng, sradius, q, apikey)
@@ -174,6 +173,8 @@ def async_searchByKeyword(pool, q, bounds, apikey, findings, k=None):
                 lng + lng_seg_range/2.0
             ]
             async_searchByKeyword(pool, q, finer_bounds, apikey, findings, k=2)
+        else:
+            print status
             
     while not result_q.empty(): 
         place_id, location = result_q.get()
@@ -261,15 +262,3 @@ def saveGeoJSON(d,values=[],ofile="output.geojson"):
     with open(ofile,'w') as outfile:
         json.dump(geo,outfile,sort_keys=True,indent=4,ensure_ascii=False)
     outfile.close()
-
-def f(x):
-    print "start" + str(x)
-    return x*x
-def f1(x):
-    print "start" + str(x*x)
-    return x*x*x
-
-if __name__ == '__main__':
-    pool = Pool(processes=4)              # start 4 worker processes
-    print pool.map(f, range(10))          # prints "[0, 1, 4,..., 81]"
-    print pool.map(f1, range(10))          # prints "[0, 1, 4,..., 81]"
