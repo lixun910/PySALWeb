@@ -262,6 +262,10 @@ var Manager = (function(window){
         }
         return undefined;
       },
+     
+      GetOrigIdx : function(idx)  {
+        return mapOrder[idx];
+      },
       
       Reorder : function(newOrder) {
         // mapOrder [2,1,3,4]

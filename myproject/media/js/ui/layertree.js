@@ -95,7 +95,7 @@ var LayerTree = (function($) {
         // change current layer name
         PlaceLayerName(name);
         $('.tree-item-eye[id='+nMaps+']').click(function() {
-          SwitchLayer($(this), $(this).attr("id"));
+          SwitchLayer($(this), mapManager.GetOrigIdx($(this).attr("id")));
         });
       },
       
