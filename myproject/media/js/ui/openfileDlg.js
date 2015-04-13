@@ -56,6 +56,9 @@ var OpenFileDlg = (function() {
         require(['ui/mapManager'], function(MapManager){
           dlgPrgBar.hide();
           MapManager.getInstance().AddMap(data, function(map){
+            // add map name to space-time dialog
+            GetCartoTables();
+            //$('#sel-spacetime-table-point')
             CartoProxy.GetFields(table_name, function(fields){
               map.fields = fields;
               UIManager.getInstance().SetupMap(map);

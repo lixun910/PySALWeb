@@ -98,7 +98,35 @@ var SpregDlg = (function($){
         $(obj).prop('checked', false);
       });
     }
-    
+   
+    var prev_obj; // for mobile devices
+    $('#y_catalog h2, #x_catalog h2').click(function(){
+      if (prev_obj) {
+        prev_obj.css("border", "");
+      }
+      prev_obj = $(this).next();
+      prev_obj.css("border", "2px solid red");
+    }); 
+    $('#ul-x-variables').selectable().click( function(evt) {
+      if ( prev_obj == undefined || !$(evt.target).parent().is("li") ) return;
+      var txt_var = evt.target.innerText;
+      var box = prev_obj.children().first();
+      box.find( ".placeholder" ).remove();
+      // customized behavior for different dropbox
+      var box_id = box.closest("div").attr("id");
+      var n_items = box.children().length;
+      if ( n_items > 0) {
+        if (box_id === 'y_box'||box_id==='r_box')
+          return;
+      }
+      // drop gragged item
+      $( "<li></li>" ).text(txt_var).appendTo(box).dblclick(function(){
+        $(this).remove();
+        $(evt.target).parent().show();
+      });
+      $(evt.target).parent().hide();
+    });
+
     // init Spreg dialg: tabs
     $("#y_catalog").accordion({heightStyle : "content"});
     $("#x_catalog").accordion({heightStyle : "content"});
