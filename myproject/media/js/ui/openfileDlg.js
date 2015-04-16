@@ -57,8 +57,8 @@ var OpenFileDlg = (function() {
         googleKeyEl = $('#google-key');
    
     keyEl.donetyping(function() {
-      CartoProxy.SaveAccount();
       GetCartoTables();
+      CartoProxy.SaveAccount();
     });
     
     CartoProxy.GetAccount(function(uid, key){
