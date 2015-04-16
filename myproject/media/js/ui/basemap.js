@@ -48,6 +48,11 @@ var GDABasemap = (function($, L, cartodb){
     // basemap buton on the right side of top bar
     $('.basemap').click(function(){
       $('#mapInfo').toggle();
+      if ($('#mapInfo').is(':hidden') ) {
+        $('.hl-canvas')[0].style.pointerEvents = 'auto';
+      } else {
+        $('.hl-canvas')[0].style.pointerEvents = 'none';
+      }
     });
     
     function CreateBaseLayer() {

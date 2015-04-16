@@ -6,6 +6,7 @@ var zip = this.zip;
 
 var carto_uid;
 var carto_key;
+var is_changed = false;
 
 var csrftoken = this.csrftoken;
 
@@ -45,11 +46,34 @@ var CartoProxy = {
     };
     xhr.send(null);
   },
-
+  SetChange : function(flag) { is_changed = true;},
   GetUID : function() {return carto_uid;},
   GetKey: function() {return carto_key;},
+  
   SetUID : function(obj) {carto_uid = obj;},
-  SetKey: function(obj) {carto_key = obj;},
+  SetKey: function(obj) {
+    if (obj != carto_key) is_changed = true;
+    carto_key = obj;
+  },
+  
+  GetAccount : function(callback) {
+    $.get('../get_cartodb_account/').done(function(data){
+      carto_uid = data.id;
+      carto_key = data.key;
+      if(callback) callback(carto_uid, carto_key);
+    });
+  },
+  
+  SaveAccount: function() {
+    if (is_changed === false) return;
+    // upload carto_uid and carto_key to server
+    $.get('../save_cartodb_account/', {
+      'id' : carto_uid,
+      'key' : carto_key,
+    }).done(function(data) {
+      console.log(data);
+    });
+  },
   
   GetGeomType : function(table_name, onSuccess) {
     var sql = "SELECT GeometryType(the_geom) FROM " + table_name + " LIMIT 1";

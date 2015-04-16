@@ -51,12 +51,10 @@ function($, LayerTree, Toolbar, UIManager, MsgBox,  CartoProxy, FileDlg, MapMana
       return this.indexOf(suffix, this.length - suffix.length) !== -1;
   };
   
-  var uid = "lixun910";
-  var key = "340808e9a453af9680684a65990eb4eb706e9b56";
-  
-  CartoProxy.SetUID(uid);
-  CartoProxy.SetKey(key);
-  
+  //var uid = "lixun910";
+  //var key = "340808e9a453af9680684a65990eb4eb706e9b56";
+  //CartoProxy.SetUID(uid);
+  //CartoProxy.SetKey(key);  
   //CartoProxy.AddFieldWithValues('natregimes', 'lisa', 'integer', [1,2,3,4,5,6,7,8,9,10]);
   
   // UI Manager 

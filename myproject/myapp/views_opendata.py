@@ -123,6 +123,44 @@ def google_search_carto(request):
     return HttpResponse(RSP_FAIL, content_type="application/json")    
                 
 @login_required
+def get_google_key(request):
+    # check user login
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    try:
+        pref = Preference.objects.get(userid=userid)
+        return HttpResponse('{"key":"%s"}'% pref.googlekey, content_type="application/json")    
+    except:
+        pass
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
+    
+    
+    
+@login_required
+def save_google_key(request):
+    # check user login
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+
+    if request.method == 'GET': 
+        gkey = request.GET.get("key", None)
+        if gkey:
+            try:
+                pref = Preference.objects.get(userid=userid)
+                pref.googlekey= gkey
+                pref.save()
+            except:
+                new_pref = Preference(
+                    userid = userid,
+                    googlekey = gkey
+                )
+                new_pref.save()
+    return HttpResponse(RSP_OK, content_type="application/json")    
+            
+        
+@login_required
 def google_search(request):
     # check user login
     userid = request.user.username
