@@ -42,19 +42,18 @@ var Manager = (function(window){
         }
       }, 250);
     }
-    
     function OnKeyDown( evt ) {
       if ( evt.keyCode = 77 ) {
-        hlcanvas[0].style.pointerEvents= 'none';  
+        //hlcanvas[0].style.pointerEvents= 'none';  
       }
     }
     
     function OnKeyUp( evt ) {
       if ( evt.keyCode = 77 ) {
-        hlcanvas[0].style.pointerEvents= 'auto';  
+        //hlcanvas[0].style.pointerEvents= 'auto';  
       }
     }
-
+    
     function ShowCartoDBMap(carto_uid, carto_key, table_name, geo_type) {
       var css = "";
       if (geo_type == "Point") {
@@ -305,3 +304,4 @@ var Manager = (function(window){
 return Manager;
 
 });
+

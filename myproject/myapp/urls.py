@@ -29,6 +29,8 @@ urlpatterns += patterns('myproject.myapp.views_jobs',
 )
 
 urlpatterns += patterns('myproject.myapp.views_opendata',
+    url(r'^get_google_key/$', 'get_google_key', name='get google key'),
+    url(r'^save_google_key/$', 'save_google_key', name='save google key'),
     url(r'^open_data/$', 'open_data', name='open data portal'),
     url(r'^google_search/$', 'google_search', name='google search'),
     url(r'^geoda_data/$', 'get_geoda_data', name='get geoda data'),
@@ -42,6 +44,8 @@ urlpatterns += patterns('myproject.myapp.views_plots',
 )
 
 urlpatterns += patterns('myproject.myapp.views_cartodb',
+    url(r'^get_cartodb_account/$', 'get_cartodb_account', name='get cartodb account'),
+    url(r'^save_cartodb_account/$', 'save_cartodb_account', name='save cartodb account'),
     url(r'^carto_get_tables/$', 'carto_get_tables', name='carto get tables'),
     url(r'^carto_download_table/$', 'carto_download_table', name='carto download table'),
     url(r'^carto_upload_file/$', 'carto_upload_file', name='carto upload tables'),

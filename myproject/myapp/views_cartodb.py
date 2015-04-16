@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
 
-from myproject.myapp.models import Geodata, CartoViz
+from myproject.myapp.models import Geodata, CartoViz, Preference
 from myproject.myapp.forms import DocumentForm
 
 import logging, os, zipfile, shutil
@@ -17,6 +17,43 @@ from views_utils import Save_new_shapefile
 import requests
 
 logger = logging.getLogger(__name__)
+
+@login_required
+def get_cartodb_account(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    
+    try:
+        pref = Preference.objects.get(userid=userid)
+        carto_account = pref.cartodb
+    except:
+        return HttpResponse(RSP_FAIL, content_type="application/json")    
+    return HttpResponse(carto_account, content_type="application/json")    
+    
+@login_required
+def save_cartodb_account(request):
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    if request.method == 'GET': 
+        cartodb_uid = request.GET.get("id", None)
+        cartodb_key = request.GET.get("key", None)
+        if cartodb_uid and cartodb_key:
+            carto_account = {'id':cartodb_uid, 'key':cartodb_key}
+            carto_account = json.dumps(carto_account)
+            try:
+                pref = Preference.objects.get(userid=userid)
+                pref.cartodb =  carto_account
+                pref.save()
+            except:
+                new_pref = Preference(
+                    userid = userid,
+                    cartodb = carto_account,
+                )
+                new_pref.save()
+        return HttpResponse(RSP_OK, content_type="application/json")    
+    return HttpResponse(RSP_FAIL, content_type="application/json")    
 
 @login_required
 def carto_get_tables(request):

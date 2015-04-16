@@ -215,6 +215,8 @@ return {
       top: 100 + Math.random() * 20,
     });
     main.show();
+    if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) 
+      $('div.tool-menu, .ui-dialog, #dialog-arrow').hide();
     return uuid;
   },
   

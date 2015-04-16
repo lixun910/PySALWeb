@@ -4,6 +4,42 @@
 define(['jquery','./utils','./msgbox', './message', './cartoProxy', './mapManager', './uiManager'], 
 function($, Utils, MsgBox, M, CartoProxy, MapManager, UIManager) {
 
+// plugin
+$.fn.extend({
+    donetyping: function(callback,timeout){
+        timeout = timeout || 1e3; // 1 second default timeout
+        var timeoutReference,
+            doneTyping = function(el){
+                if (!timeoutReference) return;
+                timeoutReference = null;
+                callback.call(el);
+            };
+        return this.each(function(i,el){
+            var $el = $(el);
+            // Chrome Fix (Use keyup over keypress to detect backspace)
+            // thank you @palerdot
+            $el.is(':input') && $el.on('keyup keypress paste',function(e){
+                // This catches the backspace button in chrome, but also prevents
+                // the event from triggering too premptively. Without this line,
+                // using tab/shift+tab will make the focused element fire the callback.
+                if (e.type=='keyup' && e.keyCode!=8) return;
+                
+                // Check if timeout has been set. If it has, "reset" the clock and
+                // start over again.
+                if (timeoutReference) clearTimeout(timeoutReference);
+                timeoutReference = setTimeout(function(){
+                    // if we made it here, our timeout has elapsed. Fire the
+                    // callback
+                    doneTyping(el);
+                }, timeout);
+            }).on('blur',function(){
+                // If we can, fire the event since we're leaving the field
+                doneTyping(el);
+            });
+        });
+    }
+});
+
 var OpenFileDlg = (function() {
 
   var instance;
@@ -19,17 +55,40 @@ var OpenFileDlg = (function() {
         keyEl = $('#txt-carto-key'),
         googleKeywords = $('#keywords'),
         googleKeyEl = $('#google-key');
+   
+    keyEl.donetyping(function() {
+      CartoProxy.SaveAccount();
+      GetCartoTables();
+    });
+    
+    CartoProxy.GetAccount(function(uid, key){
+      idEl.val(uid);
+      keyEl.val(key);
+      GetCartoTables();
+    });
     
     var google_types = ["accounting", "airport", "amusement_park","aquarium","art_gallery","atm","bakery","bank","bar","beauty_salon","bicycle_store","book_store","bowling_alley","bus_station","cafe","campground","car_dealer","car_rental","car_repair","car_wash","casino","cemetery","church","city_hall","clothing_store","convenience_store","courthouse","dentist","department_store","doctor","electrician","electronics_store","embassy","establishment","finance","fire_station","florist","food","funeral_home","furniture_store","gas_station","general_contractor","grocery_or_supermarket","gym","hair_care","hardware_store","health","hindu_temple","home_goods_store","hospital","insurance_agency","jewelry_store","laundry","lawyer","library","liquor_store","local_government_office","locksmith","lodging","meal_delivery","meal_takeaway","mosque","movie_rental","movie_theater","moving_company","museum","night_club","painter","park","parking","pet_store","pharmacy","physiotherapist","place_of_worship","plumber","police","post_office","real_estate_agency","restaurant","roofing_contractor","rv_park","school","shoe_store","shopping_mall","spa","stadium","storage","store","subway_station","synagogue","taxi_stand","train_station","travel_agency","university","veterinary_care","zoo",];
     
     googleKeywords.autocomplete({
       source: google_types
     });
+    
+    googleKeyEl.donetyping(function() {
+    });
+    
+    $.get('../get_google_key/').done(function(data) {
+      if (data && data.key)
+        googleKeyEl.val(data.key);
+    });
+    
 
     function GetCartoTables() {
-      dlgPrgBar.show();
       var uid = idEl.val(),
           key = keyEl.val();
+      if (uid === "" || key === "") return;
+      dlgPrgBar.show();
+      CartoProxy.SetUID(uid);
+      CartoProxy.SetKey(key);
       CartoProxy.GetAllTables(uid, key, function(tables) {
         dlgPrgBar.hide();
         require(['ui/cartodbDlg', 'ui/spacetimeDlg', 'ui/networkDlg'], function(CartoDlg, SpacetimeDlg, NetworkDlg){
@@ -124,6 +183,7 @@ var OpenFileDlg = (function() {
             var bounds = Basemap.getInstance().GetBounds();
             //return [sw.lat, sw.lng, ne.lat, ne.lng];
             dlgPrgBar.show();
+            $.get('../save_google_key/', {'key': googleKeyEl.val()}).done(function(){});
             $.get('../google_search_carto/', {
               'bounds[]' : bounds,
               'gkey' : key,
