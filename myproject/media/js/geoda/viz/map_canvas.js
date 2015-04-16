@@ -309,13 +309,13 @@ var MapCanvas = function(map, canvas, hlcanvas, params) {
   this.offsetY = 0;
   
   this.hlcanvas.addEventListener('mousemove', this.OnMouseMove, false);
-  this.hlcanvas.addEventListener('touchmove', this.OnMouseMove, false);
+  this.hlcanvas.addEventListener('touchmove', this.OnTouchMove, false);
   
   this.hlcanvas.addEventListener('mousedown', this.OnMouseDown, false);
-  this.hlcanvas.addEventListener('touchstart', this.OnMouseDown, false);
+  this.hlcanvas.addEventListener('touchstart', this.OnTouchStart, false);
   
   this.hlcanvas.addEventListener('mouseup', this.OnMouseUp, false);
-  this.hlcanvas.addEventListener('touchend', this.OnMouseUp, false);
+  this.hlcanvas.addEventListener('touchend', this.OnTouchEnd, false);
   
   this.hlcanvas.addEventListener('keydown', this.OnKeyDown, true);
   this.hlcanvas.addEventListener('keyup', this.OnKeyUp, true);
@@ -899,6 +899,15 @@ MapCanvas.prototype = {
   OnKeyUp: function( evt ) {
     if ( evt.keyCode == 83) {
     }
+  },
+  OnTouchStart: function( evt) {
+    document.body.style.overflow = "hidden";
+  },
+  OnTouchMove: function( evt) {
+    document.body.style.overflow = "auto";
+  },
+  OnTouchEnd: function( evt) {
+    document.body.style.overflow = "auto";
   },
   OnMouseDown: function( evt ) {
     //var x = evt.pageX, y = evt.pageY;
