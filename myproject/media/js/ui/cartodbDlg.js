@@ -202,7 +202,7 @@ var CartoDlg = (function($, CartoProxy) {
     };
     
     dlg.dialog({
-      height: 500,
+      height: 300,
       width: 550,
       autoOpen: false,
       modal: false,

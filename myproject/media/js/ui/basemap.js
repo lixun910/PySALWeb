@@ -44,15 +44,23 @@ var GDABasemap = (function($, L, cartodb){
     var mapProviders = mapProvider.children();
     var currentTileUrl = tileUrls[tileIdx];
     $(mapProviders[0]).css({'border':'2px solid orange'});
-    
-    // basemap buton on the right side of top bar
-    $('.basemap').click(function(){
-      $('#mapInfo').toggle();
+
+    function OnMapInfoChange() {
       if ($('#mapInfo').is(':hidden') ) {
         $('.hl-canvas')[0].style.pointerEvents = 'auto';
       } else {
         $('.hl-canvas')[0].style.pointerEvents = 'none';
       }
+    }    
+
+    // basemap buton on the right side of top bar
+    $('.basemap').click(function(){
+      $('#mapInfo').toggle();
+      OnMapInfoChange();
+    });
+
+    $('.account').click(function(){
+      $('#userInfo').toggle();
     });
     
     function CreateBaseLayer() {
@@ -90,6 +98,8 @@ var GDABasemap = (function($, L, cartodb){
         $(this).css({'border':'2px solid orange'});
         tileIdx = parseInt($(this).attr('id'));
         currentTileUrl = tileUrls[tileIdx];
+        $('#mapInfo').hide();
+        OnMapInfoChange();
         
         baselayer = CreateBaseLayer();
       });

@@ -403,12 +403,15 @@ def _get_layer_viz(viz_conf, order):
             css += "line-width: %s;" % stroke_width
     
         elif map_type == "LINE":
-            if clr:
-                css += "line-color: %s;" % clr
+            if clr == "#ffffff":
+                css = "line-opacity: 0"
             else:
-                css += "line-color: %s;" % stroke_clr
-            css += "line-width: %s;" % stroke_width
-            css += "line-opacity:%s" % alpha
+                if clr:
+                    css += "line-color: %s;" % clr
+                else:
+                    css += "line-color: %s;" % stroke_clr
+                css += "line-width: %s;" % stroke_width
+                css += "line-opacity:%s" % alpha
         return css
     
     sql = "SELECT * FROM %s" % table_name

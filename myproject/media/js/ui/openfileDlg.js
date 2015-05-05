@@ -206,7 +206,7 @@ var OpenFileDlg = (function() {
     };
     
     dlg.dialog({
-      height: 450,
+      height: 400,
       width: 500,
       autoOpen: false,
       modal: false,

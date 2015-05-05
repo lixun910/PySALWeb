@@ -80,8 +80,9 @@ var LisaDlg = (function($){
         
           } else if (map.name) {
             // to cartodb
-            var table_name = map.name;
-        
+            var table_name = map.name,
+                map_type = map.shpType;
+
             require(['ui/weightsDlg', 'geoda/esda/local_moran'], function(WeightsDlg, Moran_Local) {
               var w_conf = WeightsDlg.getInstance().GetCartoWeights();
               var moran_w, moran_y, moran_timer;
@@ -127,12 +128,20 @@ var LisaDlg = (function($){
                 MoranI();
               });
               if (w_conf.w_type === 0) {
-                CartoProxy.CreateContiguityWeights(table_name, w_conf, function(w){
-                  moran_w = w;
-                  MoranI();
-                });
+                if ( map_type === "Line") {
+                  CartoProxy.CreateRoadQueenWeights(table_name, w_conf, function(w){
+                    moran_w = w;
+                    MoranI();
+                  });
+                } else {
+                  CartoProxy.CreateContiguityWeights(table_name, w_conf, function(w){
+                    moran_w = w;
+                    MoranI();
+                  });
+                }
               } else if (w_conf.w_type === 1) {
-                CartoProxy.CreateDistanceWeights(table_name, w_conf, function(w){
+                //CartoProxy.CreateDistanceWeights(table_name, w_conf, function(w){
+                CartoProxy.CreateKnnWeights(table_name, w_conf, function(w){
                   moran_w = w;
                   MoranI();
                 });

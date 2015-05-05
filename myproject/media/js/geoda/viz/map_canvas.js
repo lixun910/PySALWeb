@@ -234,8 +234,9 @@ var GRect = function( x0, y0, x1, y1 ) {
 
 GRect.prototype = {
   Contains: function( x, y) {
-    return x >= this.x0 && x <= this.x1 && 
+    var flag = x >= this.x0 && x <= this.x1 && 
            y >= this.y0 && y <= this.y1;
+    return flag;
   },
   GetW: function() {
     return this.x1 - this.x0;
@@ -298,6 +299,8 @@ var MapCanvas = function(map, canvas, hlcanvas, params) {
   this.isBrushing = false;
   this.startX = -1;
   this.startY = -1;
+  this.currentX = -1;
+  this.currentY = -1;
   this.startPX = undefined;
   this.startPY = undefined;
   this.isMouseDown = false;
@@ -307,18 +310,15 @@ var MapCanvas = function(map, canvas, hlcanvas, params) {
   
   this.offsetX = 0;
   this.offsetY = 0;
+
+  this.hlcanvas.addEventListener('touchmove', this.OnMouseMove, false);
+  this.hlcanvas.addEventListener('touchstart', this.OnMouseDown, false);
+  this.hlcanvas.addEventListener('touchend', this.OnMouseUp, false);
   
   this.hlcanvas.addEventListener('mousemove', this.OnMouseMove, false);
-  this.hlcanvas.addEventListener('touchmove', this.OnTouchMove, false);
-  
   this.hlcanvas.addEventListener('mousedown', this.OnMouseDown, false);
-  this.hlcanvas.addEventListener('touchstart', this.OnTouchStart, false);
-  
   this.hlcanvas.addEventListener('mouseup', this.OnMouseUp, false);
-  this.hlcanvas.addEventListener('touchend', this.OnTouchEnd, false);
   
-  this.hlcanvas.addEventListener('keydown', this.OnKeyDown, true);
-  this.hlcanvas.addEventListener('keyup', this.OnKeyUp, true);
   
   // draw map on Canvas
   this.map.fitScreen(this.canvas.width, this.canvas.height, this.margin_left, this.margin_top);
@@ -360,7 +360,10 @@ MapCanvas.prototype = {
     if ('offsetX' in params) this.offsetX = params.offsetX;
     if ('offsetY' in params) this.offsetY = params.offsetY;
     
-    if ('heatmap' in params) this.heatmap = params.heatmap;
+    if ('heatmap' in params) {
+      if (this.heatmap == true) this.heatmap = false;
+      else if (this.heatmap == false) this.heatmap = true;
+    }
   },
 
   exportCartoCSS : function() {
@@ -412,11 +415,14 @@ MapCanvas.prototype = {
     var ctx = this.canvas.getContext("2d");
     ctx.imageSmoothingEnabled= false;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    this.hlcanvas.addEventListener('touchmove', this.OnMouseMove, false);
+    this.hlcanvas.addEventListener('touchstart', this.OnMouseDown, false);
+    this.hlcanvas.addEventListener('touchend', this.OnMouseUp, false);
+
     this.hlcanvas.removeEventListener('mousemove', this.OnMouseMove, false);
     this.hlcanvas.removeEventListener('mousedown', this.OnMouseDown, false);
     this.hlcanvas.removeEventListener('mouseup', this.OnMouseUp, false);
-    this.hlcanvas.removeEventListener('keydown', this.OnKeyDown, true);
-    this.hlcanvas.removeEventListener('keyup', this.OnKeyUp, true);
   },  
 
   move : function(offsetX, offsetY) {
@@ -639,6 +645,7 @@ MapCanvas.prototype = {
       } 
     } else {
       for ( var c in colors ) {
+        if (c === "#ffffff") continue;
         var ids = colors[c];
         if (c != "dummy") {
           ctx.fillStyle = c;
@@ -701,6 +708,7 @@ MapCanvas.prototype = {
       ctx.stroke();
     } else {
       for ( var c in colors ) {
+        if (c === "#ffffff") continue;
         var ids = colors[c];
         ctx.strokeStyle = c;
         for ( var i=0, n=ids.length; i< n; ++i) {
@@ -748,6 +756,7 @@ MapCanvas.prototype = {
       } 
     } else {
       for ( var c in colors ) {
+        if (c === "#ffffff") continue;
         ctx.fillStyle = c;
         var ids = colors[c];
         for ( var i=0, n=ids.length; i< n; ++i) {
@@ -795,7 +804,7 @@ MapCanvas.prototype = {
         // test heatmap
         var hm = new Canvas2dRenderer(this.buffer);
         hm.renderAll(map.screenObjects);
-        this.heatmap = false;
+        //this.heatmap = false;
       }
       this.drawPoints( ctx, map.screenObjects, colors) ;
       
@@ -890,36 +899,27 @@ MapCanvas.prototype = {
   },
   
   // register mouse events of canvas
-  
-  OnKeyDown: function( evt ) {
-    if ( evt.keyCode == 83 ) {
-      self.isKeyDown = true;
-    } 
-  },
-  OnKeyUp: function( evt ) {
-    if ( evt.keyCode == 83) {
-    }
-  },
-  OnTouchStart: function( evt) {
-    document.body.style.overflow = "hidden";
-  },
-  OnTouchMove: function( evt) {
-    document.body.style.overflow = "auto";
-  },
-  OnTouchEnd: function( evt) {
-    document.body.style.overflow = "auto";
-  },
   OnMouseDown: function( evt ) {
     //var x = evt.pageX, y = evt.pageY;
-    var x = evt.offsetX, y = evt.offsetY;
+    var x, y;
+    if (evt.type.indexOf("touch")>=0) {
+      if (evt.touches.length === 1) {
+        x = evt.targetTouches[0].pageX;
+        y = evt.targetTouches[0].pageY - 48;
+      } else {
+        return;
+      }
+    } else {
+      x = evt.offsetX;
+      y = evt.offsetY;
+    }
     self.isMouseDown = true;
     self.startX = x;
     self.startY = y;
-    if ( self.isKeyDown == true ) {
-      if (self.brushRect && self.brushRect.Contains(x, y) ) {
-        self.isBrushing = true;
-      }
+    if (self.brushRect && self.brushRect.Contains(x, y) ) {
+      self.isBrushing = true;
     }
+
     if (self.brushRect == undefined ||
         self.brushRect && !self.brushRect.Contains(x, y) ) {
       self.brushRect = undefined;
@@ -929,10 +929,21 @@ MapCanvas.prototype = {
   },
   OnMouseMove: function(evt) {
     if ( self.isMouseDown == true ) {
-      var currentX = evt.offsetX, 
-          currentY = evt.offsetY,
-          startX = self.startX,
-          startY = self.startY;
+      if (evt.type.indexOf("touch")>=0) {
+        if (evt.touches.length === 1) {
+          self.currentX = evt.targetTouches[0].pageX;
+          self.currentY = evt.targetTouches[0].pageY -48; 
+        } else
+            return;
+      } else {
+        self.currentX = evt.offsetX;
+        self.currentY = evt.offsetY;
+      }
+
+      var startX = self.startX,
+          startY = self.startY,
+          currentX = self.currentX,
+          currentY = self.currentY;
       
       var x0 = startX >= currentX ? currentX : startX;
       var x1 = startX < currentX ? currentX : startX;
@@ -957,10 +968,18 @@ MapCanvas.prototype = {
       
       self.highlightExt([], [x0,y0,x1,y1], true);
     }
+    evt.preventDefault();
   },
   OnMouseUp: function(evt) {
     if ( self.isMouseDown == true) {
-      var x = evt.offsetX, y = evt.offsetY;
+      var x, y;
+      if (evt.type.indexOf("touch")>=0) {
+        x = self.currentX; 
+        y = self.currentY;
+      } else {
+        x = evt.offsetX;
+        y = evt.offsetY;
+      }
       if ( self.startX == x && self.startY == y ) {
         // point select
         self.clearCanvas(self.hlcanvas);
@@ -982,12 +1001,13 @@ MapCanvas.prototype = {
         self.resetDraw();
         self.triggerLink([], undefined);
         
-      } else if ( self.isKeyDown == true &&  self.isBrushing == false) {
+      } else if ( self.isBrushing == false) {
         // setup brushing box
         self.brushRect = new GRect( self.startX, self.startY, x, y);
       }
     }
     self.isMouseDown = false;
+    evt.preventDefault();
   },
 };
 

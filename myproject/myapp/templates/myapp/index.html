@@ -147,13 +147,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 -->
 <div id="dialog-open-file"  title="Let's get started">
-  <span> <br/><br/>
+  <span> <br/>
     <table>
       <tr>
 	<td><img id="img-open-dlg" src="../../media/img/add-file.png"></td>
 	<td>Load your map files from one of these sources:</td>
       </tr>
-    </table><br/><br/><br/>
+    </table><br/>
   </span>
   <div id="tabs-dlg-open-file">
     <ul>
@@ -199,7 +199,7 @@
 	<br/><br/>
 	<table>
 	  <tr><td>Your Google Maps API key: </td>
-	  <td><input id="google-key" type="text" size=45 value=""></td>
+	  <td><input id="google-key" type="text" size=45 value="AIzaSyAU7KVznamXg5CytX9AkNJUa1dIRLZUZwU"></td>
 	  </tr>
 	  <tr><td>Input a search keyword:</td>
 	  <td><input id="keywords" type="text" placeholder="Keywords (e.g. Liquor Stores)" size=30/> </td>
@@ -224,7 +224,7 @@
       <div id="dropbox_div"></div>
     </div>
   </div>
-  <br/><br/>
+  <br/>
   <div id="progress_bar_openfile"><img src="../../media/img/progress-bar.gif"></div>
 </div>
 
@@ -234,11 +234,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 -->
 <div class="mainDlg" id="dialog-cartodb"  title="CartoDB Dialog">
-  <span> <br/><img src="../../media/img/cartodb.png"><br/></span>
+  <span> <img src="../../media/img/cartodb.png"><br/></span>
   <div id="tabs-dlg-cartodb">
     <ul>
       <li><a href="#tabs-1">Setup</a></li>
-      <li><a href="#tabs-2">Create&Share CartoDB Vizjson</a></li>
+      <li><a href="#tabs-2">Share current map</a></li>
+      <li><a href="#tabs-3">View your shared map</a></li>
     </ul>
     <div id="tabs-1">
       <form id="cartodb-setup-form">
@@ -267,25 +268,24 @@
               <input type="text" id="txt-carto-vizjson" size=55>
             </td>
           </tr>
-	</table>
-	<br/>
-	<br/>
-	<br/>
-	<br/>
-	<table>
+	     </table>
+      </form>
+    </div>
+    <div id="tabs-3">
+	     <br/>
+      <table>
           <tr>
-            <td>View existing CartoDB Viz</td>
+            <td>Select a shared map</td>
             <td>
               <select id="sel-carto-viz">
-		<option></option>
+		           <option></option>
               </select>
             </td>
           </tr>
         </table>
-      </form>
     </div>
   </div>
-  <br/><br/>
+  <br/>
   <div id="progress_bar_cartodb"><img src="../../media/img/progress-bar.gif"></div>
 </div>
 
@@ -344,7 +344,7 @@
             </td>
           </tr>
           <tr>
-            <td>Input a field name to store counts of points on roads</td>
+            <td>Input the name of new snapping field</td>
             <td>
               <input type="text" id="txt-snap-count-col-name" size=25 value="">
             </td>
@@ -390,7 +390,7 @@
             </td>
           </tr>
           <tr>
-            <td>3.Input the name of couting field in polygon layer:</td>
+            <td>3.Input the name of new aggregate field:</td>
             <td valign="top">
               <input type="text" id="txt-spacetime-col-name" size=30 value="">
             </td>

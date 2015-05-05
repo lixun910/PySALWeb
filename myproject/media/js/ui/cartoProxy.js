@@ -17,7 +17,7 @@ var CartoProxy = {
   GetAllTables : function(uid, key, onSuccess) {
     carto_uid = uid;
     carto_key = key;
-    var sql = "SELECT table_name FROM information_schema.tables WHERE table_schema='public'";
+    var sql = "SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name";
     var url = "https://" + uid + ".cartodb.com/api/v2/sql?api_key=" + key + "&q=" + sql + '&' + Utils.guid();
     var that = this;
     var xhr = new XMLHttpRequest();
@@ -278,7 +278,7 @@ var CartoProxy = {
         sql += vars[i] + ", ";
     }
     sql += vars[vars.length-1];
-    sql += " FROM " + table_name;
+    sql += " FROM " + table_name + " ORDER BY cartodb_id";
     
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=csv&api_key=" + carto_key + "&q=" + sql + '&' + Utils.guid();
     var xhr = new XMLHttpRequest();
@@ -322,6 +322,31 @@ var CartoProxy = {
     return w;
   },
   
+  CreateRoadQueenWeights : function(table_name, w_conf, onSuccess) {
+    //select b.cartodb_id, ARRAY(
+    //  SELECT a.cartodb_id as id
+    //  FROM natregimes as a 
+    //  WHERE a.cartodb_id <> b.cartodb_id
+    //  AND st_intersects(a.the_geom, b.the_geom)
+    //) as nn
+    //from natregimes b
+    var that = this;
+    
+    var sql = "select b.cartodb_id-1 as id, ARRAY(SELECT a.cartodb_id-1 FROM natregimes as a WHERE a.cartodb_id <> b.cartodb_id AND st_touches(a.the_geom, b.the_geom)) as nn from natregimes b";
+   
+    sql = sql.replace(/natregimes/g, table_name);
+    
+    var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url);
+    xhr.responseType = 'json';
+    xhr.onload = function(evt) {
+      var w = that.FormatWeights(xhr.response);
+      if (onSuccess) onSuccess(w);
+    };
+    xhr.send(null);
+  },
+
   CreateContiguityWeights : function(table_name, w_conf, onSuccess) {
     //select b.cartodb_id, ARRAY(
     //  SELECT a.cartodb_id as id

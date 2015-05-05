@@ -68,7 +68,7 @@ var ChoroplethDlg = (function($){
   var dlg = $( "#dlg-simple-map" );
   dlg.dialog({
     dialogClass: "dialogWithDropShadow",
-    width: 300,
+    width: 350,
     height: 300,
     autoOpen: false,
     modal: false,
@@ -80,8 +80,9 @@ var ChoroplethDlg = (function($){
     buttons: [{
       text: "Save",
       click: function() {
-        $('#map-conf-name').val($('#sel-map-conf').val());
-        $('#dlg-save-map-conf').dialog('open');
+        //$('#map-conf-name').val($('#sel-map-conf').val());
+        //$('#dlg-save-map-conf').dialog('open');
+        $( this ).dialog( "close" );
       },
     }]
   });
@@ -130,7 +131,7 @@ var ChoroplethDlg = (function($){
   $( "#dlg-quantile-map" ).dialog({
     dialogClass: "dialogWithDropShadow",
     width: 300,
-    height: 500,
+    height: 300,
     autoOpen: false,
     modal: false,
     resizable:  false,
