@@ -70,7 +70,7 @@ var LayerTree = (function($) {
           var map = mapManager.GetMap(),
               mapcanvas = mapManager.GetMapCanvas();
           mapcanvas.SetDefaultMap();
-          mapManager.UpdateExtent(map);
+          //mapManager.UpdateExtent(map);
           
           UIManager.getInstance().UpdateFieldNames(map.fields);
         });

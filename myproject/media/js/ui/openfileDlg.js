@@ -64,6 +64,8 @@ var OpenFileDlg = (function() {
     CartoProxy.GetAccount(function(uid, key){
       idEl.val(uid);
       keyEl.val(key);
+      $('#txt-carto-setup-id').val(uid);
+      $('#txt-carto-setup-key').val(key);
       GetCartoTables();
     });
     

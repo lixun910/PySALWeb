@@ -74,7 +74,7 @@ ShpMap.prototype = {
   updateExtent : function(basemap) {
     // when overlay this map on top of a base map, the extent of this map
     // should be changed to the extent of the base map
-    this.extent = basemap.extent;
+    //this.extent = basemap.extent;
     this.mapLeft = basemap.mapLeft;
     this.mapRight = basemap.mapRight;
     this.mapTop = basemap.mapTop;

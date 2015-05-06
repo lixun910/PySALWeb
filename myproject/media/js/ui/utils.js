@@ -150,7 +150,9 @@ return {
         if (i > 0 && bins[i] !== undefined) {
           lower = bins[i-1].toFixed(2);
           txt = lower ? "(" + lower + ", " + upper + "]" : "<=" + upper;
-        } else {
+        } else if (i==0) {
+          txt = "< " + upper;
+        } else if (i>0) {
           txt = "> " + upper;
         }
       }

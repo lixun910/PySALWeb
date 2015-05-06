@@ -278,10 +278,10 @@ var Manager = (function(window){
         }
         
         if (newExtent) {
-          var topLayerIdx = newOrder[n-1],
-              mapcanvas = mapCanvasList[topLayerIdx],
-              map = mapcanvas.map,
-              extent = map.setExtent();
+          var topLayerIdx = newOrder[n-1];
+          var mapcanvas = mapCanvasList[topLayerIdx];
+          var map = mapcanvas.map;
+          var extent = map.setExtent();
               
           map.setLmapExtent(extent);
         }

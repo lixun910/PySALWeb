@@ -259,9 +259,16 @@ var ChoroplethDlg = (function($){
         }
       }, 
       Cancel: function() {
-        $( this ).dialog( "close" );},
+        $( this ).dialog( "close" );
       },
-    });
+      "Reset": function() {
+        $('#legend').hide();
+        var mapCanvas = MapManager.getInstance().GetMapCanvas();
+        mapCanvas.updateColor(undefined, "", [], [],[]);
+        $( this ).dialog( "close" );
+      },
+    },
+  });
 
   
     return {
