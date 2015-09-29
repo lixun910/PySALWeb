@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../media/css/jquery-ui.css">
+<link rel="stylesheet" href="../media/css/plots.css">
+<style>
+
+svg{
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  font-size: 14px;
+}
+canvas{
+  position: relative;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.axis {
+  shape-rendering: crispEdges;
+}
+
+.axis line {
+  stroke: #ddd;
+  stroke-width: .5px;
+}
+
+.axis path {
+  display: none;
+}
+
+rect.extent {
+  fill: #000;
+  fill-opacity: .125;
+  stroke: #fff;
+}
+
+rect.frame {
+  fill: #fff;
+  fill-opacity: .7;
+  stroke: #aaa;
+}
+
+circle {
+  fill: #ccc;
+  fill-opacity: .5;
+}
+
+.cell text {
+  pointer-events: none;
+}
+
+.highlight {
+  fill: #008;
+}
+</style>
+
+<script src="../media/js/require.js" charset="utf-8"></script>
+<script src="../media/js/lib/jquery.min.js" charset="utf-8"></script>
+<script src="../media/js/lib/jquery-ui-1.10.4.custom.min.js" charset="utf-8"></script>
+
+<body>
+<div id="map-container"> 
+  <svg id='graph'></svg>
+  <canvas id='paint-canvas'></canvas>
+</div>
+<canvas id='hl-canvas'></canvas>
+
+<script>
+
+require.config({
+  baseUrl: '../media/js',
+  paths: {
+    jquery: './lib/jquery.min',
+    jqueryui : 'lib/jquery-ui-1.10.4.custom.min',
+    d3: './lib/d3.v3.min',
+    colorbrewer  : './lib/colorbrewer',
+  },
+  shim : {
+    d3 : {exports : 'd3'},
+    colorbrewer: {exports : "colorbrewer"},
+  }
+});
+
+require(["./ui/cartoProxy","./ui/utils", 'colorbrewer', 'd3'],
+function(CartoProxy,Utils, colorbrewer, d3){
+
+  var uuid = Utils.getParameterByName('uuid'),
+      carto_conf = Utils.getParameterByName('carto');
+
+  if (carto_conf) {
+    carto_conf = JSON.parse(carto_conf);    
+  }
+
+  var table_name = carto_conf['table_name'],
+      fields = carto_conf['fields'],
+      carto_uid = carto_conf['carto_uid'],
+      carto_key = carto_conf['carto_key'];
+      
+  var end = 2*Math.PI;
+
+  // load data and create chart
+  CartoProxy.SetUID(carto_uid);
+  CartoProxy.SetKey(carto_key);
+  var isCSV = true;
+
+    
+  CartoProxy.GetVariables(table_name, fields, isCSV, function(csv_content) {
+
+    var csv_data = d3.csv.parse(csv_content);
+    csv_data.forEach(function(d,i) { d.id = d.id || i; });
+  
+    // get canvas
+    var canvas = $('#paint-canvas')[0];
+    var hlcanvas = $('#hl-canvas')[0];
+      
+    // 
+    var screenW, screenH;
+    var ctx = canvas.getContext('2d');
+    var hlctx = hlcanvas.getContext('2d');
+    var buffer = document.createElement("canvas");
+    var screenObj = {};
+
+    function highlightPoints(hlPoints)  {
+      hlctx.clearRect(0, 0, screenW, screenH);
+      hlctx.strokeStyle = 'red';
+      for (var screenX in hlPoints) {
+        for (var screenY in hlPoints[screenX]) {
+          hlctx.beginPath();
+          hlctx.arc(screenX, screenY, 2, 0, end);
+          hlctx.stroke();
+          hlctx.closePath();
+        }
+      }
+      hlctx.strokeStyle = '';
+    }
+    
+    function highlightPrep(ids, hlPoints) {
+      if (hlPoints === undefined) hlPoints = {};
+    
+      for (var _screenID in screenObj) {
+        _screenCoords = screenObj[_screenID];
+        for (var i=0, m=ids.length; i<m; i++) {
+          item = _screenCoords[ids[i]];
+          screenX = item[0];
+          screenY = item[1];
+          if (hlPoints[screenX] === undefined) 
+            hlPoints[screenX] = {};
+          hlPoints[screenX][screenY] = null;
+        }
+      }
+      return hlPoints;
+    }
+      
+    function MainPlot() {
+      var margin = {top: 5, right: 0, bottom: 30, left: 0},
+        width = screenW - margin.left - margin.right,
+        height = screenH - margin.top - margin.bottom;
+      
+      screenW = $("#map-container").width(),
+      screenH = $("#map-container").height(),
+    
+      // get canvas
+      canvas.width =  screenW;
+      canvas.height = screenH;
+      
+      hlcanvas.width =  screenW;
+      hlcanvas.height = screenH;
+      
+      ctx.clearRect(0, 0, screenW, screenH);
+      ctx.globalAlpha = 0.5;
+      ctx.imageSmoothingEnabled= false;
+    
+      hlctx.clearRect(0, 0, screenW, screenH);
+      hlctx.globalAlpha = 0.8;
+      hlctx.imageSmoothingEnabled= false;
+      
+      // create buffer for canvas
+      buffer.width = screenW;
+      buffer.height = screenH;
+      var bufferctx = buffer.getContext('2d');
+      bufferctx.clearRect(0, 0, screenW, screenH);
+      bufferctx.globalAlpha = 0.8;
+      bufferctx.imageSmoothingEnabled= false;
+      
+    
+      // Size parameters for each cell
+      var n = fields.length,
+          cell_w = screenW / n,
+          cell_h = screenH / n,
+          padding = 15;
+        
+      if (cell_w < cell_h) {
+        size = cell_w - padding;
+        margin.top = (screenH - size * n) / 2.0;
+      } else {
+        size = cell_h - padding;
+        margin.left = (screenW - size * n) / 2.0;
+      }
+    
+      // Position scales.
+      var x = {}, y = {};
+      
+      fields.forEach(function(field) {
+        // values to numbers.
+        csv_data.forEach(function(d) { d[field] = +d[field]; });
+    
+        var value = function(d) { return d[field]; },
+            domain = [d3.min(csv_data, value), d3.max(csv_data, value)],
+            range = [padding / 2, size - padding / 2];
+        x[field] = d3.scale.linear().domain(domain).range(range);
+        y[field] = d3.scale.linear().domain(domain).range(range.reverse());
+      });
+  
+      // Axes.
+      var axis = d3.svg.axis()
+        .ticks(5)
+        .tickSize(size * n);
+    
+      // Brush.
+      var brush = d3.svg.brush()
+        .on("brushstart", brushstart)
+        .on("brush", brush)
+        .on("brushend", brushend);
+    
+      // Root panel.
+      var svg = d3.select("#graph")
+          .attr("width", screenW)
+          .attr("height", screenH)
+        .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+          
+      // X-axis.
+      svg.selectAll("g.x.axis")
+        .data(fields)
+      .enter().append("svg:g")
+        .attr("class", "x axis")
+        .attr("transform", function(d, i) { return "translate(" + i * size + ",0)"; })
+        .each(function(d) { d3.select(this).call(axis.scale(x[d]).orient("bottom")); });
+    
+      // Y-axis.
+      svg.selectAll("g.y.axis")
+        .data(fields)
+      .enter().append("svg:g")
+        .attr("class", "y axis")
+        .attr("transform", function(d, i) { return "translate(0," + i * size + ")"; })
+        .each(function(d) { d3.select(this).call(axis.scale(y[d]).orient("right")); });
+   
+    
+      // Cell and plot.
+      var cell = svg.selectAll("g.cell")
+        .data(cross(fields, fields))
+      .enter().append("svg:g")
+        .attr("class", "cell")
+        .attr("transform", function(d) { return "translate(" + d.i * size + "," + d.j * size + ")"; })
+        .each(plot);
+    
+      // Titles for the diagonal.
+      cell.filter(function(d) { return d.i == d.j; }).append("svg:text")
+        .attr("x", padding)
+        .attr("y", padding)
+        .attr("dy", ".71em")
+        .text(function(d) { return d.x; }); 
+        
+      // Clear the previously-active brush, if any.
+      function brushstart(p) {
+        if (brush.data !== p) {
+          cell.call(brush.clear());
+          brush.x(x[p.x]).y(y[p.y]).data = p;
+        }
+      }
+    
+      // Highlight the selected circles.
+      function brush(p) {
+        // highlight current selection without computing
+        var pos = $(this).find('.extent').position(),
+            startX = pos.left,
+            startY = pos.top,
+            w = parseFloat($(this).find('.extent').attr("width")),
+            h = parseFloat($(this).find('.extent').attr("height")),
+            endX = startX + w,
+            endY = startY + h;
+        
+        ctx.clearRect(0, 0, screenW, screenH);
+        ctx.globalAlpha = 0.2;
+        ctx.drawImage(buffer, 0, 0);
+       
+        // highlight in current cells
+        var item,
+            offsetX = margin.left + (size) * p.i,
+            offsetY = margin.top + (size) * p.j,
+            screenX,
+            screenY,
+            hlIds = [];
+            hlPoints = {};
+        
+        var screenID = p.x + p.y;
+        var screenCoords = screenObj[screenID];
+        
+        for (var i=0, m=screenCoords.length; i<m; i++) {
+          item = screenCoords[i];
+          screenX = item[0];
+          screenY = item[1];
+          if (startX <= screenX && screenX <= endX && 
+              startY <= screenY && screenY <= endY) {
+              if (hlPoints[screenX] === undefined) 
+                hlPoints[screenX] = {};
+              hlPoints[screenX][screenY] = null;
+              hlIds.push(i);
+          }
+        }
+        
+        // other cells
+        for (var _screenID in screenObj) {
+          if (screenID === _screenID) continue;
+          _screenCoords = screenObj[_screenID];
+          for (var i=0, m=hlIds.length; i<m; i++) {
+            item = _screenCoords[hlIds[i]];
+            screenX = item[0];
+            screenY = item[1];
+            if (hlPoints[screenX] === undefined) 
+              hlPoints[screenX] = {};
+            hlPoints[screenX][screenY] = null;
+          }
+        }
+        
+        highlightPoints(hlPoints);
+        
+        var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
+        if (hl_ids === null) hl_ids = {};
+        hl_ids[table_name] = hlIds;
+        localStorage.setItem("HL_IDS", JSON.stringify(hl_ids));
+      }
+    
+      // If the brush is empty, select all circles.
+      function brushend() {
+        if (brush.empty())  {
+          hlctx.clearRect(0, 0, screenW, screenH);
+          ctx.clearRect(0, 0, screenW, screenH);
+          ctx.globalAlpha = 0.5;
+          ctx.drawImage(buffer, 0, 0);
+        }
+      }
+    
+      function cross(a, b) {
+        var c = [], n = a.length, m = b.length, i, j;
+        for (i = -1; ++i < n;) for (j = -1; ++j < m;) c.push({x: a[i], i: i, y: b[j], j: j});
+        return c;
+      }      
+    
+      function plot(p) {
+        var cell = d3.select(this);
+    
+        // Plot frame.
+        cell.append("svg:rect")
+          .attr("class", "frame")
+          .attr("x", padding / 2)
+          .attr("y", padding / 2)
+          .attr("width", size - padding)
+          .attr("height", size - padding);
+      
+        // plot dots in canvas
+        var item,
+            offsetX = margin.left + (size) * p.i,
+            offsetY = margin.top + (size) * p.j,
+            screenX,
+            screenY;
+          
+        var screenID = p.x + p.y;
+        screenObj[screenID] = [];
+        
+        for (var i=0, m=csv_data.length; i<m; i++) {
+          item = csv_data[i];
+          screenX = (offsetX + x[p.x](item[p.x])) | 0;
+          screenY = (offsetY + y[p.y](item[p.y])) | 0;
+          
+          screenObj[screenID].push([screenX, screenY]);
+          
+          bufferctx.beginPath();
+          bufferctx.arc(screenX, screenY, 2, 0, end);
+          bufferctx.stroke();
+          bufferctx.fill();
+        }
+       
+        if (p.i === n -1 && p.j === n-1)
+          ctx.drawImage(buffer, 0, 0);
+        
+        // Plot brush.
+        cell.call(brush.x(x[p.x]).y(y[p.y]));
+      }     
+    }
+    
+    MainPlot();
+  
+    var resizeTimer;
+    
+    function resize() {
+      d3.select("#graph g").remove();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() {
+        console.log('resize');
+        screenW = $("#map-container").width(),
+        screenH = $("#map-container").height();
+        
+        MainPlot();
+      }, 500);
+    }
+
+    d3.select(window).on('resize', resize); 
+    
+    
+    $(window).bind('storage', function(e) {
+      var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
+      if ( table_name in hl_ids ) {
+        var ids = hl_ids[table_name];
+        var hlPoints = highlightPrep(ids);
+        highlightPoints(hlPoints);
+      }
+    });
+    
+  }); // end CartoProxy.GetVariables()
+  
+});
+</script>
+
+
+
+</body>
+</html>
