@@ -22,9 +22,9 @@ var CartoProxy = {
     var that = this;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function(evt) {
-      var content = xhr.response;
+      var content = JSON.parse(xhr.response);
       if (content['rows'] === undefined ) {
         MsgBox.getInstance().Show("Error:Get all tables from CartoDB returns empty", JSON.stringify(content));
         return;
@@ -80,9 +80,9 @@ var CartoProxy = {
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function(evt) {
-      var data = xhr.response,
+      var data = JSON.parse(xhr.response),
           row = data.rows[0];
       var geotype = "";
       if (row && row['geometrytype']) {
@@ -230,9 +230,9 @@ var CartoProxy = {
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql + '&' + Utils.guid();
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function(evt) {
-      var data = xhr.response,
+      var data = JSON.parse(xhr.response),
           rows = data.rows,
           n = rows.length,
           col,
@@ -339,9 +339,9 @@ var CartoProxy = {
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function(evt) {
-      var w = that.FormatWeights(xhr.response);
+      var w = that.FormatWeights(JSON.parse(xhr.response));
       if (onSuccess) onSuccess(w);
     };
     xhr.send(null);
@@ -364,9 +364,9 @@ var CartoProxy = {
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function(evt) {
-      var w = that.FormatWeights(xhr.response);
+      var w = that.FormatWeights(JSON.parse(xhr.response));
       if (onSuccess) onSuccess(w);
     };
     xhr.send(null);
@@ -395,9 +395,9 @@ var CartoProxy = {
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function(evt) {
-      var w = that.FormatWeights(xhr.response);
+      var w = that.FormatWeights(JSON.parse(xhr.response));
       if (w_conf['pow_idist']) {
         // power of inverse distance
         // aid, bid, power(1/dist, idx)
@@ -426,9 +426,9 @@ var CartoProxy = {
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function(evt) {
-      var w = that.FormatWeights(xhr.response);
+      var w = that.FormatWeights(JSON.parse(xhr.response));
       if (onSuccess) onSuccess(w);
     };
     xhr.send(null);
@@ -451,9 +451,9 @@ var CartoProxy = {
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=json&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function(evt) {
-      var w = that.FormatWeights(xhr.response);
+      var w = that.FormatWeights(JSON.parse(xhr.response));
       if (onSuccess) onSuccess(w);
     };
     xhr.send(null);
@@ -465,9 +465,9 @@ var CartoProxy = {
     
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function(evt) {
-      var data = xhr.response;
+      var data = JSON.parse(xhr.response);
       if (callback) callback();      
     };
     xhr.send(null);
@@ -489,10 +489,11 @@ var CartoProxy = {
       
       var xhr = new XMLHttpRequest();
       xhr.open("POST", "../carto_add_field_from_file/");
-      xhr.responseType = 'json';
+      xhr.responseType = 'text';
       xhr.onload = function(evt) {
         console.log(xhr.response);
-        if (xhr.response['table_name']) {
+        var data = JSON.parse(xhr.response);
+        if (data['table_name']) {
           if (onSuccess)
             onSuccess(field_name);
         }
@@ -519,9 +520,9 @@ var CartoProxy = {
     var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?format=csv&api_key=" + carto_key + "&q=" + sql;
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function(evt) {
-      var data = xhr.response;
+      var data = JSON.parse(xhr.response);
       if (onSuccess) onSuccess(data);
     };
     xhr.send(null);
@@ -546,9 +547,9 @@ var CartoProxy = {
       var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?api_key=" + carto_key + "&q=" + sql;
       var xhr = new XMLHttpRequest();
       xhr.open("GET", url);
-      xhr.responseType = 'json';
+      xhr.responseType = 'text';
       xhr.onload = function(evt) {
-        var data = xhr.response;
+        var data = JSON.parse(xhr.response);
         if (callback) callback(data);
       };
       xhr.send(null);
@@ -575,9 +576,9 @@ UPDATE man_road SET xun = (select cnt from lcnt where lcnt.lid=man_road.cartodb_
       var url = "https://" + carto_uid + ".cartodb.com/api/v2/sql?api_key=" + carto_key + "&q=" + sql;
       var xhr = new XMLHttpRequest();
       xhr.open("GET", url);
-      xhr.responseType = 'json';
+      xhr.responseType = 'text';
       xhr.onload = function(evt) {
-        var data = xhr.response;
+        var data = JSON.parse(xhr.response);
         if (callback) callback(data);
       };
       xhr.send(null);

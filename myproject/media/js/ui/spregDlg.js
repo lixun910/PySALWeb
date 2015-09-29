@@ -296,9 +296,9 @@ var SpregDlg = (function($){
               
               var xhr = new XMLHttpRequest();
               xhr.open("POST", "../publish_spreg_cartodb/");
-              xhr.responseType = 'json';
+              xhr.responseType = 'text';
               xhr.onload = function(evt) {
-                var data = xhr.response,
+                var data = JSON.parse(xhr.response),
                     user_id = data.user_id;
                 
                 var w = window.open(

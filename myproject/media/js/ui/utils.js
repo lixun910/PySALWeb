@@ -168,11 +168,11 @@ return {
   GetJSON : function(url, successHandler, errorHandler) {
     var xhr = new XMLHttpRequest();
     xhr.open('get', url, true);
-    xhr.responseType = 'json';
+    xhr.responseType = 'text';
     xhr.onload = function() {
       var status = xhr.status;
       if (status == 200) {
-        successHandler && successHandler(xhr.response);
+        successHandler && successHandler(JSON.parse(xhr.response));
       } else {
         errorHandler && errorHandler(status);
       }

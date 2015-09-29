@@ -31,7 +31,7 @@ define( ["../utils"], function(Utils) {
     }
     
     this.quads = [1,2,3,4];
-    this.permutations = 799;    
+    this.permutations = 999;    
     this.Is = [];
     this.p_sim = [];
     this.q = [];
