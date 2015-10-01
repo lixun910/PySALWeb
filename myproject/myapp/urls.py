@@ -3,6 +3,7 @@ import django
 from django.conf.urls import patterns, url
 from django.views.generic import TemplateView
 
+
 urlpatterns = patterns('',
     url(r'^mylogin/$', 'django.contrib.auth.views.login', name='login'),
     url(r'^mylogout/$', 'django.contrib.auth.views.logout', name='logout'),
