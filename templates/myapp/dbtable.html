@@ -1,0 +1,79 @@
+{% load render_table from django_tables2 %}
+<!doctype html>
+<html>
+<head>
+<title>PySAL Cloud Beta</title>
+<link rel="stylesheet" href="../../media/css/header.css" />
+<link rel="stylesheet" href="../../media/css/pure-min.css" />
+<link rel="stylesheet" href="../../media/css/tabs.css" />
+<link rel="stylesheet" href="../../media/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
+
+<link rel="stylesheet" href="../../media/django_tables2/themes/paleblue/css/screen.css" />
+<style>
+button {
+  cursor: pointer;
+  padding: 4px 7px 3px 7px;
+  overflow: visible;
+  border: 1px solid #5c9d1f;
+
+  /* Text */
+  color: #FFFFFF;
+  font-weight: bold;
+  font-size: 0.9em;
+  font-family: arial,helvetica,sans-serif;
+
+  /* Fallback colors and background */
+  background-color: #5b9c1e; 
+  background-image: url(#{path.css('../images/buttons/bg_gradient.gif')});
+
+  /* CSS3 Gradient */
+  background-image: -moz-linear-gradient(100% 100% 90deg, #5b9c1e, #80c242);
+  background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#80c242), to(#5b9c1e));
+
+  /* CSS3 Radius */
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  border-radius: 6px;
+
+  /* CSS3 Shadow */
+  -moz-box-shadow: 0px 2px 3px #999999;
+  -webkit-box-shadow: 0px 2px 3px #999999;
+  box-shadow: 0px 2px 3px #999999;
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <table class="toolbar_tbl" align="left" >
+    <tr>
+      <td width=160"><img id="logo" src="../../media/img/pysalweb-logo.png"></td>
+      <td width=160>
+        <font color="#ffaf4b">Spatial Analysis</font>
+      </td>
+      <td width=120>
+        <a class="title_link" href="../open_data/" target="_blank">Open Data</a>
+      </td>
+      <td width=70>
+        <a class="title_link" class="" href="../open_data/" target="_blank">APIs</a>
+      </td>
+      <td width=120>
+        <a class="title_link" href="../open_data/" target="_blank">Documents</a>
+      </td>
+      <td width=100>
+        <a class="title_link" href="../open_data/" target="_blank">My Account</a>
+      </td>
+      <td class="righttd">
+        <img id="account" src="../../media/img/user.png" align="">
+        <font size="2" style="margin-top:-2px">{{userid}}</font>
+        <button id="btn_logout">logout</button>
+      </td>
+    </tr>
+  </table>
+</div>
+<br/>
+                    <button id="google-jobs-refresh" >Refresh</button><br/>
+                    
+<br/>
+{% render_table dbtable %}
+</body>
+</html>

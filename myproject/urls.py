@@ -11,7 +11,13 @@ from django.contrib import admin
 urlpatterns = patterns('',
     (r'myapp/', include('myproject.myapp.urls')),
     (r'^$', RedirectView.as_view(url=settings.URL_PREFIX + '/myapp/login/')), # Just for ease of use.
-) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.URL_PREFIX + settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.URL_PREFIX + settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+) 
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
+
+urlpatterns += static(settings.URL_PREFIX + settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) 
+
+urlpatterns += static(settings.URL_PREFIX + settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += [
     url(r'^admin/', include(admin.site.urls)),

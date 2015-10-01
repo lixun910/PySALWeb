@@ -38,11 +38,6 @@ def my_login(request):
             return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/index/') 
         else:
             error_msg = "Email or password don't match any existing record."
-            
-    elif request.method == 'GET':
-        if request.user and request.user.is_authenticated():
-            return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/index/') 
-            
     return render_to_response(
         'myapp/login.html',{
             'url_prefix': settings.URL_PREFIX,\

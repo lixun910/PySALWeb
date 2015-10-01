@@ -1,0 +1,105 @@
+<!doctype html>
+  <!--<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.1.1/list.min.js"></script>
+  <link rel="stylesheet" href="http://jqueryui.com/resources/demos/style.css">
+-->
+  <style>
+  .ui-widget-overlay { background: #aaa repeat-x; opacity: .8;}
+  table { border-spacing: 0;}
+  th { text-align: left; padding: 10px 0 10px 0; }
+  </style>
+
+
+  <button id="btn_create">Create</button>
+  <div id="tabs-dlg-weights">
+    <ul>
+      <li><a href="#tabs-1">Contiguity</a></li>
+      <li><a href="#tabs-2">Distance</a></li>
+      <li><a href="#tabs-3">Adaptive Kernel</a></li>
+    </ul>
+    <div id="tabs-1">
+      <table>
+        <tr>
+          <td>Contituity Type</td>
+          <td>
+            <select>
+              <option value="rook" selected>Rook</option>
+              <option value="queen">Queen</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Order of Contiguity</td>
+          <td><input id="spinner-cont-order" name="cont-order" value=1></td>
+        </tr>
+        <tr>
+          <td>Include Lower Orders</td>
+          <td><input type="checkbox" name="cont-ilo"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-2">
+      <table>
+        <tr>
+          <td>Select Distance Metric</td>
+          <td>
+            <select>
+              <option value="euclidean" selected>Euclidean Distance</option>
+              <option value="arcmile" selected>Arc Distance (miles)</option>
+              <option value="arckilometer" selected>Arc Distance (kilometers)</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist"> k-Nearest Neighbors</td>
+          <td># of neighbors <input id="spinner-dist-knn-n" value="1"></td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist">Binary Distane Band</td>
+          <td>
+            <input type="text" name="txt-w-dist-thre" value="0.0" style="float:left;margin-right:100px;width:100px">
+            <div id="dist-slider" style="margin: 5px 0 0 120px;"></div>
+          </td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist">Power of Inverse Distance</td>
+          <td><input id="spinner-pow-idist" value="1"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-3">
+      <table>
+        <tr>
+          <td>Select Kernel Function Type</td>
+          <td>
+            <select>
+              <option value="uniform" selected>Uniform</option>
+              <option value="triangular">Triangular</option>
+              <option value="quadratic">Quadratic</option>
+              <option value="quartic">Quartic</option>
+              <option value="gaussian">Gaussian</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Number of Neighbors</td>
+          <td><input type="text" name="txt-dist-kernel-n" value="1"></td>
+        </tr>
+    </div>
+  </div>
+
+<script>
+  var slider_dist = $('#dist-slider').slider();
+  var spinner_pow_idist = $('#spinner-pow-idist').spinner();
+  var spinner_cont_order = $('#spinner-cont-order').spinner();
+  $('#spinner-dist-knn-n').spinner();
+  $('#tabs-dlg-weights').tabs();
+
+  $( "#btn_create" ).button().click(function(){
+    console.log($('#spinner-cont-order').val());
+  });
+  
+</script>
+test

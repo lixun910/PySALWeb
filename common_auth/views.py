@@ -7,10 +7,10 @@ def login(request):
     # context = RequestContext(request, {
     #     'request': request, 'user': request.user})
     # return render_to_response('login.html', context_instance=context)
-    return render(request, 'login.html')
+    return render(request, 'myapp/login.html')
 
 
 
 def logout(request):
     auth_logout(request)
-    return redirect('/')
+    return redirect('myapp/login.html')

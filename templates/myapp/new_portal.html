@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PySAL Cloud</title>
+<link rel="stylesheet" href="../../media/css/portal.css" />
+<link rel="stylesheet" href="../../media/css/leaflet.css" />
+<link rel="stylesheet" href="../../media/css/jquery.switchButton.css" />
+<link rel="stylesheet" href="../../media/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
+<link rel="stylesheet" href="../../media/css/jquery.colorpicker.min.css" />
+<link rel="stylesheet" href="../../media/css/cartodb.css" />
+
+<script type="text/javascript" src="../../media/js/dropins.js" id="dropboxjs" data-app-key="50dk6qp6nc2fcxs"></script>
+<script src="../../media/js/cartodb.js"></script>
+<script src="../../media/js/jquery.min.js"></script>
+<script src="../../media/js/d3.v3.min.js"></script>
+<script src="../../media/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script src="../../media/js/list.min.js"></script>
+<script src="../../media/js/d3viz.js"></script>
+<script src="../../media/js/proj4-src.js"></script>
+<script src="../../media/js/jquery.switchButton.js"></script>
+<script src="../../media/js/jquery.colorpicker.min.js"></script>
+<script src="../../media/js/zip/zip.js"></script>
+
+<script src="../../media/js/colorbrewer.js"></script>
+<script src="../../media/js/xmap.js"></script>
+<script src="../../media/js/utils.js"></script>
+<script src="../../media/js/shapefile.js"></script>
+<script src="../../media/js/portal.js"></script>
+<script>
+    var csrftoken = '{{ csrf_token }}';
+    var url_prefix = '{{url_prefix}}';
+    var gMsg, gViz, gMap, gPrj;
+</script>
+</head>
+
+<body>
+<div class="awesome-bar">
+  <div class="logo"></div>
+  <div class="header_topright">
+    <div class="account"> Account</div>
+    <div class="basemap"> Basemap</div>
+  </div>
+</div>
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Main Body
+///////////////////////////////////////////////////////////////////////////////
+-->
+  <div style="padding-top:48px"></div>
+  <div id="map-container">
+	<div id="map"></div>
+  </div>
+  <canvas class="hl-canvas"></canvas>
+  
+  <div id="bottombar">
+	<div id="toolbar">
+		<div style="clear: left;"></div>
+		<table class="toolbar_tbl" align="left" style="width: 1024px;"> 
+		  <tr>
+		  <td width=120>
+			<div class="blockBtn" id="btnOpenData"><img src="../../media/img/addLayer.png"/><span>Load data</span></div>
+		  </td>
+		  <td width=80 style='width:120px;'>
+			<div class="blockBtn" id="btnMultiLayer"><img src="../../media/img/multilayer.png"/><span></span></div>
+		  </td>
+		  <td width=90>
+			<div class="blockBtn" id="btnShowTable"><img src="../../media/img/table.png"/><span>Table</span></div>
+		  </td>
+		  <td width=80>
+			<div class="blockBtn" id="btnNewMap"><img src="../../media/img/nmap.png"/><span>Map</span></div>
+		  </td>
+		  <td width=100>
+			<div class="blockBtn" id="btnExplore"><img src="../../media/img/hist.png"/><span>Explore</span></div>
+		  </td>
+		  <td width=160>
+			<div class="blockBtn" id="btnSpace"><img src="../../media/img/moran.png"/><span>Spatial Analysis</span></div>
+		  </td>
+		  <td width=130>
+			<div class="blockBtn" id="btnSpreg"><img src="../../media/img/spreg.png"/><span>Regression</span></div>
+		  </td>
+		  </tr>
+		</table>
+	</div>
+  </div>
+
+<div class="tool-menu" id="layer-tree">
+  <div id="add-layer"><p>Drag drop to reorder map layers</p></div>
+  <ul id="sortable-layers"></ul>
+</div>
+
+<div class="tool-menu" id="map-menu">
+	<div id="btnSimMap" class="image-wrap" style="background-image: url(../../media/img/wiz-sim-poly.png);width: 92px; height: 82px;">
+	  <span>Simple Map</span>
+	</div>
+	<div id="btnCatMap" class="image-wrap" style="background-image: url(../../media/img/wiz-cat-poly.png);">
+	  <span>Choropthleth Map</span>
+	</div>
+	<div id="btnDensity" class="image-wrap" style="background-image: url(../../media/img/wiz-density.jpeg);">
+	  <span>Density Map</span>
+	</div>
+</div>
+
+<div class="tool-menu" id="explore-menu">
+	<div id="btnHist" class="image-wrap" style="background-image: url(../../media/img/wiz-hist.png);">
+	  <span>Histogram</span>
+	</div>
+	<div id="btnScatter" class="image-wrap" style="background-image: url(../../media/img/wiz-scatter.png);">
+	  <span>Scatter Plot</span>
+	</div>
+	<div class="image-wrap" style="background-image: url(../../media/img/wiz-pcp.png);">
+	  <span>Parallel Coordinates</span>
+	</div>
+	<div class="image-wrap" style="background-image: url(../../media/img/wiz-chord.png);">
+	  <span>Chord Diagram</span>
+	</div>
+</div>
+
+<div class="tool-menu" id="space-menu">
+	<div id="btnRoad" class="image-wrap" style="background-image: url(../../media/img/wiz-road.png);">
+	  <span>Road Network Analysis</span>
+	</div>
+	<div id="btnSpaceTime" class="image-wrap" style="background-image: url(../../media/img/wiz-spacetime.png);">
+	  <span>Space Time Aggregation</span>
+	</div>
+	<div id="btnCreateW" class="image-wrap" style="background-image: url(../../media/img/wiz-w.png);">
+	  <span>Create Weights</span>
+	</div>
+	<div class="image-wrap" style="background-image: url(../../media/img/wiz-hist-w.png);">
+	  <span>Weights Histogram</span>
+	</div>
+	<div id="btnMoranScatter" class="image-wrap" style="background-image: url(../../media/img/wiz-moran.png);">
+	  <span>Moran Scatter Plot</span>
+	</div>
+	<div id="btnLISA" class="image-wrap" style="background-image: url(../../media/img/wiz-lisa.png)">
+	  <span>LISA Map</span>
+	</div>
+</div>
+
+<div class="down-arrow" id="tool-menu-arrow"></div>
+<div class="down-arrow" id="dialog-arrow"></div>
+<div class="asu-geoda">
+  <img src="https://geodacenter.asu.edu/drupal_files/geoda_logo.png" height=20>
+</div>
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Open Files
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dialog-open-file"  title="Let's get started">
+  <span> <br/><br/>
+    <table>
+      <tr><td>
+      <img id="img-open-dlg" src="../../media/img/add-file.png">
+      </td>
+      <td>
+      Load your map files from one of these sources (shp, json, etc.):
+      </td></tr>
+    </table><br/><br/><br/></span>
+  <div id="tabs-dlg-open-file">
+    <ul>
+      <li><a href="#tabs-1">My Maps</a></li>
+      <li><a href="#tabs-2">Local Disk</a></li>
+      <li><a href="#tabs-3">Dropbox</a></li>
+      <li><a href="#tabs-4">CartoDB</a></li>
+    </ul>
+    <div id="tabs-1">
+        {% if geodata %}
+        <div style="text-align: left;">
+          {% for i,layer in geodata.iteritems %}
+          <p onmouseover="ShowMapTitleTool(this,true);" onmouseout="ShowMapTitleTool(this,false);">
+	    {% if layer.n > 4000 %}
+	      <a href='#' onclick='AddExistMap("{{layer.uuid}}","../../media/{{layer.jsonpath}}.zip")'>{{layer.name}}</a>
+	    {% else %}
+	      <a href='#' onclick='AddExistMap("{{layer.uuid}}","../../media/{{layer.jsonpath}}")'>{{layer.name}}</a>
+	    {% endif %}
+            <img class='novis' onclick="DownloadMap('{{layer.uuid}}');" src="../../media/img/download.png">
+            <img class='novis' onclick="DeleteMap(this,'{{layer.uuid}}');" src="../../media/img/uncheckmark.gif">
+          </p>
+          {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    <div id="tabs-2">
+      <div id="drop_zone">Drop files here
+        <p style="font-size:12px;"><label id="lbl-drop-json">.json</label>&nbsp;&nbsp;or &nbsp;&nbsp;
+        <label  id="lbl-drop-shp">.shp</label>&nbsp;<label id="lbl-drop-dbf">.dbf</label>
+        &nbsp;<label id="lbl-drop-shx">.shx</label>&nbsp;.prj&nbsp;&nbsp;&nbsp;or &nbsp;&nbsp;
+        <label>.zip</label></p>
+      </div>
+      <div id="progress_bar"><div class="percent">0%</div></div>
+      <table>
+      </table>
+    </div>
+    <div id="tabs-3">
+      <div id="dropbox_div"></div>
+    </div>
+    <div id="tabs-4">
+      <form id="cartodb-form">
+        <img src="../../media/img/cartodb.png">
+        <table>
+          <tr>
+            <td>CartoDB user id</td>
+            <td>
+              <input type="text" id="txt-carto-id" size=45 value="lixun910">
+            </td>
+          </tr>
+          <tr>
+            <td>CartoDB app key</td>
+            <td>
+              <input type="text" id="txt-carto-key" size=45 value="340808e9a453af9680684a65990eb4eb706e9b56">
+	      &nbsp;&nbsp;&nbsp;<img id='btn-file-cartodb-get-all-tables'src="../../media/img/refresh.png">
+
+            </td>
+          </tr>
+          <tr>
+            <td>CartoDB table name</td>
+            <td>
+              <select id="sel-file-carto-tables"></select>            </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>
+              <input type="checkbox" id="chk-carto-download" id=0>Download CartoDB table to your account?
+            </td>
+          </tr>
+        </table>
+      </form>
+    </div>
+  </div>
+  <br/><br/>
+  <div id="progress_bar_openfile"><img src="../../media/img/progress-bar.gif"></div>
+</div>
+
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// CartoDB
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dialog-cartodb"  title="CartoDB Dialog">
+  <span> <br/><img src="../../media/img/cartodb.png"><br/></span>
+  <div id="tabs-dlg-cartodb">
+    <ul>
+      <li><a href="#tabs-1">Setup</a></li>
+      <li><a href="#tabs-2">Create Theme Map </a></li>
+    </ul>
+    <div id="tabs-1">
+      <form id="cartodb-setup-form">
+        <table>
+          <tr>
+            <td>CartoDB user id</td>
+            <td>
+              <input type="text" id="txt-carto-setup-id" size=55 value="lixun910">
+            </td>
+          </tr>
+          <tr>
+            <td>CartoDB app key</td>
+            <td>
+              <input type="text" id="txt-carto-setup-key" size=55 value="340808e9a453af9680684a65990eb4eb706e9b56">
+            </td>
+          </tr>
+        </table>
+      </form>
+    </div>
+    <div id="tabs-2">
+      <br><img src="../../media/img/carto_upload.png"><br><br>
+      <form id="cartodb-upload-form">
+        <table>
+          <tr>
+            <td>Select a map to upload to CartoDB&nbsp;&nbsp;&nbsp;</td>
+            <td>
+              <select id="sel-carto-table-upload">
+              </select>
+            </td>
+          </tr>
+        </table>
+      </form>
+    </div>
+  </div>
+  <br/><br/>
+  <div id="progress_bar_cartodb"><img src="../../media/img/progress-bar.gif"></div>
+</div>
+
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Road Network
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dialog-road"  title="Road Network Dialog">
+  <span> <br/><img src="../../media/img/network.png"><br/><br/></span>
+  <div id="tabs-dlg-road">
+    <ul>
+      <li><a href="#tabs-1">Road Segmentation</a></li>
+      <li><a href="#tabs-2">Snapping Points to Roads</a></li>
+      <li><a href="#tabs-3">Create Weights for Roads</a></li>
+    </ul>
+    <div id="tabs-1">
+      <form id="form-road-segement">
+        <table>
+          <tr>
+            <td>Select a road layer</td>
+            <td>
+              <select id="sel-road-seg">
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Input a maximum length of segemented road (ft)</td>
+            <td>
+              <input type="text" id="txt-seg-road-length" size=25 value="1000">
+            </td>
+          </tr>
+          <tr>
+            <td>Input a file name for saving the segemented roads</td>
+            <td>
+              <input type="text" id="txt-seg-road-name" size=25 value="">
+            </td>
+          </tr>
+        </table>
+      </form>
+    </div>
+    <div id="tabs-2">
+      <form id="form-snap-points-to-roads">
+        <table>
+          <tr>
+            <td>Select a point layer</td>
+            <td>
+              <select id="sel-road-snap-point-layer">
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Select a road layer</td>
+            <td>
+              <select id="sel-road-snap-road-layer">
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Input a field name to store counts of points on roads</td>
+            <td>
+              <input type="text" id="txt-snap-count-col-name" size=25 value="">
+            </td>
+          </tr>
+          <tr>
+            <td>Input the length used to segement road</td>
+            <td>
+              <input type="text" id="txt-snap-seg-road-length" size=25 value="1000">
+            </td>
+          </tr>
+        </table>
+      </form>
+    </div>
+    <div id="tabs-3">
+      <form id="form-create-road-w">
+        <table>
+          <tr>
+            <td>Select a road layer</td>
+            <td>
+              <select id="sel-road-w-layer">
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Input the length used to segement road</td>
+            <td>
+              <input type="text" id="txt-w-seg-road-length" size=25 value="1000">
+            </td>
+          </tr>
+          <tr>
+            <td>Select a weights type</td>
+            <td>
+              <select id="sel-road-cont-type">
+                <option value="0" selected>Queen</option>
+                <option value="1">KNN</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Input a name for created weights</td>
+            <td>
+              <input type="text" id="txt-road-w-name" size=25 value="">
+            </td>
+          </tr>
+        </table>
+      </form>
+    </div>
+  </div>
+  <br/>  <br/>
+  <div id="progress_bar_road"><img src="../../media/img/progress-bar.gif"></div>
+</div>
+
+
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// SpaceTime
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dialog-spacetime"  title="Space Time Aggregation">
+  <table><tr><td><img src="../../media/img/st.png"></td>
+  <td>&nbsp;&nbsp;Aggregate points in time and space and apply spatial analysis.</td>
+  </tr>
+  </table>
+  <br>
+  <div id="spacetime_catalog">
+    <h2><a href='#'>Space</a></h2>
+    <div style="height:400px;">
+      <p style="text-align: left">Example of Space Aggregation (e.g. counting how many points in each polygon.)</p>
+      <br><img src="../../media/img/pnp.png"><br><br>
+      
+      <form id="spacetime-count-pform">
+        <table>
+          <tr>
+            <td>1.Select the polygon layer:</td>
+            <td>
+              <select id="sel-spacetime-table-poly"></select>
+            </td>
+          </tr>
+          <tr>
+            <td>2.Select the point layer:</td>
+            <td>
+              <select id="sel-spacetime-table-point"></select>
+            </td>
+          </tr>
+          <tr>
+            <td>3.Input the name of couting field in polygon layer:</td>
+            <td valign="top">
+              <input type="text" id="txt-spacetime-col-name" size=30 value="">
+            </td>
+          </tr>
+        </table>
+      </form>
+
+    </div>
+    <h2><a href='#'> Time</a></h2>
+    <div>
+    <table>
+      <tr><td height="30">Field:</td>
+        <td><select><option>Date</option></select>&nbsp;&nbsp;
+        <select><option>Time</option></select></td>
+      </tr>
+      <tr><td height="30">Time of Day&nbsp;&nbsp;&nbsp;</td>
+        <td><select><option>00:00-23:59</option></select></td>
+        <td><button>&nbsp;+&nbsp;</button> <button>&nbsp;-&nbsp;</button></td>
+      </tr>
+      <tr><td height="30">Step By</td>
+        <td><input type="text" value=1 size=4><select><option>Day</option><option>Week</option></select></td>
+      </tr>
+      <tr><td height="30">Interval</td>
+        <td>Start&nbsp;<input type="text" id="datepicker-start"><td>
+      </tr>
+      <tr><td height="30"></td><td>End&nbsp;&nbsp;&nbsp;<input type="text" id="datepicker-end"></td>
+      </tr>
+    </table>
+    </div>
+  </div>
+  <div id="progress_bar_spacetime"><img src="../../media/img/progress-bar.gif"></div>
+</div>
+<!--
+///////////////////////////////////////////////////////////////////////////////
+//  LISA Map
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dlg-lisa-map" title="Create LISA Map">
+<br><br>
+  <table>
+  <tr>
+    <td width="200"><label for="name">Select a variable:</label></td>
+    <td><select id="sel-lisa-var"></td>
+  </tr>
+  <tr>
+    <td width="200"><label for="name">Select weights:</label></td>
+    <td><select id="sel-lisa-w"></td>
+  </tr>
+ </table> 
+  <br/>  <br/>
+  <div id="progress_bar_lisa"><img src="../../media/img/progress-bar.gif"></div>
+</div>
+
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Moran Scatter Plot
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dlg-moran-scatter-plot" title="Open Moran Scatter Plot">
+<br><br>
+  <table>
+  <tr>
+    <td width="200"><label for="name">Select a variable:</label></td>
+    <td><select id="sel-moran-var"></td>
+  </tr>
+  <tr>
+    <td width="200"><label for="name">Select weights:</label></td>
+    <td><select id="sel-moran-w"></td>
+  </tr>
+ </table> 
+</div>
+
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Scatter Plot
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dlg-scatter-plot" title="Open Scatter Plot">
+<br><br>
+  <table>
+  <tr>
+    <td width="200"><label for="name">Select X variable:</label></td>
+    <td><label for="name">Select Y variable:</label></td>
+  </tr>
+  <tr>
+    <td><select id="sel-scatter-x"></td>
+    <td><select id="sel-scatter-y"></td>
+  </tr>
+  <tr>
+    <td>
+	  <input type="checkbox" id="chk-newtab-scatter" id=0>Open in new window?
+	</td>
+ </table> 
+</div>
+
+<div id="dlg-histogram" title="Open Histogram Plot">
+<br><br>
+  <table>
+  <tr>
+    <td width="200"><label for="name">Select a variable:</label></td>
+  </tr>
+  <tr>
+    <td><select id="sel-histogram-x"></td>
+  </tr>
+ </table> 
+</div>
+
+<div id="dlg-simple-map" title="Configure Map">
+  <br/><br/>
+  <table>
+  <tr>
+    <td><label for="name">Configuration list:</label></td>
+    <td valign='top'><select id="sel-map-conf"><option value='default' selected>default</option></select></td>
+  </tr>
+  <tr height=30>
+  </tr>
+  <tr>
+    <td><label for="name">Fill Color:</label></td>
+    <td><input type="text" id="colorpicker-fill" value=""></td>
+  </tr>
+  <tr>
+    <td><label for="name">Stroke Width:</label></td>
+    <td><input type="text" id="stroke-width" value="0.3"></td>
+  </tr>
+  <tr>
+    <td><label for="name">Stroke Color:</label></td>
+    <td><input type="text" id="colorpicker-stroke" value=""></td>
+  </tr>
+  <tr>
+    <td height=30><label for="name">Transparency:</label></td>
+    <td><div id="opacity-slider"></div></td>
+	<td width=10><span id="opacity">0.9</span></td>
+  </tr>
+ </table> 
+</div>
+<div id="dlg-save-map-conf" title="Save Map Configuration">
+<br>
+<br>
+<br>
+<br>
+    <label for="name">Input a map configuration name:</label>
+    <input type="text" id="map-conf-name" class="text ui-widget-content ui-corner-all" value="default">
+</div>
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Choroplet Map
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dlg-quantile-map" title="Open Choropleth Map">
+  <br/><br/>
+  <table>
+  <tr>
+    <td><label for="name">Select quantification method:</label></td>
+    <td><select id="sel-quan-method">
+      <option value="quantile">Quantile</option>
+      <option value="natural breaks">Natural Breaks</option>
+      <option value="equal interval">Equal Interval</option>
+      <option value="fisher jenks">Fisher Jenks</option>
+    </td>
+  </tr>
+  <tr>
+    <td><label for="name">Select a variable:</label></td>
+    <td><select id="sel-var"></td>
+  </tr>
+  <tr>
+    <td><label for="name">Input category number:</label></td>
+    <td><select id="quan-cate">
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5" selected>5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
+      <option value="9">9</option>
+      <option value="10">10</option>
+    </td>
+  </tr>
+  <tr>
+    <td><label for="name">Select a color scheme:</label></td>
+    <td><select id="color-selector"></td>
+  </tr>
+ </table> 
+</div>
+
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Weights Creation
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dialog-weights"  title="Weights Creation Dialog">
+  <style>
+    </style>
+  <table>
+    <tr>
+      <td><li>Please input a Weights name:</li></td>
+      <td><input type="text" id="txt-w-name"></td>
+    </tr>
+    <tr>
+      <td><li>Select an ID variable for weights file:</li></td>
+      <td>
+      <select id='sel-w-id'></select>
+      <img id="img-id-chk" src="../../media/img/checkmark.png">
+      <img id="img-id-nochk" src="../../media/img/uncheckmark.gif">
+      <img id="img-id-spin" src="../../media/img/loading_small.gif">
+      </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><a href='#' id="btn-w-add-uid">Add an unique ID</a></td>
+    </tr>
+  </table>
+  <br/>
+  <br/>
+  <div id="tabs-dlg-weights">
+    <ul>
+      <li><a href="#tabs-1">Contiguity</a></li>
+      <li><a href="#tabs-2">Distance</a></li>
+      <li><a href="#tabs-3">Adaptive Kernel</a></li>
+    </ul>
+    <div id="tabs-1">
+      <form id="cont-form">
+        <table>
+          <tr>
+            <td>Contiguity Type</td>
+            <td>
+              <select id="sel-cont-type">
+                <option value="0" selected>Rook</option>
+                <option value="1">Queen</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td>Order of Contiguity</td>
+            <td><input id="spn-cont-order" value=1></td>
+          </tr>
+          <tr>
+            <td>Include Lower Orders</td>
+            <td><input type="checkbox" id="cbx-cont-ilo"></td>
+          </tr>
+        </table>
+      </form>
+    </div>
+    <div id="tabs-2">
+      <table>
+        <tr>
+          <td>Select Distance Metric</td>
+          <td>
+            <select id="sel-dist-metr">
+              <option value="0" selected>Euclidean Distance</option>
+              <option value="1">Arc Distance (miles)</option>
+              <option value="2">Arc Distance (kilometers)</option>
+            </select>
+          </td>
+        </tr>
+        <tr height="22px">
+          <td><input type="radio" name="rdo-dist" id=0> k-Nearest Neighbors</td>
+          <td># of neighbors <input id="spn-dist-knn" value="1"></td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist" id=1>Binary Distane Band</td>
+          <td>
+            <input type="text" id="txt-dist-thr" value="0.0" style="float:left;margin-right:100px;width:100px">
+            <div id="dist-slider" style="margin: 5px 0 0 120px;"></div>
+			<img id="w-dist-loading" src="../../media/img/loading_small.gif">
+          </td>
+        </tr>
+        <tr>
+          <td><input type="radio" name="rdo-dist" id=2>Power of Inverse Distance</td>
+          <td><input id="spn-pow-idst" value="1"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-3">
+      <table>
+        <tr>
+          <td>Select Kernel Function Type</td>
+          <td>
+              <select id="sel-kel-type">
+              <option value="0" selected>Uniform</option>
+              <option value="1">Triangular</option>
+              <option value="2">Quadratic</option>
+              <option value="3">Quartic</option>
+              <option value="4">Gaussian</option>
+              </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Numbe of Neighbors</td>
+          <td><input type="text" id="txt-kel-nn" value="1"></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <br/><br/><br/>
+  <table>
+    <tr>
+      <td width=200><li>Select to download a Weights file</li></td>
+      <td><select id='sel-w-type'>
+          <option value="gal" selected>GAL</option>
+          <option value="gwt">GWT</option>
+          <option value="kwt">KWT</option>
+        </select>
+      </td>
+      <td><select id='sel-w-files'></select></td>
+    </tr>
+  </table>
+  <div class="dlg-loading"></div>
+</div> 
+
+<div id="dlg-add-uniqid" title="Add Unique ID">
+    <label for="name">Input an unique ID name:</label>
+    <input type="text" id="uniqid_name" class="text ui-widget-content ui-corner-all">
+</div>
+
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Spatial Regression
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dialog-regression" title="Spatial Regression Dialog"> 
+  <p style="text-align: left">
+  <button id="btn_open_model">Open Model</button>
+  <button id="btn_save_model">Save Model</button>
+  <button id="btn_reset_model">Reset Model</button>
+  <button id="btn_preference">Preference</button>
+  <button id="btn_run">Run</button>
+  <button id="btn_result">Show Result</button>
+  </p>
+  <table>
+    <tr><td></td></tr>
+    <tr>
+      <td valign="top">
+        <div id="model_spec">
+          <h1 class="ui-widget-header">Model Specifications</h1>
+          <p>Drag and drop variables from the Variables Panel.<br>Double click variable to remove it.</p>
+          <div id="y_catalog">
+            <h2><a href="#">Y (Required) </a></h2>
+            <div class="drop_box" id="y_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">YE </a></h2>
+            <div class="drop_box" id="ye_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">Instruments</a></h2>
+            <div class="drop_box" id="inst_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <h2><a href="#">R</a></h2>
+            <div class="drop_box" id="r_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            <!--
+            <h2><a href="#">T</a></h2>
+            <div class="drop_box" id="t_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+            -->
+          </div>
+          <div id="x_catalog">
+            <h2><a href="#">X (Required) </a></h2>
+            <div class="drop_box" id="x_box">
+              <ol>
+                <li class="placeholder">Add your items here</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        <div id="estimation">
+          <h1 class="ui-widget-header">Estimation</h1>
+          <div class="est_tab">
+            <p>Model Type</p>
+            <input type="radio" name="model_type" value="0" checked>Standard<br>
+            <input type="radio" name="model_type" value="1">Spatial Lag<br>
+            <input type="radio" name="model_type" value="2">Spatial Error<br>
+            <input type="radio" name="model_type" value="3">Spatial Lag+Error<br>
+          </div>
+          <div class="est_tab">
+            <p>Method</p>
+            <input id="ols" type="radio" name="method" value=0 checked>OLS<br>
+            <input id="gmm" type="radio" name="method" value=1>GMM<br>
+            <input id="ml" type="radio" name="method" value=2>ML<br>
+          </div>
+          <div class="est_tab">
+            <p>Standard Errors</p>
+            <input id="white" type="checkbox" name="stderror" value="white">White<br>
+            <input id="hac" type="checkbox" name="stderror" value="hac">HAC<br>
+            <input id="het" type="checkbox" name="stderror" value="kphet">KP HET<br>
+          </div>
+        </div>
+        <div id="weights">
+          <h1 class="ui-widget-header">Weights</h1>
+          <table width=100%><tr><td>
+          <button id="btn_create_w">Create Weights</button> 
+          </td></tr><tr><td>
+          <div id="w_catalog_model">
+            <h2><a href="#">Model Weights (Optional) </a></h2>
+            <div id="w_model_box">
+              <select id="sel-model-w-files" multiple="multiple">
+              </select>
+            </div>
+          </div>
+          <div id="w_catalog_kernel">
+            <h2><a href="#">Kernel Weights (Optional) </a></h2>
+            <div id="w_kernel_box">
+              <select id="sel-kernel-w-files" multiple="multiple">
+              </select>
+            </div>
+          </div>
+          </td></tr></table>
+        </div>
+      </td>
+      <td valign="top">
+        <div id="var_list">
+          <h1 class="ui-widget-header">Variables</h1>
+          <div class="ui-widget-content" id="vars">
+            <input class="search" placeholder="Search" />
+            <button class="sort" data-sort="name">
+            Sort
+            </button>
+            <ul id="ul-x-variables" class="list">
+              <li><p class="name">x1</p></li>
+            </ul>
+          </div>
+        </div>
+
+  </td>
+</tr>
+</table> 
+</div>
+<div id="dialog-spreg-result" title="Spatial Regression Result">
+  <div id="spreg-result-tabs">
+    <ul>
+      <li><a href="#tabs-1">Report</a></li>
+      <li><a href="#tabs-2">Predicted Values and Residuals</a></li>
+    </ul>
+    <div id="tabs-1" style="height:100%">
+      <pre id="txt-spreg-summary" style="text-align:left; font-size: 12px; white-space:pre-wrap;width: 100%; padding: 10px; border: none; height: 100%; margin: -10px; border: 1px solid #ccc;"> </pre>
+    </div>
+    <div id="tabs-2" style="height:100%">
+      <button id="btn-save-predy">Save values to datasource</button>
+      <a href="#" id="btn-export-predy">Export to CSV</a>
+      <div id="txt-spreg-predy" > </div>
+    </div>
+  </div>
+</div>
+
+<div id="dialog-preference" title="Preference">
+  <form id="form-pref">
+  <div id="tabs">
+    <ul>
+      <li><a href="#tabs-1">Std Dev</a></li>
+      <li><a href="#tabs-2">GMM</a></li>
+      <li><a href="#tabs-3">ML</a></li>
+      <li><a href="#tabs-4">Instruments</a></li>
+      <li><a href="#tabs-5">Output</a></li>
+      <li><a href="#tabs-6">Regimes</a></li>
+      <li><a href="#tabs-7">Other</a></li>
+    </ul>
+    <div id="tabs-1">
+      <p><b>Compute Standard Deviation with N or N-K</b></p>
+      <table>
+        <tr><td></td><td width="40">N-K</td><td width="40">N</td></tr>
+        <tr><td>OLS</td><td><input type="radio" name="sig2n_k_ols" value=0 checked></td><td><input type="radio" name="sig2n_k_ols" value=1></td></tr>
+        <tr><td>2SLS</td><td><input type="radio" name="sig2n_k_2sls" value=0></td><td><input type="radio" name="sig2n_k_2sls" value=1 checked></td></tr>
+        <tr><td>GM-Lag</td><td><input type="radio" name="sig2n_k_gmlag" value=0></td><td><input type="radio" name="sig2n_k_gmlag" value=1 checked></td></tr>
+        <tr><td>All Other Models</td><td><input type="radio" name="sig2n_k_other" value=0></td><td><input type="radio" name="sig2n_k_other" value=1 checked></td></tr>
+      </table>
+    </div>
+    <div id="tabs-2">
+      <table>
+        <tr><th>Improved Efficiency</th></tr>
+        <tr>
+          <td>Maximum Iteration</td>
+          <td><input id="spinner" name="gmm_max_iter" value=1></td>
+        </tr>
+        <tr>
+          <td>Stopping Criterion<br>(change in Lambda)</td>
+          <td><input id="spinner" name="gmm_epsilon" value="0.00001"></td>
+        </tr>
+        <tr><th><b>Spatial Error Model</b></th><th></th></tr>
+        <tr>
+          <td>Inference on Lambda</td>
+          <td><input type="checkbox" name="gmm_inferenceOnLambda" checked></td>
+        </tr>
+        <tr><th><b>Heteroskedasticity</b></th><th></th></tr>
+        <tr>
+          <td>Computation of Inverse</td>
+          <td>
+            <select name="gmm_inv_method">
+              <option value="Power Expansion" selected>Power Expansion</option>
+              <option value="True Inverse">True Inverse</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Step 1c from Arraiz et al (2010)</td>
+          <td><input type="checkbox" name="gmm_step1c"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-3">
+      <table>
+        <tr><th>Diagnostics</th></tr>
+        <tr>
+          <td>ML Diagnostics</td>
+          <td><input type="checkbox" name="ml_diagnostics"></td>
+        </tr>
+        <tr><th>Methods</th><th></th></tr>
+        <tr>
+          <td>ML Method</td>
+          <td>
+            <select name="ml_method">
+              <option value="Full">Full</option>
+              <option value="Ord">Ord</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>Tolerance Criterion</td>
+          <td><input type="text" name="ml_epsilon" value="0.00001"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-4">
+      <table>
+        <tr>
+          <td>Order of Spatial Lags for Instruments</td>
+          <td><input id="spinner" name="instruments_w_lags" value="1"></td>
+        </tr>
+        <tr>
+          <td>Include Lags of User-Specified Instruments</td>
+          <td><input type="checkbox" name="instruments_lag_q" checked></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-5">
+      <table>
+        <tr>
+          <td>Show Variance-Covariance Matrix</td>
+          <td><input type="checkbox" name="output_vm_summary"></td>
+        </tr>
+        <tr>
+          <td>Save Predicted Values and Residuals</td>
+          <td><input type="checkbox" name="output_save_pred_residuals"></td>
+        </tr>
+        <tr>
+          <td>Save Detailed Model Specification</td>
+          <td><input type="checkbox" name="output_show_detailed_spec"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-6">
+      <table>
+        <tr>
+          <td>Error by Regimes</td>
+          <td><input type="checkbox" name="regimes_regime_error" checked></td>
+        </tr>
+        <tr>
+          <td>Spatial Lag by Regimes</td>
+          <td><input type="checkbox" name="regimes_regime_lag"></td>
+        </tr>
+      </table>
+    </div>
+    <div id="tabs-7">
+      <table>
+        <tr><th>Diagnostics</th></tr>
+        <tr>
+          <td>OLS Diagnostics</td>
+          <td><input type="checkbox" name="other_ols_diagnostics" checked></td>
+        </tr>
+        <tr>
+          <td>White Test (OLS only)</td>
+          <td><input type="checkbox" name="white_teste"></td>
+        </tr>
+        <tr>
+          <td>Moran's I of the Residuals</td>
+          <td><input type="checkbox" name="other_residualMoran"></td>
+        </tr>
+        <tr><th><b>Data</b></th><th></th></tr>
+        <tr>
+          <td>Replace Missing Values With</td>
+          <td><input type="text" name="other_missingValue" value=""></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  </form>
+</div>
+
+<div id="dlg-save-model" title="Save Spreg Model">
+    <label for="name">Input a model name:</label>
+    <input type="text" id="model_name" class="text ui-widget-content ui-corner-all">
+</div>
+
+<div id="dlg-open-model" title="Open Spreg Model">
+    <label for="name">Select a spreg model:</label>
+    <select id="open_spreg_model">
+    </select>
+</div>
+<!--
+///////////////////////////////////////////////////////////////////////////////
+// Other Dialogs
+///////////////////////////////////////////////////////////////////////////////
+-->
+<div id="dlg-msg" title="Message">
+  <div class="text-align:left;">
+    <p class="font-weight:bold;" id="msg-title"></p>
+    <p id="msg-content" class="text-align:left;"></p>
+  </div>
+</div>
+
+<div id="userInfo" class="info-div">
+  <p>{{userid}}</p> <br/>
+  <span>Storage Usage: <img src="../../media/img/capacity.png" height=14></span> <br/><br/>
+  <button id="btn_logout">logout</button>
+</div>
+
+<div id="mapInfo" class='info-div'>
+  <div class="switch-wrapper" id="divSwitchLeaflet"><input type="checkbox" id="switch" value="1" checked></div>
+  <br/>
+  <div id="mapproviders">
+	<img id="0" src="../../media/img/b0.png">
+	<img id="1" src="../../media/img/b1.png">
+	<img id="2" src="../../media/img/b2.png">
+	<img id="3" src="../../media/img/b3.png">
+	<img id="4" src="../../media/img/b4.png">
+	<img id="5" src="../../media/img/b5.png">
+  </div>
+</div>
+
+<div id="prgInfo" class="info-div" style="left: 0px; right: none;">
+  <span>Uploading data ...</span><br/>
+  <img src="../../media/img/progress-bar.gif">
+</div>
+
+<div id="divPop" class="bubble">This is Popup Div.</div>
+</body>
+
+<div id="legend" class="info" style="z-index:9999;position:fixed;top:200px;right:5px;">Legend</div>
+
+</html>

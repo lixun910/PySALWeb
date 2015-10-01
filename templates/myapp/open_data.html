@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PySAL Web Beta</title>
+<link rel="stylesheet" href="../../media/css/header.css" />
+<link rel="stylesheet" href="../../media/css/pure-min.css" />
+<link rel="stylesheet" href="../../media/css/tabs.css" />
+<link rel="stylesheet" href="../../media/css/ui-lightness/jquery-ui-1.10.4.custom.min.css">
+
+<style>
+button {
+  cursor: pointer;
+    padding: 4px 7px 3px 7px;
+    overflow: visible;
+    border: 1px solid #5c9d1f;
+
+    /* Text */
+    color: #FFFFFF;
+    font-weight: bold;
+    font-size: 0.9em;
+    font-family: arial,helvetica,sans-serif;
+  
+    /* Fallback colors and background */
+    background-color: #5b9c1e; 
+    background-image: url(#{path.css('../images/buttons/bg_gradient.gif')});
+
+    /* CSS3 Gradient */
+    background-image: -moz-linear-gradient(100% 100% 90deg, #5b9c1e, #80c242);
+    background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#80c242), to(#5b9c1e));
+
+    /* CSS3 Radius */
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    border-radius: 6px;
+
+    /* CSS3 Shadow */
+    -moz-box-shadow: 0px 2px 3px #999999;
+    -webkit-box-shadow: 0px 2px 3px #999999;
+    box-shadow: 0px 2px 3px #999999;
+}
+#google-open-data-accordion .ui-accordion-content {
+  max-height: 300px;
+}
+.overlay {
+  position: absolute; 
+  top:0; 
+  left:0;
+  width:100%;
+  height:100%;
+}
+#map-canvas {
+  opacity:1;
+  z-index:1;
+}
+#google-frame {
+  border:0;
+  z-index:2;
+}
+#map-cover {
+  position:absolute; bottom:0px; right:0; width:50px; height:100px; opacity:0; z-index:3;
+}
+#map-close {
+  position:absolute; top:0px; right:0; width:150px; height:25px;
+  margin-top:-25px;
+  padding-top:4px;
+  z-index:3;
+}
+#panImg {
+  cursor: hand;
+}
+div#column1, div#column2, div#column3, div#column4, div#column5 {
+  float:left;
+  width:250px;
+}
+
+div#column1 li, div#column2 li, div#column3 li, div#column4 li, div#column5 li {
+  list-style-type: none;
+}
+.ui-autocomplete {
+  text-align: left;
+}
+td.status0 {color: yellow;}
+td.status1 {color: yellow;}
+td.status2 {color: blue;}
+td.status3 {color: green;}
+td.status4 {color: red;}
+
+.fixed_height {
+  height: 500px;
+}
+#google-jobs, #geoda-data {
+  position : relative;
+  height:100%;
+  overflow:auto;
+}
+#google-jobs a:link, #geoda-data a:link {
+  text-decoration: underline;
+}
+/*-------------------------------------*/
+    
+    .cf:before, .cf:after{
+      content:"";
+      display:table;
+    }
+    
+    .cf:after{
+      clear:both;
+    }
+
+    .cf{
+      zoom:1;
+    }
+
+    /*-------------------------------------*/	
+    
+    .form-wrapper {
+        width: 650px;
+        padding: 0px;
+        background: #444;
+        background: rgba(0,0,0,.2);
+        -moz-border-radius: 10px;
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        -moz-box-shadow: 0 1px 1px rgba(0,0,0,.4) inset, 0 1px 0 rgba(255,255,255,.2);
+        -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.4) inset, 0 1px 0 rgba(255,255,255,.2);
+        box-shadow: 0 1px 1px rgba(0,0,0,.4) inset, 0 1px 0 rgba(255,255,255,.2);
+    }
+    
+    .form-wrapper input {
+        width: 530px;
+        height: 20px;
+        padding: 10px 5px;
+        float: left;    
+        font: bold 15px 'lucida sans', 'trebuchet MS', 'Tahoma';
+        border: 0;
+        background: #eee;
+        -moz-border-radius: 3px 0 0 3px;
+        -webkit-border-radius: 3px 0 0 3px;
+        border-radius: 3px 0 0 3px;      
+    }
+    
+    .form-wrapper input:focus {
+        outline: 0;
+        background: #fff;
+        -moz-box-shadow: 0 0 2px rgba(0,0,0,.8) inset;
+        -webkit-box-shadow: 0 0 2px rgba(0,0,0,.8) inset;
+        box-shadow: 0 0 2px rgba(0,0,0,.8) inset;
+    }
+    
+    .form-wrapper input::-webkit-input-placeholder {
+       color: #999;
+       font-weight: normal;
+       font-style: italic;
+    }
+    
+    .form-wrapper input:-moz-placeholder {
+        color: #999;
+        font-weight: normal;
+        font-style: italic;
+    }
+    
+    .form-wrapper input:-ms-input-placeholder {
+        color: #999;
+        font-weight: normal;
+        font-style: italic;
+    }    
+    
+    .form-wrapper button {
+		overflow: visible;
+        position: relative;
+        float: right;
+        border: 0;
+        padding: 0;
+        cursor: pointer;
+        height: 40px;
+        width: 110px;
+        font: bold 15px/40px 'lucida sans', 'trebuchet MS', 'Tahoma';
+        color: #fff;
+        text-transform: uppercase;
+        background: #009933;
+        -moz-border-radius: 0 3px 3px 0;
+        -webkit-border-radius: 0 3px 3px 0;
+        border-radius: 0 3px 3px 0;      
+        text-shadow: 0 -1px 0 rgba(0, 0 ,0, .3);
+    }   
+      
+    .form-wrapper button:hover{		
+        background: #00CC99;
+    }	
+      
+    .form-wrapper button:active,
+    .form-wrapper button:focus{   
+        background: #009933;    
+    }
+    
+    .form-wrapper button:before {
+        content: '';
+        position: absolute;
+        border-width: 8px 8px 8px 0;
+        border-style: solid solid solid none;
+        border-color: transparent #009933 transparent;
+        top: 12px;
+        left: -6px;
+    }
+    
+    .form-wrapper button:hover:before{
+        border-right-color: #00CC99;
+    }
+    
+    .form-wrapper button:focus:before{
+        border-right-color: #009933;
+    }    
+    
+    .form-wrapper button::-moz-focus-inner {
+        border: 0;
+        padding: 0;
+    }  
+</style>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=places"></script>
+<script src="../../media/js/jquery.min.js"></script>
+<script src="../../media/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script src="../../media/js/d3.v3.min.js"></script>
+<script src="../../media/js/msgbox.js"></script>
+<script>
+var google_types = [
+"accounting",
+"airport",
+"amusement_park",
+"aquarium",
+"art_gallery",
+"atm",
+"bakery",
+"bank",
+"bar",
+"beauty_salon",
+"bicycle_store",
+"book_store",
+"bowling_alley",
+"bus_station",
+"cafe",
+"campground",
+"car_dealer",
+"car_rental",
+"car_repair",
+"car_wash",
+"casino",
+"cemetery",
+"church",
+"city_hall",
+"clothing_store",
+"convenience_store",
+"courthouse",
+"dentist",
+"department_store",
+"doctor",
+"electrician",
+"electronics_store",
+"embassy",
+"establishment",
+"finance",
+"fire_station",
+"florist",
+"food",
+"funeral_home",
+"furniture_store",
+"gas_station",
+"general_contractor",
+"grocery_or_supermarket",
+"gym",
+"hair_care",
+"hardware_store",
+"health",
+"hindu_temple",
+"home_goods_store",
+"hospital",
+"insurance_agency",
+"jewelry_store",
+"laundry",
+"lawyer",
+"library",
+"liquor_store",
+"local_government_office",
+"locksmith",
+"lodging",
+"meal_delivery",
+"meal_takeaway",
+"mosque",
+"movie_rental",
+"movie_theater",
+"moving_company",
+"museum",
+"night_club",
+"painter",
+"park",
+"parking",
+"pet_store",
+"pharmacy",
+"physiotherapist",
+"place_of_worship",
+"plumber",
+"police",
+"post_office",
+"real_estate_agency",
+"restaurant",
+"roofing_contractor",
+"rv_park",
+"school",
+"shoe_store",
+"shopping_mall",
+"spa",
+"stadium",
+"storage",
+"store",
+"subway_station",
+"synagogue",
+"taxi_stand",
+"train_station",
+"travel_agency",
+"university",
+"veterinary_care",
+"zoo",
+];
+var csrftoken = '{{ csrf_token }}';
+var url_prefix = '{{url_prefix}}';
+var searchBox;
+
+var PanGoogle = function() {
+  $('#map-canvas').css('z-index', 2);
+  $('#map-canvas').css('opacity', 1);
+  $('#google-frame').css('z-index', 1);
+  $('#google-frame').css('opacity', 0);
+  $('#map-close').show();
+};
+ 
+var NoPanGoogle = function() {
+  $('#map-canvas').css('z-index', 1);
+  $('#map-canvas').css('opacity', 0);
+  $('#google-frame').css('z-index', 2);
+  $('#google-frame').css('opacity', 1);
+  $('#map-close').hide();
+};
+var TestGoogleSearch = function() {
+  var q = $('#pac-input').val(),
+      iframe = $('#google-frame');
+  var loc = "https://www.google.com/maps/embed/v1/search?key=AIzaSyBDqDw7hBlO0EkzlbYeiP3UpS2jpEzSDfE&q=" + q;
+  iframe.attr('src', loc);  
+};
+
+var UpdateBounds = function(bounds) {
+    var ne = bounds.getNorthEast();
+    var sw = bounds.getSouthWest();
+    $('#top').val(ne.lat());
+    $('#bottom').val(sw.lat());
+    $('#left').val(sw.lng());
+    $('#right').val(ne.lng());
+};
+
+var GetJobs = function() {
+  $.get('../get_jobs/', {'type':'google_search'}).done(function(data){
+    if ('success' in data) {
+      return; 
+    }
+    var table = '<table class="pure-table pure-table-bordered" style="font: small medium/1.4 sans-serif;">';
+    table += '<thead><tr><td>job name</td><td>job status</td><td>job time (minutes)</td><td>job log</td></tr></thead>';
+    table += '<tbody>';
+    for (var i=0, n=data.length; i<n; i++) {
+      var item = data[i],
+          stat = item.status;
+      var stat_str = "";
+      if (stat == 0) {
+        stat_str = "Init"
+      } else if (stat == 1){
+        stat_str = "Pending"
+      } else if (stat == 2){
+        stat_str = "Working"
+      } else if (stat == 3){
+        stat_str = "Complete"
+      } else if (stat == 4){
+        stat_str = "Error"
+      }
+      if (item.uuid == '') {
+        table += '<tr><td>'+item.name+'</td>';
+      } else {
+        table += '<tr><td><a href="../main/?uuid='+item.uuid+'">'+item.name+'</a></td>';
+      }
+      table += '<td class="status'+stat+'">'+stat_str+'</td>';
+      table += '<td>'+item.time+'</td>';
+      table += '<td>'+item.log+'</td>';
+      table += '</tr>';
+    }
+    table += '</tbody>';
+    table += '</table>';
+    $('#google-jobs').empty().append(table);
+  });
+};
+
+var GetGeoDaData = function() {
+  $.get('../geoda_data/').done(function(data) {
+    if ('success' in data) {
+      return; 
+    }
+    var table = '<table class="pure-table pure-table-bordered" style="font: medium medium/0.8 sans-serif;width:98%;">';
+    table += '<thead><tr><td>Data Name</td><td>Description</td><td># Obs</td><td>Tags</td><td>Operation</td></tr></thead>';
+    table += '<tbody>';
+    for (var i=0, n=data.length; i<n; i++) {
+      var item = data[i];
+      table += '<td><a href="../main/?uuid='+item.uuid+'" target="_blank">'+item.name+'</a></td>';
+      table += '<td>'+item.description+'</td>';
+      table += '<td>'+item.n+'</td>';
+      table += '<td></td>';
+      table += '<td>';
+	  table += '<a href="../download_map/?layer_uuid='+item.uuid+'" target="_blank">Download</a>&nbsp;&nbsp;';
+	  table += '<a href="../tag_map/?layer_uuid='+item.uuid+'" target="_blank">Tag this data</a>&nbsp;&nbsp;';
+	  if (item.incloud) {
+		table += 'In my cloud&nbsp;&nbsp;';
+	  } else {
+		table += '<a href="#" onclick="SaveToMyCloud(\''+item.uuid+'\');">Save to my cloud</a>&nbsp;&nbsp;';
+	  }
+	  table += '</td>';
+      table += '</tr>';
+    }
+    table += '</tbody>';
+    table += '</table>';
+    $('#geoda-data').empty().append(table);
+  });
+};
+
+var SaveToMyCloud = function(uuid) {
+  $.get('../saveas_map/',{"layer_uuid":uuid}).done(function(data) {
+    if ('success' in data) {
+	  if (data.success == 1) {
+		ShowMsgBox("", "The table has been copied to your cloud successfully. You can open it in Spatial Analysis.");
+	  } else {
+		ShowMsgBox("Error", "Failed to copy this table to your cloud successfully.");
+	  }
+    }
+  });
+};
+
+$(document).ready(function() {
+  GetGeoDaData();
+  $('#btn_logout').click(function(){
+    $.post("../logout/", {'csrfmiddlewaretoken' : csrftoken})
+    .done(function(data) {
+      location.reload();
+    });
+  });
+  
+  $('#progress_bar_googlesearch').hide();
+  $( "#dlg-msg" ).dialog({
+    dialogClass: "dialogWithDropShadow",
+    width: 400, height: 200, autoOpen: false, modal: true,
+    buttons: {OK: function() {$( this ).dialog( "close" );}}
+  }).hide();
+  $('#keywords').autocomplete({
+    source: google_types
+  });
+  $('.tabs .tab-links a').on('click', function(e)  {
+    var currentAttrValue = $(this).attr('href');
+    // Show/Hide Tabs
+   $('.tabs ' + currentAttrValue).fadeIn(400).siblings().hide();
+
+   // Change/remove current tab to active
+   $(this).parent('li').addClass('active').siblings().removeClass('active');
+
+   e.preventDefault();
+  });
+  $('#google-open-data-accordion').accordion({
+    collapsible: true,
+    autoHeight: false,
+    navigation: true
+  });
+  $('#google-tabs').tabs();
+  $('#top, #left, #right, #bottom').prop('disabled', false);
+  $('#sel-poly-layer').prop('disabled', true);
+
+  $('#search1').change(function(){
+    $('#top, #left, #right, #bottom').prop('disabled', false);
+    $('#sel-poly-layer').prop('disabled', true);
+  });
+
+  $('#search2').change(function(){
+    $('#top, #left, #right, #bottom').prop('disabled', true);
+    $('#sel-poly-layer').prop('disabled', false);
+  });
+  $('#test-google-search').click(function(){
+    var keywords = $('#keywords').val();
+    var area = $('#area').val();
+    var q = keywords + ' in ' + area;
+    var input = document.getElementById('pac-input');
+    input.value = q;
+    google.maps.event.trigger(input, 'focus');
+    google.maps.event.trigger(input, 'keydown', {
+      keyCode: 13
+    });
+  });
+  // setup google map for setting bbox
+  var map = new google.maps.Map(document.getElementById('map-canvas'), {
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  });
+  var defaultBounds = new google.maps.LatLngBounds(
+      new google.maps.LatLng(-33.8902, 151.1759),
+      new google.maps.LatLng(-33.8474, 151.2631));
+  map.fitBounds(defaultBounds);
+  var input = document.getElementById('pac-input');
+  searchBox = new google.maps.places.SearchBox((input));
+  google.maps.event.addListener(searchBox, 'places_changed', function() {
+    TestGoogleSearch();
+    var places = searchBox.getPlaces();
+    if (places.length == 0) {
+      return;
+    }
+    var bounds = new google.maps.LatLngBounds();
+    for (var i = 0, place; place = places[i]; i++) {
+      bounds.extend(place.geometry.location);
+    }
+    UpdateBounds(bounds);
+    map.fitBounds(bounds);
+  });
+  google.maps.event.addListener(map, 'bounds_changed', function() {
+    var bounds = map.getBounds();
+    UpdateBounds(bounds);
+    searchBox.setBounds(bounds);
+  });
+  $('#map-close').hide().click(function(){
+    NoPanGoogle();
+  });
+
+  $('#submit_google_search').click(function(){
+    var keywords = $('#keywords').val().toLowerCase(),
+        area = $('#area').val(),
+        top = $('#top').val(),
+        bottom = $('#bottom').val(),
+        left = $('#left').val(),
+        right = $('#right').val(),
+        key = $('#google-key').val(),
+        k = $('#google-k').val(),
+        name = $('#google-filename').val();
+    if (!keywords || !area || !top || !bottom || !left || !right || !key || !name || !k) {
+      ShowMsgBox("", "Please fill all required items before submit.");
+      return;
+    }
+    if (/^[_A-Za-z0-9]*$/.test(name)==false) {
+      ShowMsgBox("", "The name of searching data is not valid. Note: only valid characters (e.g a-z A-Z 0-9) are allowed");
+      return;
+    }
+    var q = ''; 
+    if (google_types.indexOf(keywords)==-1) {
+      q = 'name=' + keywords;
+    } else {
+      q = 'types=' + keywords;
+    }
+    var params = {
+      'q' : q,
+      'top' : top,
+      'right':right,
+      'bottom': bottom,
+      'left': left,
+      'bounds' : [[top, right], [bottom, left]],
+      'gkey' : key,
+      'name' : name,
+      'k' : k,
+    };
+    $('#progress_bar_googlesearch').show();
+    $.get('../google_search/', params).done(function(data) {
+      $('#progress_bar_googlesearch').hide();
+      if ('error' in data) {
+        ShowMsgBox("Error", data['error']);
+        return;
+      }
+      //$('#pac-input, #keywords, #area, #top, #bottom, #left, #right, #google-key, #google-filename').val('');
+      ShowMsgBox("", "Search job was created successfully. Please check the status in 'Check the status of exiting search'");
+      $('#google-tabs').tabs({selected: 1});
+     });
+  });
+  $('#google-jobs-refresh').click(function(){
+    GetJobs();
+  });
+  GetJobs();
+});
+</script>
+
+</head>
+
+<body>
+<div class="header">
+  <table class="toolbar_tbl" align="left" >
+    <tr>
+      <td width=160"><img id="logo" src="../../media/img/pysalweb-logo.png"></td>
+      <td width=160>
+        <a class="title_link" href="../main/" target="_blank">Spatial Analysis</a>
+      </td>
+      <td width=120>
+        <font color="#ffaf4b">Open Data</font>
+      </td>
+      <td width=70>
+        <a class="title_link" class="" href="../open_data/" target="_blank">APIs</a>
+      </td>
+      <td width=120>
+        <a class="title_link" href="../open_data/" target="_blank">Documents</a>
+      </td>
+      <td width=100>
+        <a class="title_link" href="../open_data/" target="_blank">My Account</a>
+      </td>
+      <td class="righttd">
+        <img id="account" src="../../media/img/user.png" align="">
+        <font size="2" style="margin-top:-2px">{{userid}}</font>
+        <button id="btn_logout">logout</button>
+      </td>
+    </tr>
+  </table>
+</div>
+<div class="content">
+  <div class="tabs">
+    <ul class="tab-links">
+        <li ><a href="#tab1">PySAL/GeoDa Open Data</a></li>
+        <li class="active"><a href="#tab2">Google Maps Data</a></li>
+        <li><a href="#tab3">Socrato Open Data</a></li>
+        <li><a href="#tab4">China Data Center</a></li>
+    </ul>
+ 
+    <div class="tab-content">
+        <div id="tab1" class="tab">
+          <br>
+          <br>
+		  <div style="margin-left:100px;">
+              <form class="form-wrapper cf">
+                <input type="text" placeholder="Search PySAL/GeoDa open data here..." required>
+                <button type="submit">Search</button>
+              </form>   
+		  </div>
+          <br>
+          <br>
+          <br>
+          <br>
+          <div id="geoda-data"></div>
+        </div>
+ 
+        <div id="tab2" class="tab active">
+          <table width='100%' height="100%">
+            <tr>
+              <td width=560 align='left' valign='top'>
+                <div id="google-tabs" style="height:600px">
+                  <ul>
+                    <li><a href="#google-tabs-1">Start a new search?</a></li>
+                    <li><a href="#google-tabs-2">Check the status of existing search?</a></li>
+                  </ul>
+                  <div id="google-tabs-1"> 
+                    <div id="google-open-data-accordion">
+                      <h3>Step 1</h3>
+                      <div style="text-align: left">
+                        <p> Please try to search the objects in a specific area in Google Maps. You can determine your search <b>keywords</b>, and the <b>search area</b> in this step.(Results will be shown in Google Map on the right.)
+                        </p>
+                        <input id="keywords" type="text" placeholder="Keywords (e.g. Liquor Stores)" size=30> in 
+                        <input id="area" type="text" placeholder="Area (e.g. Chicago, AZ)" size=30>
+                        <button id="test-google-search" type="button">Search</button><br/>
+                        <input id="pac-input" type="hidden" placeholder="Keywords (e.g. Liquor Stores in Chicago, AZ)" size=55> 
+                        <br/><br/>
+                        Tips: Keywords supported by Google Maps
+    <table>
+     <tr><td>
+      <ul>
+        <li><code>accounting</code></li>
+        <li><code>airport</code></li>
+        <li><code>amusement_park</code></li>
+        <li><code>aquarium</code></li>
+        <li><code>art_gallery</code></li>
+        <li><code>atm</code></li>
+        <li><code>bakery</code></li>
+        <li><code>bank</code></li>
+        <li><code>bar</code></li>
+        <li><code>beauty_salon</code></li>
+        <li><code>bicycle_store</code></li>
+        <li><code>book_store</code></li>
+        <li><code>bowling_alley</code></li>
+        <li><code>bus_station</code></li>
+        <li><code>cafe</code></li>
+        <li><code>campground</code></li>
+        <li><code>car_dealer</code></li>
+        <li><code>car_rental</code></li>
+        <li><code>car_repair</code></li>
+        <li><code>car_wash</code></li>
+        <li><code>casino</code></li>
+        <li><code>cemetery</code></li>
+        <li><code>church</code></li>
+        <li><code>city_hall</code></li>
+        <li><code>clothing_store</code></li>
+        <li><code>convenience_store</code></li>
+        <li><code>courthouse</code></li>
+        <li><code>dentist</code></li>
+        <li><code>department_store</code></li>
+        <li><code>doctor</code></li>
+        <li><code>electrician</code></li>
+        <li><code>electronics_store</code></li>
+      </ul>
+    </td>
+    <td>
+      <ul>
+        <li><code>embassy</code></li>
+        <li><code>establishment</code></li>
+        <li><code>finance</code></li>
+        <li><code>fire_station</code></li>
+        <li><code>florist</code></li>
+        <li><code>food</code></li>
+        <li><code>funeral_home</code></li>
+        <li><code>furniture_store</code></li>
+        <li><code>gas_station</code></li>
+        <li><code>general_contractor</code></li>
+        <li><code>grocery_or_supermarket</code></li>
+        <li><code>gym</code></li>
+        <li><code>hair_care</code></li>
+        <li><code>hardware_store</code></li>
+        <li><code>health</code></li>
+        <li><code>hindu_temple</code></li>
+        <li><code>home_goods_store</code></li>
+        <li><code>hospital</code></li>
+        <li><code>insurance_agency</code></li>
+        <li><code>jewelry_store</code></li>
+        <li><code>laundry</code></li>
+        <li><code>lawyer</code></li>
+        <li><code>library</code></li>
+        <li><code>liquor_store</code></li>
+        <li><code>local_government_office</code></li>
+        <li><code>locksmith</code></li>
+        <li><code>lodging</code></li>
+        <li><code>meal_delivery</code></li>
+        <li><code>meal_takeaway</code></li>
+        <li><code>mosque</code></li>
+        <li><code>movie_rental</code></li>
+        <li><code>movie_theater</code></li>
+      </ul>
+    </td>
+    <td>
+      <ul>
+        <li><code>moving_company</code></li>
+        <li><code>museum</code></li>
+        <li><code>night_club</code></li>
+        <li><code>painter</code></li>
+        <li><code>park</code></li>
+        <li><code>parking</code></li>
+        <li><code>pet_store</code></li>
+        <li><code>pharmacy</code></li>
+        <li><code>physiotherapist</code></li>
+        <li><code>place_of_worship</code></li>
+        <li><code>plumber</code></li>
+        <li><code>police</code></li>
+        <li><code>post_office</code></li>
+        <li><code>real_estate_agency</code></li>
+        <li><code>restaurant</code></li>
+        <li><code>roofing_contractor</code></li>
+        <li><code>rv_park</code></li>
+        <li><code>school</code></li>
+        <li><code>shoe_store</code></li>
+        <li><code>shopping_mall</code></li>
+        <li><code>spa</code></li>
+        <li><code>stadium</code></li>
+        <li><code>storage</code></li>
+        <li><code>store</code></li>
+        <li><code>subway_station</code></li>
+        <li><code>synagogue</code></li>
+        <li><code>taxi_stand</code></li>
+        <li><code>train_station</code></li>
+        <li><code>travel_agency</code></li>
+        <li><code>university</code></li>
+        <li><code>veterinary_care</code></li>
+        <li><code>zoo</code></li>
+      </ul>
+    </td></tr>
+    </table>
+                      </div>
+                      <h3>Step 2</h3>
+                      <div>
+                        <p>Please specify the search area in details by either define a searching box or using a map layer (ShapeType=Polygon)</p>
+                        <p>
+                          <input type="radio" name="group1" id="search1" checked>Search in a bounding box:<br>
+                            <br/>&nbsp;&nbsp;Click <img id="panImg" onclick="PanGoogle();" src="../../media/img/pan.png"> to automatically fill the bounds by panning/zooming the right side Google Map.<br/>
+                           <div style="margin-left:20px;border:1px solid #000000;width:400px;padding-left:40px;">
+                            <p style="margin-left:100px;">
+                              Top: <input type="text" size="20" id="top" name="top" value="38.900881">
+                            </p>
+                            <p>
+                              Left: <input type="text" size="20" id="left" name="left" value="-77.041579">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                              Right: <input type="text" size="20" id="right" name="right" value="-77.007247">
+                            </p>
+                            <p style="margin-left:100px;">
+                              Bottom: <input type="text" size="20" id="bottom" name="bottom" value="38.885851">
+                            </p>
+                          </div><br/>
+                          <br/><br/><br/>
+                          <input type="radio" name="group1" id="search2">Or, search in a map(polygon) layer: <select id="sel-poly-layer"></select>
+                        </p>
+                        <br/><br/><br/>
+                      </div>
+                      <h3>Step 3</h3>
+                      <div>
+                        <p>Great! You already defined your search keywords and specified the search area. Please input your Google Maps API, and we will use your API to retrieve data from Google Maps. The results will be stored in your spatial data space.</p>
+                        <p>
+                          Input the size of grid (N x N)that we will use to divide the search area into small piecies for searching. N=<input id="google-k" type="text" size=10 value="3">
+                        </p>
+                        <p>
+                          Your Google Maps API key: <br/><input id="google-key" type="text" size=45 value="{{google_key}}">
+                        </p>
+                        <p>
+                          Input a name of the searching data (must be a single word with valid characters [0-9a-zA-Z]): <br/><input id="google-filename" type="text" size=45>
+                        </p>
+                        <p><button type="button" id="submit_google_search">Submit my search request</button></p> 
+                        <br/>
+                        <div id="progress_bar_googlesearch"><img src="../../media/img/progress-bar.gif"></div>
+                      </div>
+                    </div>
+                  </div> 
+                  <div id="google-tabs-2"> 
+                    <button id="google-jobs-refresh" >Refresh</button>
+                    <br/><br/>
+                    <div class="fixed_height"><div id="google-jobs"></div></div>
+                  </div> 
+                </div>
+              </td>
+              <td width=20></td>
+              <td style="position:relative;">
+                <div class="overlay" id="map-canvas" ></div>
+                <iframe id='google-frame' class="overlay" src="https://www.google.com/maps/embed/v1/search?key=AIzaSyBDqDw7hBlO0EkzlbYeiP3UpS2jpEzSDfE&q=liquor store in chicago, IL" width="100%" height="100%" frameborder="0"></iframe>
+                <div id="map-cover"></div>
+                <button type="button" id="map-close">Switch to search results</button>
+              </td>
+            </tr>
+          </table>
+        </div>
+ 
+        <div id="tab3" class="tab">
+            <p>Tab #3 content goes here!</p>
+			
+		  <img src="{{url_prefix}}/media/img/socratalogo.png" style="margin:5px"><br/>
+		  <table>
+			<tr>
+			  <td>Socrata data url:</td>
+			  <td>
+				<input type="text" id="txt-socrata-url" size=55 value="">
+			  </td>
+			</tr>
+		  </table>
+        </div>
+ 
+        <div id="tab4" class="tab">
+            <p>Tab #4 content goes here!</p>
+        </div>
+    </div>
+</div>
+</div>
+<div id="dlg-msg" title="Message">
+  <div class="text-align:left;">
+    <p class="font-weight:bold;" id="msg-title"></p>
+    <p id="msg-content" class="text-align:left;"></p>
+  </div>
+</div>
+</body>
+</html>
