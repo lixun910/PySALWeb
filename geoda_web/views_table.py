@@ -10,8 +10,8 @@ from django.db import models
 from django.shortcuts import render
 from django.db import connections, DEFAULT_DB_ALIAS
 
-from myproject.myapp.models import Geodata, Jobs
-from myproject.myapp.forms import DocumentForm
+from geoda_web.models import Geodata, Jobs
+from geoda_web.forms import DocumentForm
 
 import logging, os, zipfile, shutil, time
 
@@ -66,7 +66,7 @@ def get_table(request):
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
     if request.method == 'GET': 
         layer_uuid = request.GET.get("layer_uuid","")
-        attrs = {'__module__': 'myproject.myapp.models'}
+        attrs = {'__module__': 'geoda_web.models'}
         connection = connections['default']
         cursor = connection.cursor() 
         for table_name in connection.introspection.table_names(cursor):

@@ -19,7 +19,7 @@ import zipfile
 import urllib
 from hashlib import md5
 
-from myproject.myapp.models import Document, Geodata, Weights, SpregModel, MapConfigure
+from geoda_web.models import Document, Geodata, Weights, SpregModel, MapConfigure
 from views_utils import * 
 from views_utils import Save_new_shapefile
 

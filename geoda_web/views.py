@@ -9,8 +9,8 @@ from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
 
-from myproject.myapp.models import Document, Weights, Geodata, Preference
-from myproject.myapp.forms import DocumentForm
+from geoda_web.models import Document, Weights, Geodata, Preference
+from geoda_web.forms import DocumentForm
 
 import logging, os
 from hashlib import md5
@@ -166,7 +166,7 @@ def list(request):
             newdoc.save()
 
             # Redirect to the document list after POST
-            return HttpResponseRedirect(reverse('myproject.myapp.views.list'))
+            return HttpResponseRedirect(reverse('geoda_web.views.list'))
     else:
         form = DocumentForm() # A empty, unbound form
 

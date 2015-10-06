@@ -18,6 +18,9 @@ class Document(models.Model):
     #filename = models.CharField(max_length=255)
     #docfile = models.FileField(upload_to=get_upload_path,storage=OverwriteStorage())
     docfile = models.FileField(upload_to=get_upload_path)
+    
+    class Meta:
+        db_table = "myapp_document"
 
 class MapConfigure(models.Model):
     uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
@@ -27,6 +30,9 @@ class MapConfigure(models.Model):
     name = models.CharField(max_length=255)
     # configuration
     configuration = models.TextField()
+    
+    class Meta:
+        db_table = "myapp_mapconfigure"    
     
 class Geodata(models.Model):
     # layer uuid: md5('temp/023420/xx.shp')
@@ -49,6 +55,9 @@ class Geodata(models.Model):
     description = models.TextField()
     minpairdist = models.FloatField(null=True, blank=True)
     thumbnail = models.URLField()
+    
+    class Meta:
+        db_table = "myapp_geodata"    
 
 class Weights(models.Model):
     #md5([username,shpfilename,wname])
@@ -63,6 +72,9 @@ class Weights(models.Model):
     histogram = models.TextField()
     neighbors = models.TextField()
     weights = models.TextField()
+    
+    class Meta:
+        db_table = "myapp_weights"    
 
 class Preference(models.Model):
     userid = models.CharField(max_length=80, unique=True, db_index=True, primary_key=True)
@@ -71,6 +83,9 @@ class Preference(models.Model):
     cartodb = models.CharField(max_length=255)
     googlekey = models.CharField(max_length=255)
     
+    class Meta:
+        db_table = "myapp_preference"    
+    
 class SpregModel(models.Model):
     #md5([userid,layeruuid])
     userid = models.CharField(max_length=80)
@@ -78,6 +93,9 @@ class SpregModel(models.Model):
     name = models.CharField(max_length=255)
     content = models.TextField()
     
+    class Meta:
+        db_table = "myapp_spregmodel"    
+
 class Jobs(models.Model):
     uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
     userid = models.CharField(max_length=80)
@@ -88,9 +106,15 @@ class Jobs(models.Model):
     log = models.TextField()
     time = models.FloatField(null=True, blank=True)
     
+    class Meta:
+        db_table = "myapp_jobs"    
+    
 class CartoViz(models.Model):
     uuid = models.CharField(max_length=64, unique=True, db_index=True, primary_key=True)
     userid = models.CharField(max_length=80)
     name = models.CharField(max_length=255)
     type = models.IntegerField()
+    
+    class Meta:
+        db_table = "myapp_cartoviz"    
     

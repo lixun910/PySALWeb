@@ -9,7 +9,7 @@ from django.db import connections, DEFAULT_DB_ALIAS
 
 from pysal.weights.user import get_points_array_from_shapefile
 from scipy.spatial import cKDTree
-from myproject.myapp.models import Geodata
+from geoda_web.models import Geodata
 
 TBL_PREFIX = "myapp_"
 db_set = settings.DATABASES['default']

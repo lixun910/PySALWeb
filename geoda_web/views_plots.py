@@ -17,7 +17,7 @@ from pysal import open as pysalOpen
 from pysal.core.IOHandlers.gal import GalIO as GAL
 from pysal.core.IOHandlers.gwt import GwtIO as GWT
 
-from myproject.myapp.models import Document, Geodata, Weights
+from geoda_web.models import Document, Geodata, Weights
 import GeoDB
 from views_utils import *
 from weights_dispatcher import CreateWeights

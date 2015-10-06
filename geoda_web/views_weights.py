@@ -18,7 +18,7 @@ from pysal import open as pysalOpen
 from pysal.core.IOHandlers.gal import GalIO as GAL
 from pysal.core.IOHandlers.gwt import GwtIO as GWT
 
-from myproject.myapp.models import Weights, Preference
+from geoda_web.models import Weights, Preference
 import GeoDB
 from views_utils import get_file_url, create_w_uuid, helper_get_W, RSP_FAIL, RSP_OK
 from weights_dispatcher import CreateWeights

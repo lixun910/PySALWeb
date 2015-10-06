@@ -9,7 +9,7 @@ from django.contrib import admin
 
 
 urlpatterns = patterns('',
-    (r'myapp/', include('myproject.myapp.urls')),
+    (r'myapp/', include('geoda_web.urls')),
     (r'^$', RedirectView.as_view(url=settings.URL_PREFIX + '/myapp/login/')), # Just for ease of use.
 ) 
 

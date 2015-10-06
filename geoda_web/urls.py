@@ -9,8 +9,8 @@ urlpatterns = patterns('',
     url(r'^mylogout/$', 'django.contrib.auth.views.logout', name='logout'),
 )
                        
-urlpatterns += patterns('myproject.myapp.views',
-    #url(r'^open_data/$', TemplateView.as_view(template_name='myapp/open_data.html')),
+urlpatterns += patterns('geoda_web.views',
+    #url(r'^open_data/$', TemplateView.as_view(temdplate_name='myapp/open_data.html')),
     url(r'^dup_email/$', 'dup_email', name='dup email'),
     url(r'^signup/$', 'my_signup', name='signup'),
     url(r'^login/$', 'my_login', name='login'),
@@ -21,15 +21,15 @@ urlpatterns += patterns('myproject.myapp.views',
     url(r'^index/$','index', name='index'), 
 ) 
 
-urlpatterns += patterns('myproject.myapp.views_table',
+urlpatterns += patterns('geoda_web.views_table',
     url(r'^get_table/$', 'get_table', name='get table'),
 )
 
-urlpatterns += patterns('myproject.myapp.views_jobs',
+urlpatterns += patterns('geoda_web.views_jobs',
     url(r'^get_jobs/$', 'get_jobs', name='get jobs'),
 )
 
-urlpatterns += patterns('myproject.myapp.views_opendata',
+urlpatterns += patterns('geoda_web.views_opendata',
     url(r'^get_google_key/$', 'get_google_key', name='get google key'),
     url(r'^save_google_key/$', 'save_google_key', name='save google key'),
     url(r'^open_data/$', 'open_data', name='open data portal'),
@@ -38,13 +38,13 @@ urlpatterns += patterns('myproject.myapp.views_opendata',
     url(r'^google_search_carto/$', 'google_search_carto', name='google search to CartoDB'),
 )
 
-urlpatterns += patterns('myproject.myapp.views_plots',
+urlpatterns += patterns('geoda_web.views_plots',
     url(r'^histogram/$', 'histogram', name='histogram'),
     url(r'^scatter_plot/$', 'scatter_plot', name='scatter plot'),
     url(r'^moran_scatter_plot/$', 'moran_scatter_plot', name='moran scatter plot'),
 )
 
-urlpatterns += patterns('myproject.myapp.views_cartodb',
+urlpatterns += patterns('geoda_web.views_cartodb',
     url(r'^get_cartodb_account/$', 'get_cartodb_account', name='get cartodb account'),
     url(r'^save_cartodb_account/$', 'save_cartodb_account', name='save cartodb account'),
     url(r'^carto_get_tables/$', 'carto_get_tables', name='carto get tables'),
@@ -55,7 +55,7 @@ urlpatterns += patterns('myproject.myapp.views_cartodb',
     url(r'^carto_add_field_from_file/$', 'carto_add_field_from_file', name='carto field from csv file'),
 )
 
-urlpatterns += patterns('myproject.myapp.views_map',
+urlpatterns += patterns('geoda_web.views_map',
     url(r'^get_dropbox_data/$', 'get_dropbox_data', name='get map data dropbox'),
     url(r'^get_map_names/$', 'get_map_names', name='get map names'),
     url(r'^get_map_conf/$', 'get_configure', name='get map configuration'),
@@ -80,7 +80,7 @@ urlpatterns += patterns('myproject.myapp.views_map',
     url(r'^upload_canvas/$', 'upload_canvas', name='upload canvas'),
     url(r'^draw/$', TemplateView.as_view(template_name='myapp/draw.html')),
 )    
-urlpatterns += patterns('myproject.myapp.views_weights',
+urlpatterns += patterns('geoda_web.views_weights',
     url(r'^add_UID/$', 'add_Unique_ID', name='add unique ID'),
     url(r'^check_ID/$', 'check_ID', name='check if field unique'),
     url(r'^download_w/$', 'download_w', name=''),
@@ -89,7 +89,7 @@ urlpatterns += patterns('myproject.myapp.views_weights',
     url(r'^get_weights_names/$', 'get_weights_names', name=''),
     url(r'^weights/$', TemplateView.as_view(template_name='myapp/weights.html')),
 )    
-urlpatterns += patterns('myproject.myapp.views_spreg',
+urlpatterns += patterns('geoda_web.views_spreg',
     url(r'^get_spreg_p/$', 'load_spreg_preference', name='load spreg preference'),
     url(r'^save_spreg_p/$', 'save_spreg_preference', name='save spreg preference'),
     url(r'^save_spreg_model/$', 'save_spreg_model', name='save spreg model'),

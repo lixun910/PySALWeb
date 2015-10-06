@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <title>GeoDa.app</title>
 <style>
+html { 
+  background: url({{url_prefix}}/media/img/bg.jpg) no-repeat center center fixed; 
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
 #login {
     width: 80%;
     height: 500px;
@@ -106,7 +113,7 @@
           <a href="{% url 'social:begin' 'facebook' %}?next={{ request.path }}"><img src="../../media/img/login-facebook.png"></a>
         </p>
         <p style="text-align:center">
-          <a href="{% url 'social:begin' 'google' %}?next={{ request.path }}"><img src="../../media/img/login-google.png"></a>
+          <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ request.path }}"><img src="../../media/img/login-google.png"></a>
         </p>
         <br>
       </div>

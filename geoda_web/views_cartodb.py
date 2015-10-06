@@ -7,8 +7,8 @@ from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
 
-from myproject.myapp.models import Geodata, CartoViz, Preference
-from myproject.myapp.forms import DocumentForm
+from geoda_web.models import Geodata, CartoViz, Preference
+from geoda_web.forms import DocumentForm
 
 import logging, os, zipfile, shutil
 from hashlib import md5

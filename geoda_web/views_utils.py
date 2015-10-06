@@ -12,7 +12,7 @@ from hashlib import md5
 from pysal import W, w_union, higher_order
 import GeoDB
 import multiprocessing as mp
-from myproject.myapp.models import Geodata
+from geoda_web.models import Geodata
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ RSP_FAIL = '{"success":0}'
 Get reletive url of shape files that user uploaded to server.
 """
 def get_file_url(userid, layer_uuid):
-    from myproject.myapp.models import Document, Geodata
+    from geoda_web.models import Document, Geodata
     try:
         geodata = Geodata.objects.get(uuid=layer_uuid)
         file_path = os.path.join(settings.MEDIA_ROOT, geodata.filepath)
@@ -53,7 +53,7 @@ def load_from_json(json_str):
 Get W object from database using weights uuid
 """
 def helper_get_W(wuuid):
-    from myproject.myapp.models import Weights
+    from geoda_web.models import Weights
     w_record = Weights.objects.get(uuid=wuuid)
     if w_record:
         neighbors_dict = {}

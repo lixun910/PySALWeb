@@ -8,7 +8,7 @@ import google
 
 def job_google_search(userid, uuid, q,bounds,apikey, name, opath,k=3):
     start_time = time.time()
-    from myproject.myapp.models import Jobs
+    from geoda_web.models import Jobs
     job = Jobs.objects.get(uuid=uuid)
     job.status = 2
     job.save()

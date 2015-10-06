@@ -7,7 +7,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 
-from myproject.myapp.models import Weights, Geodata, Preference,SpregModel
+from geoda_web.models import Weights, Geodata, Preference,SpregModel
 from views_cartodb import cartodb_contiguity_w, cartodb_distance_w, cartodb_kernel_w, cartodb_get_columns
 
 import logging
