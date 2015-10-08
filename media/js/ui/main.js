@@ -1,7 +1,15 @@
 
 // Author: xunli at asu.edu
 define(['jquery', 
-        './layertree','./toolbar','./uiManager', './msgbox', './cartoProxy', './openfileDlg',  './mapManager', 'jqueryui', 'jquery.ui.touch-punch'], 
+        './layertree',
+        './toolbar',
+        './uiManager', 
+        './msgbox', 
+        './cartoProxy', 
+        './openfileDlg',  
+        './mapManager', 
+        'jqueryui', 
+        'jquery.ui.touch-punch'], 
         
 function($, LayerTree, Toolbar, UIManager, MsgBox,  CartoProxy, FileDlg, MapManager) {
 

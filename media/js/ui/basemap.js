@@ -30,7 +30,7 @@ var GDABasemap = (function($, L, cartodb){
     'http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     ];
       
-    var tileIdx = 0;
+    var tileIdx = 3;
     var tileProviders = {};
     tileProviders[tileUrls[0]] = cartodb_att;
     tileProviders[tileUrls[1]] = esri_att;
@@ -44,7 +44,7 @@ var GDABasemap = (function($, L, cartodb){
     var mapProviders = mapProvider.children();
     var currentTileUrl = tileUrls[tileIdx];
     $(mapProviders[0]).css({'border':'2px solid orange'});
-
+    
     function OnMapInfoChange() {
       if ($('#mapInfo').is(':hidden') ) {
         $('.hl-canvas')[0].style.pointerEvents = 'auto';
@@ -64,6 +64,9 @@ var GDABasemap = (function($, L, cartodb){
     });
     
     function CreateBaseLayer() {
+      
+      $('#map').css("opacity",1);
+      
       // remove previous basemap
       if (baselayer) {
         lmap.removeLayer(baselayer);

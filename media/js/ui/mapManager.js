@@ -113,6 +113,7 @@ var Manager = (function(window){
     
     require(['ui/basemap'], function(BaseMap){
       basemap = BaseMap.getInstance();
+      $('#map').css("opacity",0);
     });
     
     var Lmove_start, Lmove, Lmove_end, gOffsetX, gOffsetY;
@@ -160,6 +161,7 @@ var Manager = (function(window){
     
     //create basemap
     function OnAddMap(map) {
+    $('#map').css("opacity",1);
       // create a HTML5 canvas object for this map
       var canvas = $('<canvas/>', {'id':numMaps}).attr('class','paint-canvas');
       container.append(canvas);

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>GeoDa.app</title>
 <style>
-html { 
-  background: url({{url_prefix}}/media/img/bg3.jpg) no-repeat center center fixed; 
+body { 
+  background: url({{url_prefix}}/media/img/bg.jpg) no-repeat center center fixed; 
   -webkit-background-size: cover;
   -moz-background-size: cover;
   -o-background-size: cover;
@@ -62,9 +62,9 @@ font-weight: bold;
 height: auto;
 line-height: 20px;
 text-decoration: none;
-text-shadow: rgba(0, 0, 0, 0.298039) 0px 1px 0px;
+text-shadow: rgba(0, 0, 0, 0.298039) 0px 8px 8px;
 width: auto;
-margin-top: 20px;
+margin-top: 15px;
 }
 h2 {
 text-align: left;
@@ -77,21 +77,21 @@ font-weight: normal;
 height: 66px;
 line-height: 33.6px;
 margin-bottom: 20px;
-margin-left: 0px;
+margin-left: 30px;
 margin-right: 0px;
-margin-top: 15px;
+margin-top: 25px;
 padding-left: 49px;
-padding-right: 40px;
 text-rendering: optimizeLegibility;
 text-shadow: rgba(0, 0, 0, 0.298039) 0px 1px 0px;
+width: auto;
 }
 /* CSSTerm.com Simple CSS menu */
 
 .menu_simple ul {
-    margin-left: 180px; 
-    margin-top: 120px;
+    margin-left: 80px; 
+    margin-top: 80px;
     padding: 0;
-    width:285px;
+    width:405px;
     list-style-type: none;
 }
 
@@ -106,8 +106,10 @@ color: rgb(255, 255, 255);
 text-align: left;
 text-decoration: none;
 text-shadow: rgba(0, 0, 0, 0.298039) 0px 1px 0px;
+text-shadow: rgba(0, 0, 0, 0.298039) 0px 4px 4px;
+
 font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-font-size: 13px;
+font-size: 18px;
 height: 14px;
 line-height: 14px;
     text-decoration: none;
@@ -124,6 +126,71 @@ line-height: 14px;
     color: white;
 }
 
+.btn-block {
+-webkit-font-smoothing: antialiased;
+background-repeat: repeat-x;
+border-radius: 2px;
+border-style: solid;
+border-width: 1px;
+border-image-outset: 0px;
+border-image-repeat: stretch;
+border-image-slice: 100%;
+border-image-source: none;
+border-image-width: 1;
+box-shadow: none;
+box-sizing: border-box;
+color: rgb(255, 255, 255);
+cursor: pointer;
+display: block;
+font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+font-size: 15px;
+font-weight: 500;
+height: 36px;
+line-height: 20px;
+margin-bottom: 17px;
+margin-top: 12px;
+padding-bottom: 7px;
+padding-left: 14px;
+padding-right: 14px;
+padding-top: 7px;
+position: relative;
+text-align: left;
+text-decoration: none;
+text-shadow: none;
+vertical-align: middle;
+width: 259px;
+}
+
+#facebook_login_button {
+background-color: rgb(59, 89, 152);
+background-image: linear-gradient(rgb(59, 89, 152), rgb(59, 89, 152));
+border-color: rgb(59, 89, 152);
+}
+#google_login_button {
+background-color: rgb(246, 109, 105);
+background-image: linear-gradient(rgb(246, 109, 105), rgb(246, 109, 105));
+border-color: rgb(246, 109, 105);
+}
+#twitter_login_button {
+background-color: rgb(75, 180, 221);
+background-image: linear-gradient(rgb(75, 180, 221), rgb(75, 180, 221));
+border-color: rgb(75, 180, 221);
+}
+#tumblr_login_button {
+background-color: rgb(54, 69, 94);
+background-image: linear-gradient(rgb(54, 69, 94), rgb(54, 69, 94));
+border-color: rgb(54, 69, 94);
+}
+#weibo_login_button {
+background-color: rgb(251, 145, 0);
+background-image: linear-gradient(rgb(251, 145, 0), rgb(251, 145, 0));
+border-color: rgb(251, 145, 0);
+}
+
+.login-button-icon {
+    vertical-align:middle;
+    margin-right:10px;
+}
 </style>
 
 <link rel="stylesheet" href="../../media/css/header.css" />
@@ -138,12 +205,12 @@ line-height: 14px;
 <body>
 <div style="width:100%;height:140px;"></div>
 <div class="content" style="width:80%;margin:0 auto;">
-  <div style="float:left;width:600px;margin-top:20px;">
+  <div style="float:left;width:400px;margin-top:20px;max-width:400px;display: inline-block;">
     
-    <img id="logo" style="float:left;text-align:top;margin-right:28px;opacity:0.8;" src="../../media/img/geoda-logo-white.png"> 
+    <img id="logo" style="float:left;text-align:top;margin-right:10px;" src="../../media/img/geoda-logo.png"> 
     <div class="geoda_title"> 
       GeoDa-Web
-      <h2 style="">The cloud based GeoDa <br>for your spatial data analysis.</h2>
+      <h2 style="">The cloud based GeoDa <br>for spatial data analysis.</h2>
     </div>
 
 <div class="menu_simple">
@@ -155,10 +222,10 @@ line-height: 14px;
 <li><a href="#">Contact</a></li>
 <li><a href="#">Help</a></li>
 <li><a href="#">About</a></li>
+<br><br><br>
 <li><a href="#">Copyright &copy; 2015 geodacenter.asu.edu</a></li>
 </ul>
 </div>
-
 
     
   </div>
@@ -182,25 +249,33 @@ line-height: 14px;
               </td>
             </tr>
           </table>
-          <br/><br/>
+          <br/>
           &nbsp;&nbsp;&nbsp;<font color="red" style="font-size:10px" face="Century Gothic">{{error_msg}}</font>
-          <br/><br/>
-          {% if error_msg != "" %}<br>
+          
+          {% if error_msg != "" %}<br><br>
           &nbsp;&nbsp;&nbsp;<font color="blue" style="font-size:10px" face="Century Gothic">Forget my password?</font>
           {% endif %}
           </form>
         </p>
-        <br/><br/>
-        <p style="border-top: 1px solid #ccc">
-        </p>
-        <p style="text-align:center">
-          <a href="{% url 'social:begin' 'twitter' %}?next={{ request.path }}"><img src="../../media/img/login-twitter.png"></a>
-        </p>
-        <p style="text-align:center">
-          <a href="{% url 'social:begin' 'facebook' %}?next={{ request.path }}"><img src="../../media/img/login-facebook.png"></a>
-        </p>
-        <p style="text-align:center">
-          <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ request.path }}"><img src="../../media/img/login-google.png"></a>
+        
+        <p style="border-top: 1px solid #ccc;text-align:center;"></p>
+        
+        <p style="margin-left:30px;margin-top:30px;">
+          <a id="facebook_login_button" class="btn-block" href="{% url 'social:begin' 'facebook' %}?next={{ request.path }}">
+          <img class="login-button-icon" src="../../media/img/button-icon-facebook.png"> Log in with Facebook
+          </a>   
+          <a id="google_login_button" class="btn-block" href="{% url 'social:begin' 'google-oauth2' %}?next={{ request.path }}">
+          <img class="login-button-icon" src="../../media/img/button-icon-google.png"> Log in with Google
+          </a> 
+          <a id="twitter_login_button" class="btn-block" href="{% url 'social:begin' 'twitter' %}?next={{ request.path }}">
+          <img class="login-button-icon" src="../../media/img/button-icon-twitter.png"> Log in with Twitter
+          </a> 
+          <a id="tumblr_login_button" class="btn-block" href="{% url 'social:begin' 'tumblr' %}?next={{ request.path }}">
+          <img class="login-button-icon" src="../../media/img/button-icon-tumblr.png"> Log in with Tumblr
+          </a> 
+          <a id="weibo_login_button" class="btn-block" href="{% url 'social:begin' 'weibo' %}?next={{ request.path }}">
+          <img class="login-button-icon" src="../../media/img/button-icon-weibo.png"> Log in with Weibo
+          </a> 
         </p>
         <br>
       </div>

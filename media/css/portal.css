@@ -113,7 +113,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   font-size: 150%;
   font-family: Verdana,Helvetica,Arial,sans-serif;
   color: #EEE;
-  background:#038D98;
+  background: rgb(48,48,50);
   -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
@@ -333,7 +333,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   width: 100%;
   min-width: 600px;
   height: 40px;
-  background-color: #038D98;
+  background-color: rgb(48,48,50);
   -webkit-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
   -moz-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
   box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
@@ -384,6 +384,8 @@ border: 1px solid #aaa;margin: 1px 10px;
   position: relative; 
   border: 0px solid red;
   width: 100%;
+  background: url("../img/bg.jpg") no-repeat center center fixed;
+  background-size: cover;
   height: -moz-calc(100% - 88px); /* Firefox */
   height: -webkit-calc(100% - 88px); /* Chrome, Safari */
   height: calc(100% - 88px); /* IE9+ and future browsers */
