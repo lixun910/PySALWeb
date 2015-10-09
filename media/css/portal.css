@@ -109,24 +109,31 @@ border: 1px solid #aaa;margin: 1px 10px;
   min-width: 600px;
   height: 48px;
   z-index: 9999;
-  opacity: 0.9;
   font-size: 150%;
   font-family: Verdana,Helvetica,Arial,sans-serif;
   color: #EEE;
-  background: rgb(48,48,50);
+  background: rgba(0,0,0,.6);
   -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
 }
 .logo {
-  width: 45px;
+  width: 240px;
   height: 40px;
-  margin: 5px 0 0 10px;
+  margin: 10px 0 0 10px;
   background: url("../img/geoda-logo.png") no-repeat;
+  background-size: 30px 29px;
   float: left;
   cursor: pointer;
   -webkit-filter: drop-shadow(10px 10px 10px #222);
     filter:         drop-shadow(10px 10px 10px #222); 
+  
+}
+.logo p {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+font-size: 28px;
+font-weight: bold;
+margin-top: -5px;
 }
 .header_topright {
   float: right;
@@ -333,7 +340,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   width: 100%;
   min-width: 600px;
   height: 40px;
-  background-color: rgb(48,48,50);
+  background-color: rgba(48,48,50,0.8);
   -webkit-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
   -moz-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
   box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
@@ -384,7 +391,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   position: relative; 
   border: 0px solid red;
   width: 100%;
-  background: url("../img/bg.jpg") no-repeat center center fixed;
+  background: url("../img/bg0.jpg") no-repeat center center fixed;
   background-size: cover;
   height: -moz-calc(100% - 88px); /* Firefox */
   height: -webkit-calc(100% - 88px); /* Chrome, Safari */

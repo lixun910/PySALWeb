@@ -5,11 +5,13 @@
 <title>GeoDa.app</title>
 <style>
 body { 
+/*
   background: url({{url_prefix}}/media/img/bg.jpg) no-repeat center center fixed; 
   -webkit-background-size: cover;
   -moz-background-size: cover;
   -o-background-size: cover;
   background-size: cover;
+  */
 }
 #login {
     width: 80%;
@@ -109,7 +111,7 @@ text-shadow: rgba(0, 0, 0, 0.298039) 0px 1px 0px;
 text-shadow: rgba(0, 0, 0, 0.298039) 0px 4px 4px;
 
 font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-font-size: 18px;
+font-size: 24px;
 height: 14px;
 line-height: 14px;
     text-decoration: none;
@@ -191,6 +193,32 @@ border-color: rgb(251, 145, 0);
     vertical-align:middle;
     margin-right:10px;
 }
+#wrap {
+position:absolute; 
+ background: url(../../media/img/bg0.jpg) no-repeat center center fixed; 
+        z-index:-1; 
+        top:0; 
+        left:0; 
+        background-color:black
+        width: 100%;
+        width: -moz-calc(100%); /* Firefox */
+  width: -webkit-calc(100%); /* Chrome, Safari */
+  width: calc(100%); /* IE9+ and future browsers */
+        height: 100%;
+        
+}
+#wrap img.bgfade{
+    position:absolute;
+    top:0;
+    left:0;
+    display:none;
+
+    z-index:-1
+    width: auto;
+    height: auto;
+    max-width:  -webkit-calc(100%); /* Chrome, Safari */
+    max-height:  -webkit-calc(100%); /* Chrome, Safari */
+}
 </style>
 
 <link rel="stylesheet" href="../../media/css/header.css" />
@@ -203,6 +231,15 @@ border-color: rgb(251, 145, 0);
 <link rel="stylesheet" href="{{url_prefix}}/media/css/{{theme_jquery}}/jquery-ui-1.10.4.custom.min.css">
 </head>
 <body>
+<div id="wrap">
+  
+  
+  <img class="bgfade" src="../../media/img/bg0.jpg">
+  <img class="bgfade" src="../../media/img/bg1.jpg">
+  <img class="bgfade" src="../../media/img/bg2.jpg">
+  <img class="bgfade" src="../../media/img/bg3.jpg">
+  
+</div>
 <div style="width:100%;height:140px;"></div>
 <div class="content" style="width:80%;margin:0 auto;">
   <div style="float:left;width:400px;margin-top:20px;max-width:400px;display: inline-block;">
@@ -210,20 +247,19 @@ border-color: rgb(251, 145, 0);
     <img id="logo" style="float:left;text-align:top;margin-right:10px;" src="../../media/img/geoda-logo.png"> 
     <div class="geoda_title"> 
       GeoDa-Web
-      <h2 style="">The cloud based GeoDa <br>for spatial data analysis.</h2>
+      <h2 style="">The cloud-based GeoDa <br>for spatial data analysis.</h2>
     </div>
 
 <div class="menu_simple">
 <ul>
 
-<li><a href="#">Examples</a></li>
-<li><a href="#">Projects</a></li>
+<li><a href="#">Gallery</a></li>
+<li><a href="#">Tutorial</a></li>
 <li><a href="#">APIs</a></li>
-<li><a href="#">Contact</a></li>
 <li><a href="#">Help</a></li>
 <li><a href="#">About</a></li>
-<br><br><br>
-<li><a href="#">Copyright &copy; 2015 geodacenter.asu.edu</a></li>
+<br><br><br><br>
+<li><a href="#" style="font-size: 18px;">Copyright &copy; 2015 geodacenter.asu.edu</a></li>
 </ul>
 </div>
 
@@ -328,6 +364,21 @@ border-color: rgb(251, 145, 0);
 </div>
 <script>
 $(document).ready(function() {
+
+  var images = ['bg0.jpg', 'bg1.jpg', 'bg2.jpg'];
+var i = 0;
+
+setInterval(function(){
+    $('#wrap').css('background-image', function() {
+        if (i >= images.length) {
+            i=0;
+        }
+        return 'url(../../media/img/' + images[i++] + ')'; 
+    });
+}, 10000);
+
+
+  
   $('.tabs .tab-links a').on('click', function(e)  {
     var currentAttrValue = $(this).attr('href');
    
@@ -339,6 +390,8 @@ $(document).ready(function() {
    
     e.preventDefault();
   });
+  
+  
 });
 
 $("#img-id-chk, #img-id-nochk, #img-id-spin").hide();          
