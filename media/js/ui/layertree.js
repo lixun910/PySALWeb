@@ -19,7 +19,8 @@ var LayerTree = (function($) {
     PositionLayerTree().hide();
     
     function PlaceLayerName(name) {
-      $('#btnMultiLayer').parent().width(200);
+      $('#btnMultiLayer').parent().width(160);
+      $('#btnMultiLayer').parent().css("background", "#333");
       $('#btnMultiLayer span').attr('title', name);
       $('#btnMultiLayer span').attr('title', name);
       $('#btnMultiLayer span').text(Utils.shrinkText(name));
@@ -97,6 +98,8 @@ var LayerTree = (function($) {
         $('.tree-item-eye[id='+nMaps+']').click(function() {
           SwitchLayer($(this), mapManager.GetOrigIdx($(this).attr("id")));
         });
+        $('#btnOpenData').css("width","40px");
+        $('#btnOpenData').css("height","40px");
       },
       
     };

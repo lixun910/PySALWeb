@@ -28,6 +28,13 @@ body {
   margin: 0;
   padding: 0;
 }
+.ui-widget {
+    font-size:120%;
+}
+
+
+
+
 .left_al {
   text-align: left;
 }
@@ -112,7 +119,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   font-size: 150%;
   font-family: Verdana,Helvetica,Arial,sans-serif;
   color: #EEE;
-  background: rgba(0,0,0,.6);
+  background: rgba(0,0,0,0.9);
   -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
@@ -181,16 +188,96 @@ margin-top: -5px;
 .ui-autocomplete{
  z-index: 10004 !important;
 }
+nav {
+transition: .6s ease-in-out;
+  background:
+    radial-gradient(black 15%, transparent 16%) 0 0,
+    radial-gradient(black 15%, transparent 16%) 8px 8px,
+    radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 0 1px,
+    radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 8px 9px;
+  background-color:#282828;
+  background-size:16px 16px;
+  overflow-x: scroll;
+  max-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  padding-top: 1em;
+  text-align: justify;
+  width: 30em;
+}
+
+
+nav ul:after {
+  content: '';
+  display: inline-block;
+  width: 100%;
+}
+
+nav ul li {
+  background-color: #161616;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  display: inline-block;
+  font-family: arial;
+  font-size: 1.2rem;
+  padding: 0.6em;
+  text-align: center;
+  width: 3.5em;
+}
+nav ul li:first-child {
+  margin-left: 0.5em;
+}
+nav ul li:last-child {
+  margin-right: 0.5em;
+}
+nav ul li a {
+  color: #ccc;
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
+@media (min-width: 31.25em) {
+nav ul li a {
+    color: #fff;
+  }
+}
+
+nav ul li a:before {
+  display: block;
+  font-family: FontAwesome;
+  font-weight: normal;
+  font-size: 2rem;
+  font-style: normal;
+  text-decoration: inherit;
+  vertical-align: top;
+  -webkit-font-smoothing: antialiased;
+}
+@media (min-width: 48.875em) {
+nav ul li a:before {
+    display: inline-block;
+    margin-right: 0.3em;
+  }
+}
+
 .tool-menu {
-  background-image: url("../img/menu-bg.png");
-  position: absolute; width: 100%; 
-  height: 140px; opacity: 0.9;
-  background-color: white;padding-bottom: 13px;
+  /*background-image: url("../img/menu-bg.png");*/
+  position: absolute; 
+  width: 100%; 
+  height: 140px; 
+  opacity: 0.9;
+  background-color: white;
+  padding-bottom: 13px;
   -webkit-box-shadow: -1px -7px 35px -1px rgba(0,0,0,0.5);
   -moz-box-shadow: -1px -7px 35px -1px rgba(0,0,0,0.5);
   box-shadow: -1px -7px 35px -1px rgba(0,0,0,0.5);
   z-index:10002;
   left: 0;
+  overflow-x: scroll;
+  -webkit-overflow-scrolling: touch;
 }
 .down-arrow{
   content: ' ';
@@ -300,11 +387,33 @@ margin-top: -5px;
   margin-top: 2px;
   margin:0 auto;
 }
+#btnMultiLayer {
+  display: none;
+  overflow:auto;
+}
 #btnMultiLayer span {
   color: orange;
 }
+#multilayer_arrow {
+  float: right;
+  right: 0;
+          width: 0; 
+        height: 0; 
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent; 
+        border-right:10px solid rgba(0,0,0,0.5); 
+}
+#btnShowTable {
+  margin-left: 10px;
+}
 .blockBtn {
-  vertical-align: top;
+  width: 100%;
+  height: 100%;
+  padding-top: 6px;
+}
+
+.blockBtn img {
+  vertical-align:middle;
 }
 .blockBtn span{
   margin-left: 5px;
@@ -340,7 +449,7 @@ margin-top: -5px;
   width: 100%;
   min-width: 600px;
   height: 40px;
-  background-color: rgba(48,48,50,0.8);
+  background-color: rgba(0,0,0,0.9);
   -webkit-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
   -moz-box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
   box-shadow: -1px -7px 35px -6px rgba(0,0,0,0.5);
@@ -379,14 +488,7 @@ margin-top: -5px;
   margin: 0;
   padding: 0;
 }
-#btnMultiLayer {
-  display: none;
-}
-#btnMultiLayer span {
-  background: url("../img/right-arrow.png") no-repeat;
-  background-position: right center;
-  padding-right: 20px;
-}
+
 #map-container {
   position: relative; 
   border: 0px solid red;
@@ -426,6 +528,21 @@ margin-top: -5px;
   bottom: 60px;
   opacity: 0.5;
 }
+#btnOpenData {
+  position: absolute; 
+  right: 10px; 
+  bottom: 60px;
+  opacity: 0.2;
+  width: 100px;
+  height: 100px;
+  background: url("../img/bigplus.png") no-repeat;  
+}
+#btnOpenData:hover{
+  opacity: 1.0;
+  width: 100px;
+  height: 100px;
+}
+
 .novis {
   visibility :hidden;
   margin-left: 10px;
