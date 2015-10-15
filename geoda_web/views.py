@@ -150,6 +150,38 @@ def index(request):
             },
         context_instance=RequestContext(request)
     )
+
+@login_required
+def index2(request):
+    # check user login
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+
+    geodata = Geodata.objects.all().filter( userid=userid )
+    geodata_content =  {}
+    first_geodata = ''
+    for i,layer in enumerate(geodata):
+        geodata_content[i+1] = layer
+        if i == 0:
+            first_geodata = layer
+    jsonprefix = settings.URL_PREFIX + settings.MEDIA_URL
+    # render main page with userid, shps/tables, weights
+    return render_to_response(
+        'myapp/index.v2.html', {
+            'test': {0:1},
+            'userid': userid, 
+            'geodata': geodata_content, 
+            'geodata0': first_geodata,
+            'n': len(geodata),
+            'nn':range(1,len(geodata)+1),
+            'url_prefix': settings.URL_PREFIX,
+            'jsonprefix' : jsonprefix,
+            'theme_jquery': settings.THEME_JQUERY,
+            },
+        context_instance=RequestContext(request)
+    )
+
 """
 def list(request):
     # Handle file upload

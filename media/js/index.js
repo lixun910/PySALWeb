@@ -13,6 +13,7 @@ require.config({
     rtree : 'lib/rtree',
     jquery : 'lib/jquery.min',
     jqueryui : 'lib/jquery-ui-1.10.4.custom.min',
+    jquerymobile : 'lib/jquery.mobile-1.4.5.min',
     kdtree : 'lib/kdtree',
     mapshaper: 'lib/mapshaper',
     proj4: 'lib/proj4',

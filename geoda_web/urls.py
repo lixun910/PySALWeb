@@ -19,6 +19,7 @@ urlpatterns += patterns('geoda_web.views',
     #url(r'^list/$', 'list', name='list'),
     url(r'^main/$','main', name='main'), 
     url(r'^index/$','index', name='index'), 
+    url(r'^index2/$','index2', name='index2'),
 ) 
 
 urlpatterns += patterns('geoda_web.views_table',

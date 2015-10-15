@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>GeoDa-CartoDB</title>
-<link rel="stylesheet" href="../../media/css/portal.css" />
+<link rel="stylesheet" href="../../media/css/portal.v2.css" />
 <link rel="stylesheet" href="../../media/css/leaflet.css" />
 <link rel="stylesheet" href="../../media/css/jquery.switchButton.css" />
 <link rel="stylesheet" href="../../media/css/xun/jquery-ui.min.css">
@@ -22,6 +22,17 @@
 </head>
 
 <body>
+  <header>
+  <nav role='navigation'>
+    <ul>
+      <li><a href="#"></a></li>
+      <li><a href="#">About</a></li>
+      <li><a href="#">Clients</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+  </nav>
+  </header>
+<!--
 <div class="awesome-bar">
   <div class="logo"><p>GeoDa-Web</p></div>
   <div class="header_topright">
@@ -29,12 +40,13 @@
     <div class="basemap"> Basemap</div>
   </div>
 </div>
-<!--
+
 ///////////////////////////////////////////////////////////////////////////////
 // Main Body
 ///////////////////////////////////////////////////////////////////////////////
--->
+
   <div style="padding-top:48px"></div>
+  -->
   <div id="map-container">
     <div id="map"></div>
   </div>
@@ -64,7 +76,7 @@
 	  <div class="blockBtn" id="btnSpreg"><img src="../../media/img/spreg.png"/><span>Regression</span></div>
 	</td>
 	<td width=130>
-	  <div class="blockBtn" id="btnCarto"><img src="../../media/img/publish.png"/><span>Share</span></div>
+	  <div class="blockBtn" id="btnCarto"><img src="../../media/img/cartodb_16.png"/><span>CartoDB</span></div>
 	</td>
 	</tr>
       </table>
@@ -72,7 +84,7 @@
   </div>
 
 <div class="tool-menu" id="layer-tree">
-  <div id="add-layer"><p style="margin:5px 0px 5px 10px;">Map Layers (Drag drop to reorder map layers)</p></div>
+  <div id="add-layer"><p style="margin:5px 0px 5px 10px;">Drag drop to reorder map layers</p></div>
   <ul id="sortable-layers"></ul>
 </div>
 

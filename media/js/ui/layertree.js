@@ -12,7 +12,7 @@ var LayerTree = (function($) {
     var mapManager;
     
     var PositionLayerTree = function() {
-      return $('#layer-tree').css({ left: 50, bottom: 40, height: 'auto'});
+      return $('#layer-tree').css({ left: 0, bottom: 40, height: 'auto'});
     };
     
     // set position of multi-layer tree div and hide it

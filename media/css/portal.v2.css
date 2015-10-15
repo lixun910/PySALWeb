@@ -2,6 +2,136 @@ html, body {
   width: 100%;
   height: 100%;
 }
+
+
+header {
+  background-color: #4096ee;
+}
+header:before,
+header:after {
+  content: " ";
+  display: table;
+}
+
+header:after {
+  clear: both;
+}
+nav {
+transition: .6s ease-in-out;
+  background:
+    radial-gradient(black 15%, transparent 16%) 0 0,
+    radial-gradient(black 15%, transparent 16%) 8px 8px,
+    radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 0 1px,
+    radial-gradient(rgba(255,255,255,.1) 15%, transparent 20%) 8px 9px;
+  background-color:#000;
+  background-size:16px 16px;
+  overflow-x: scroll;
+  max-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+@media (min-width: 31.25em) {
+  nav {
+    max-height: none;
+    background: none;
+    box-shadow: none;
+    overflow: hidden;
+  }
+}
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  padding-top: 1em;
+  text-align: justify;
+  width: 30em;
+}
+
+
+nav ul:after {
+  content: '';
+  display: inline-block;
+  width: 100%;
+}
+@media (min-width: 31.25em) {
+nav ul {
+    background-color: #000;
+    width: 100%;
+  }
+}
+
+nav ul li {
+  background-color: #161616;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  display: inline-block;
+  font-size: 150%;
+  font-family: Verdana,Helvetica,Arial,sans-serif;
+  padding: 0.6em;
+  text-align: center;
+  width: 3.5em;
+}
+@media (min-width: 31.25em) {
+nav ul li {
+    background: none;
+    box-shadow: none;
+    font-size: 150%;
+    padding: 0;
+    width: auto;
+  }
+}
+nav ul li:first-child {
+  margin-left: 0.5em;
+}
+nav ul li:last-child {
+  margin-right: 0.5em;
+}
+nav ul li a {
+  color: #ccc;
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
+@media (min-width: 31.25em) {
+nav ul li a {
+    color: #fff;
+  }
+}
+
+nav ul li a:before {
+  display: block;
+  font-family: FontAwesome;
+  font-weight: normal;
+  font-size: 2rem;
+  font-style: normal;
+  text-decoration: inherit;
+  vertical-align: top;
+  -webkit-font-smoothing: antialiased;
+}
+@media (min-width: 48.875em) {
+nav ul li a:before {
+    display: inline-block;
+    margin-right: 0.3em;
+  }
+}
+
+/* Used nth-childs to allocate icons to keep the HTML markup clean */ 
+
+nav ul li:first-child a:before {
+  content: url('../../media/img/geoda-logo.png');
+}
+nav ul li:nth-child(2) a:before {
+  content: '\f05a';
+}
+nav ul li:nth-child(3) a:before {
+  content: '\f0b1';
+}
+nav ul li:nth-child(4) a:before {
+  content: '\f0e0';
+}
+
+
+
+
 div {
   display: block;
 }
@@ -189,6 +319,7 @@ margin-top: -5px;
  z-index: 10004 !important;
 }
 
+
 .tool-menu {
   /*background-image: url("../img/menu-bg.png");*/
   position: absolute; 
@@ -238,38 +369,34 @@ margin-top: -5px;
   -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.5);
   box-shadow: 0 14px 18px rgba(0,0,0,0.5);
+  opacity: 0.5;
   background-repeat: no-repeat;
   background-position: center; 
-  -webkit-filter: grayscale(100%) opacity(0.8);
-  filter: grayscale(100%) opacity(0.5);
 }
 .tool-menu .image-wrap:hover {
+  opacity: 1.0;
   cursor: pointer;
-  filter: none;
-  -webkit-filter: grayscale(0%);
 }
 .tool-menu .image-wrap span{
   top: -18px; 
   position: relative;
-  opacity: 1.0;
-  text-shadow: 0px 2px 0px rgba(235,235,235,.9); /* 50% white from bottom */
+  text-shadow: 0px 2px 0px rgba(235,235,235,.5); /* 50% white from bottom */
 }
 #layer-tree { 
-  width: 300px; 
+  width: 400px; 
   cursor:pointer;
   left: 0;
   bottom: 40;
 
 }
-
 #add-layer { 
   margin: 5px; 
   padding: 0.4em; 
   font-size: 1.0em; 
   height: 18px; 
-  /*border-top: 2px dashed #bbb;
+  border-top: 2px dashed #bbb;
   border-left: 2px dashed #bbb;
-  border-right: 2px dashed #bbb;*/
+  border-right: 2px dashed #bbb;
   z-index: 10000;
 }
 #sortable-layers { 
