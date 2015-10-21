@@ -11,7 +11,8 @@ define(['jquery',
         'jqueryui', 
         'jquery.ui.touch-punch',
         'jquery.slidereveal',
-        'jquerymobile',
+        //'jquery.chosen',
+        //'jquerymobile',
         ], 
         
 function($, LayerTree, Toolbar, UIManager, MsgBox,  CartoProxy, FileDlg, MapManager) {
@@ -91,9 +92,6 @@ function($, LayerTree, Toolbar, UIManager, MsgBox,  CartoProxy, FileDlg, MapMana
   // dialogs
   var fileDlg = FileDlg.getInstance();
 
-  $('#divPop').slideReveal({
-  trigger: $("#btnCarto"),
-  position: "right"
-});
+  //$('#divPop').slideReveal({trigger: $("#btnCarto"), position: "right"});
  
 });

@@ -81,6 +81,7 @@ var CartoDlg = (function($, CartoProxy) {
           var geo_type = tables[table_name];
           $(sel).append($('<option>', {value: geo_type}).text(table_name));
         }
+        $(sel).chosen();
       });
     };
   
