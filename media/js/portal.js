@@ -784,6 +784,8 @@ $(document).ready(function() {
     $('#dialog-open-file').dialog('open');
   });
   
+
+  
   // link each item on bottom bar to a popup menu  
   // OnToolMenuClick() is link between tool item and menu
   var toolMenu = {

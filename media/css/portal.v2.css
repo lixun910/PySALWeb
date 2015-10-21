@@ -120,7 +120,7 @@ nav ul li:first-child a:before {
   content: url('../../media/img/geoda-logo.png');
 }
 nav ul li:nth-child(2) a:before {
-  content: '\f05a';
+  content: url('../../media/img/geoda-logo.png');
 }
 nav ul li:nth-child(3) a:before {
   content: '\f0b1';

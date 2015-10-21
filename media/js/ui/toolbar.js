@@ -61,7 +61,7 @@ var Toolbar = (function($, FileDlg){
       '#btnSpaceTime' : '#dialog-spacetime',
       '#btnLISA' : '#dlg-lisa-map',
       '#btnParcoords' : '#dlg-parcoords',
-      '#btnCarto' : '#dialog-cartodb',
+      //'#btnCarto' : '#dialog-cartodb',
     };
     
     var OnMenuButtonClick = function(btnID, dlgID) {
@@ -109,6 +109,9 @@ var Toolbar = (function($, FileDlg){
     $('#btnCartoDB').click(function(){
       $('#dialog-cartodb').dialog('open');
     });
+    $('#btnCarto').click(function(){
+      $('#dialog-cartodb').dialog('open');
+    });
     
     $('#btnSpreg').click(function(){
       $('#dialog-regression').dialog('open');
@@ -127,7 +130,6 @@ var Toolbar = (function($, FileDlg){
       '#btnExplore',
       '#btnSpace',
       '#btnSpreg',
-      '#btnCarto',
     ];
     
     var ToggleButtons = function(enable) {
@@ -148,6 +150,10 @@ var Toolbar = (function($, FileDlg){
       FileDlg.getInstance().Show();
     });
         
+  $('#btnOpenData').mouseover(function(){
+    $('#btnOpenData').css('width', "100px");
+    $('#btnOpenData').css('height', "100px");
+  });
     return {
       // public methods/vars
       UpdateFields : function() {

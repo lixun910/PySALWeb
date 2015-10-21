@@ -98,8 +98,8 @@ var LayerTree = (function($) {
         $('.tree-item-eye[id='+nMaps+']').click(function() {
           SwitchLayer($(this), mapManager.GetOrigIdx($(this).attr("id")));
         });
-        $('#btnOpenData').css("width","40px");
-        $('#btnOpenData').css("height","40px");
+        $('#btnOpenData').css("width","80px");
+        $('#btnOpenData').css("height","80px");
       },
       
     };

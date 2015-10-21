@@ -262,7 +262,7 @@ var MapCanvas = function(map, canvas, hlcanvas, params) {
   // highlight alpha: when highlight, the alpha of background map
   this.HL_ALPHA = 0.4;
   // stroke width 
-  this.STROKE_WIDTH = 1.0;
+  this.STROKE_WIDTH = 0.6;
   // stroke color
   this.STROKE_CLR = '#FFFFFF';
   // fill color

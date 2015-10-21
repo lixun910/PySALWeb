@@ -191,10 +191,12 @@ return {
     }
     var uuid = this.guid();
     var main = $('<div/>', {
-      class:'popup-frame',
+      class:'popup-frame ui-popup-container',
       id: uuid,
+      'data-role': "popup",
     });
     var closeBtn = $('<div/>', {class:'popup-close'}).click(function(){
+    //var closeBtn = $('<a/>', {class: 'ui-btn ui-corner-all ui-shadow ui-btn ui-icon-delete ui-btn-icon-notext ui-btn-right'}).click(function(){    
       $(this).parent().remove();
     });
     main.draggable().resizable();

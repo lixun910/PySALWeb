@@ -9,13 +9,18 @@ define(['jquery',
         './openfileDlg',  
         './mapManager', 
         'jqueryui', 
-        'jquery.ui.touch-punch'], 
+        'jquery.ui.touch-punch',
+        'jquery.slidereveal',
+        'jquerymobile',
+        ], 
         
 function($, LayerTree, Toolbar, UIManager, MsgBox,  CartoProxy, FileDlg, MapManager) {
 
   // hide all divs 
   $('#w-dist-loading, #divPop, #img-id-chk, #img-id-spin, #img-id-nochk,  .dlg-loading, #progress_bar_openfile, #progress_bar_cartodb,#progress_bar_road, #progress_bar_spacetime, #btnMultiLayer, #progress_bar_lisa, #tool-menu-arrow, #dialog-arrow, #userInfo, #mapInfo, #prgInfo, #legend').hide();
   
+
+
   $.download = function(url, data, method) {
     //url and data options required
     if (url && data) { 
@@ -86,5 +91,9 @@ function($, LayerTree, Toolbar, UIManager, MsgBox,  CartoProxy, FileDlg, MapMana
   // dialogs
   var fileDlg = FileDlg.getInstance();
 
+  $('#divPop').slideReveal({
+  trigger: $("#btnCarto"),
+  position: "right"
+});
  
 });
