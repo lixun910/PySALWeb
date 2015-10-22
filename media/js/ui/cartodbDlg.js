@@ -1,6 +1,6 @@
 
 // Author: xunli at asu.edu
-define(['jquery', './utils','./cartoProxy'], function($, Utils, CartoProxy) {
+define(['jquery', './utils','./cartoProxy','jquery.chosen'], function($, Utils, CartoProxy) {
 
 var window = this;
 
@@ -81,7 +81,7 @@ var CartoDlg = (function($, CartoProxy) {
           var geo_type = tables[table_name];
           $(sel).append($('<option>', {value: geo_type}).text(table_name));
         }
-        $(sel).chosen();
+        //$(sel).chosen({no_results_text: "Oops, nothing found!",});
       });
     };
   
@@ -228,6 +228,7 @@ var CartoDlg = (function($, CartoProxy) {
             var geo_type = tables[table_name];
             $(sel).append($('<option>', {value: geo_type}).text(table_name));
           }
+          //$(sel).chosen({no_results_text: "Oops, nothing found!",});
         });
       },
       

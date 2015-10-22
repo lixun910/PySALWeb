@@ -96,7 +96,7 @@ var OpenFileDlg = (function() {
         require(['ui/cartodbDlg', 'ui/spacetimeDlg', 'ui/networkDlg'], function(CartoDlg, SpacetimeDlg, NetworkDlg){
           CartoDlg.getInstance().UpdateTableSel(tables);
           CartoProxy.GetGeomTypes(tables, function(tbl_geo){
-            console.log(tbl_geo);
+            //console.log(tbl_geo);
             SpacetimeDlg.getInstance().UpdateTableSel(tbl_geo);
             NetworkDlg.getInstance().UpdateTableSel(tbl_geo);
           });
@@ -153,8 +153,11 @@ var OpenFileDlg = (function() {
       }
     } 
     
+    var bAccepts = false;
+    
     // hookup file dialog OK button 
     var OnOKClick = function() {
+      bAccepts = true;
       var sel_id = dlgTabs.tabs('option','active'),
           that = $(this);
       if (sel_id === 0) {
@@ -198,24 +201,32 @@ var OpenFileDlg = (function() {
               AddCartoDBTableAsMap(data.table_name);
               //data.status;
               that.dialog("close");
+              
             });
           } catch(e) {
             console.log(e);
             MsgBox.getInstance().Show("", "Please load a map first.");
+            return;
           }
         });
       }
     };
     
+
     dlg.dialog({
-      height: 400,
+      height: 450,
       width: 500,
       autoOpen: false,
       modal: false,
       dialogClass: "dialogWithDropShadow",
+      close : function() { if (bAccepts) $( '#btnOpenData').css("opacity", "0.2"); else  $( '#btnOpenData').css("opacity", "1.0");},
       buttons: [
         {text: "OK",click: OnOKClick,},
-        {text: "Close",click: function() { $( this ).dialog( "close" );}}
+        {text: "Close",click: function() { 
+            $( this ).dialog( "close" );
+            $( '#btnOpenData').css("opacity", "1.0");
+          }
+        }
       ]
     });
     dlg.dialog('open');

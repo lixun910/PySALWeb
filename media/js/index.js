@@ -25,7 +25,7 @@ require.config({
     'jquery.colorpicker' : 'lib/jquery.colorpicker.min',
     'jquery.ui.touch-punch' : 'lib/jquery.ui.touch-punch.min',
     'jquery.slidereveal' : 'lib/jquery.slidereveal.min',
-    //'jquery.chosen' : 'lib/jquery.chosen.min',
+    'jquery.chosen' : 'lib/jquery.chosen.min',
     'list' : 'lib/list.min',
     'colorbrewer'  : 'lib/colorbrewer',
     md5 : 'lib/md5.min',

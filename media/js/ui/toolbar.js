@@ -136,9 +136,12 @@ var Toolbar = (function($, FileDlg){
       for( var i=0; i<toolbar_buttons.length; i++) {
         var btn = toolbar_buttons[i];
         if (enable) {
+	  $('#bottombar, #multilayer_arrow').show();
           $(btn).show('slide');
+	  
         } else {
           $(btn).hide();
+	  $('#bottombar, #multilayer_arrow').hide();
         }
       }
     };
@@ -148,12 +151,9 @@ var Toolbar = (function($, FileDlg){
     // setup first button on bottom toolbar
     $('#btnOpenData').click(function(){
       FileDlg.getInstance().Show();
+      $(this).css("opacity", "0.2");
     });
         
-  $('#btnOpenData').mouseover(function(){
-    $('#btnOpenData').css('width', "100px");
-    $('#btnOpenData').css('height', "100px");
-  });
     return {
       // public methods/vars
       UpdateFields : function() {
