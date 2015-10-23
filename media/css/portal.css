@@ -91,7 +91,7 @@ iframe {
 }
 .iframeBlocker {
   position: absolute; 
-  top: 5; 
+  top: 25px; 
   left: 5; 
   width: -moz-calc(100% - 10px); /* Firefox */
   width: -webkit-calc(100% - 10px); /* Chrome, Safari */
