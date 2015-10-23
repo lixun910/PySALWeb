@@ -9,8 +9,8 @@ var HistogramDlg = (function($){
     // singleton
     $( "#dlg-histogram" ).dialog({
       dialogClass: "dialogWithDropShadow",
-      width: 300,
-      height: 300,
+      width: 500,
+      height: 400,
       autoOpen: false,
       modal: false,
       resizable:  false,

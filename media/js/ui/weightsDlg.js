@@ -138,8 +138,8 @@ var WeightsDlg= (function($, Utils){
     }
 
     $( "#dialog-weights" ).dialog({
-      height: 480, 
-      width: 480,
+      height: 520, 
+      width: 560,
       autoOpen: false, 
       modal: false,
       dialogClass: "dialogWithDropShadow",

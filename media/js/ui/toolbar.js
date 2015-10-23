@@ -34,7 +34,8 @@ var Toolbar = (function($, FileDlg){
           return;
         }
         $('div.tool-menu, .ui-dialog, #dialog-arrow').hide();
-        $(menu).show();
+	if (menu == "#layer-tree") $(menu).show('slide', {direction:'down'});
+        else $(menu).show();
         // adjust the pos of arrow
         var pos = $(btn).offset();
         $('#tool-menu-arrow').css({'left':pos.left});
@@ -69,14 +70,16 @@ var Toolbar = (function($, FileDlg){
         //if ($(menu).is(".visible") || $(menu).css('display') == 'block') {
         // hide all dialogs
         $('.ui-dialog-content').dialog('close');
+	/*
         $(dlgID).dialog('option', "position", {
           my: "bottom-38",
           at: "top",
           of: btnID
         });
-        var pos=$(btnID).offset();
-        $('#dialog-arrow').css({'left':pos.left});
-        $('#dialog-arrow').show();
+	*/
+        //var pos=$(btnID).offset();
+        //$('#dialog-arrow').css({'left':pos.left});
+        //$('#dialog-arrow').show();
         $(dlgID).dialog('open');
       });
     };

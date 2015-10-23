@@ -18,10 +18,11 @@ var SpacetimeDlg = (function($){
     $("#spacetime_catalog").accordion({heightStyle : "content"});
     
     $("#dialog-spacetime").dialog({
-      height: 450,
-      width: 580,
+      height: 500,
+      width: 600,
       autoOpen: false,
       modal: false,
+      resizable: false,
       dialogClass: "dialogWithDropShadow",
       beforeClose: function(event,ui){$('#dialog-arrow').hide();},
       buttons: [{

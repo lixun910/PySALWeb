@@ -214,8 +214,8 @@ var OpenFileDlg = (function() {
     
 
     dlg.dialog({
-      height: 450,
-      width: 500,
+      height: 480,
+      width: 670,
       autoOpen: false,
       modal: false,
       dialogClass: "dialogWithDropShadow",

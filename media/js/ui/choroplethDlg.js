@@ -16,8 +16,7 @@ var ChoroplethDlg = (function($){
   };
 
   $('#colorpicker-fill').colorpicker({
-    buttonColorize: true, 
-    showOn: 'both',
+    parts:  [  'map', 'bar', 'swatches', 'footer'],
     close: function(evt, clr) {
       clr = '#' + clr.formatted;
       var mapcanvas = GetMapCanvas();
@@ -26,8 +25,7 @@ var ChoroplethDlg = (function($){
     },
   });
   $('#colorpicker-stroke').colorpicker({
-    buttonColorize: true, 
-    showOn: 'both',
+    parts:  [  'map', 'bar', 'swatches', 'footer'],
     close: function(evt, clr) {
       clr = '#' + clr.formatted;
       var mapcanvas = GetMapCanvas();
@@ -68,17 +66,17 @@ var ChoroplethDlg = (function($){
   var dlg = $( "#dlg-simple-map" );
   dlg.dialog({
     dialogClass: "dialogWithDropShadow",
-    width: 350,
-    height: 300,
+    width: 550,
+    height: 400,
     autoOpen: false,
     modal: false,
     resizable:  false,
-    draggable: false,
+    draggable: true,
     beforeClose: function(event,ui){
       $('#dialog-arrow').hide();
     },
     buttons: [{
-      text: "Save",
+      text: "Close",
       click: function() {
         //$('#map-conf-name').val($('#sel-map-conf').val());
         //$('#dlg-save-map-conf').dialog('open');
@@ -130,8 +128,8 @@ var ChoroplethDlg = (function($){
 
   $( "#dlg-quantile-map" ).dialog({
     dialogClass: "dialogWithDropShadow",
-    width: 300,
-    height: 300,
+    width: 500,
+    height: 400,
     autoOpen: false,
     modal: false,
     resizable:  false,

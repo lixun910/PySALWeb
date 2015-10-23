@@ -16,9 +16,7 @@ return {
     for (var field in fields) {
       var type = fields[field];
       if (filter && filter.indexOf(type) >= 0) {
-        $('<input/>', {type: 'checkbox', name: name, value: field, text: field}).appendTo(div);
-        $('<label/>', {text: field}).appendTo(div);
-        $('<br/>').appendTo(div);
+        $('<label><input type="checkbox" name="'+name+'" value="'+field+'">'+field+'</label>').appendTo(div);
       }
     }
   },

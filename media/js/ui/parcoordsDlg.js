@@ -14,12 +14,12 @@ var ParcoordsDlg = (function($){
     
     $( "#dlg-parcoords" ).dialog({
       dialogClass: "dialogWithDropShadow",
-      width: 350,
+      width: 500,
       height: 450,
       autoOpen: false,
       modal: false,
       resizable:  false,
-      draggable: false,
+      draggable: true,
       beforeClose: function(event,ui){
 	$('#dialog-arrow').hide();
       },

@@ -13,8 +13,8 @@ var MoranDlg = (function($){
     
     $( "#dlg-moran-scatter-plot" ).dialog({
       dialogClass: "dialogWithDropShadow",
-      width: 480,
-      height: 400,
+      width: 560,
+      height: 480,
       autoOpen: false,
       modal: false,
       resizable:  false,

@@ -14,8 +14,8 @@ var ScatterDlg = (function($){
     
     $( "#dlg-scatter-plot" ).dialog({
       dialogClass: "dialogWithDropShadow",
-      width: 400,
-      height: 200,
+      width: 500,
+      height: 400,
       autoOpen: false,
       modal: false,
       resizable:  false,

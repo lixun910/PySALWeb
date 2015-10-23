@@ -36,7 +36,7 @@ var SpregDlg = (function($){
     $( "#tabs" ).tabs();
     $( "#spreg-result-tabs" ).tabs();
     
-    $( "#btn_open_model" ).button({icons: {primary: "ui-icon-folder-open"}})
+    $( "#btn_open_model" ).button({icons: {primary: "ui-icon-locked"},text: true})
     .click(function() {
       $('#dlg-open-model').dialog('open');
     });

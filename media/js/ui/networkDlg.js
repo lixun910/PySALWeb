@@ -14,10 +14,11 @@ var NetworkDlg = (function($){
         
     $('#tabs-dlg-road').tabs();
     $( "#dialog-road" ).dialog({
-      height: 380,
-      width: 520,
+      height: 480,
+      width: 580,
       autoOpen: false,
       modal: false,
+      resizable: false,
       dialogClass: "dialogWithDropShadow",
       beforeClose: function(event,ui){
           $('#dialog-arrow').hide();

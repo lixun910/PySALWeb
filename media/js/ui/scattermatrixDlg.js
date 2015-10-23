@@ -14,8 +14,8 @@ var ScatterMatrixDlg = (function($){
     
     $( "#dlg-scatter-matrix" ).dialog({
       dialogClass: "dialogWithDropShadow",
-      width: 350,
-      height: 450,
+      width: 500,
+      height: 400,
       autoOpen: false,
       modal: false,
       resizable:  false,
