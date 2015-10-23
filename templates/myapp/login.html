@@ -12,6 +12,10 @@ body {
   -o-background-size: cover;
   background-size: cover;
   */
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 #login {
   width: 80%;
@@ -45,9 +49,10 @@ body {
   box-shadow: 0 0 5px 1px #969696;
 }
 .content {
-  padding-top: 20px;
-  width: 80%;
+  width: 90%;
   /*border: 1px red solid;*/
+  margin:0 auto;
+  padding-top: 140px;
 }
 .brand {
   text-align: left;
@@ -68,7 +73,7 @@ body {
   width: auto;
   margin-top: 15px;
 }
-h2 {
+.geoda_desc {
   text-align: left;
   -webkit-font-smoothing: antialiased;
   color: rgb(255, 255, 255);
@@ -217,6 +222,45 @@ h2 {
     max-width:  -webkit-calc(100%); /* Chrome, Safari */
     max-height:  -webkit-calc(100%); /* Chrome, Safari */
 }
+.logo-panel {
+  float:left;
+  width:400px;
+  margin-top:20px;
+  max-width:400px;
+  display: inline-block;
+}
+@media (max-width: 1023px)  {
+  .logo-panel {
+    float: none;
+    width:400px;
+    margin-top:20px;
+    max-width:400px;
+  }
+  .menu_simple {
+    display: none;  
+  }
+  .content {
+    width: 90%;
+    /*border: 1px red solid;*/
+    margin:0 auto;
+    text-align: center;
+    padding-top: 10px;
+  }
+}
+@media only screen 
+and (min-device-width : 375px) 
+and (max-device-width : 667px)  {
+  .geoda_desc {
+    display: none;  
+  }
+  .content {
+    width: 90%;
+    /*border: 1px red solid;*/
+    margin:0 auto;
+    text-align: center;
+    padding-top: 0px;
+  }
+}
 </style>
 
 <link rel="stylesheet" href="../../media/css/header.css" />
@@ -236,16 +280,14 @@ h2 {
   <img class="bgfade" src="../../media/img/bg2.jpg">
   <img class="bgfade" src="../../media/img/bg3.jpg">
 </div>
-<div style="width:100%;height:140px;"></div>
 
-<div class="content" style="width:80%;margin:0 auto;">
-  <div style="float:left;width:400px;margin-top:20px;max-width:400px;display: inline-block;">
-  
+<div class="content">
+  <div class="logo-panel">
     <img id="logo" style="float:left;text-align:top;margin-right:10px;" src="../../media/img/geoda-logo.png"> 
 
     <div class="geoda_title"> 
       GeoDa-Web
-      <h2 style="">The cloud-based GeoDa <br>for spatial data analysis.</h2>
+      <h2 class="geoda_desc">The cloud-based GeoDa <br>for spatial data analysis.</h2>
     </div>
 
     <div class="menu_simple">
@@ -261,102 +303,101 @@ h2 {
     </div>  
   </div>
   
-  <div class="tabs" style="padding-left: 20px;width:400px;">
-    <ul class="tab-links">
-      <li class="active"><a href="#tab1">Login to PySAL-Cloud</a></li>
-      <li><a href="#tab2">No account? Sign Up</a></li>
-    </ul>
-
-    <div class="tab-content" style="width:350px; height:400px;">
-      <div id="tab1" class="tab active" style="text-align: left;">
-        <p>
-          <form id="form-login" method="post">{% csrf_token %}
-          <table class="logintable">
-            <tr><td>Your Email:</td><td>Password:</td></tr>
-            <tr>
-              <td><input type="text" name="lemail" value=''></input></td>
-              <td>
-                <input type="password" name="lpassword" value=''></input>&nbsp;
-                <button id="btn_login" type="submit" class="ui-state-default button-text-only">Login </button>
-              </td>
-            </tr>
-          </table>
-          <br/>
-          &nbsp;&nbsp;&nbsp;<font color="red" style="font-size:10px" face="Century Gothic">{{error_msg}}</font>
-          
-          {% if error_msg != "" %}<br><br>
-          &nbsp;&nbsp;&nbsp;<font color="blue" style="font-size:10px" face="Century Gothic">Forget my password?</font>
-          {% endif %}
-          </form>
-        </p>
-        
-        <p style="border-top: 1px solid #ccc;text-align:center;"></p>
-        
-        <p style="margin-left:30px;margin-top:30px;">
-          <a id="facebook_login_button" class="btn-block" href="{% url 'social:begin' 'facebook' %}?next={{ request.path }}">
-          <img class="login-button-icon" src="../../media/img/button-icon-facebook.png"> Log in with Facebook
-          </a>   
-          <a id="google_login_button" class="btn-block" href="{% url 'social:begin' 'google-oauth2' %}?next={{ request.path }}">
-          <img class="login-button-icon" src="../../media/img/button-icon-google.png"> Log in with Google
-          </a> 
-          <a id="twitter_login_button" class="btn-block" href="{% url 'social:begin' 'twitter' %}?next={{ request.path }}">
-          <img class="login-button-icon" src="../../media/img/button-icon-twitter.png"> Log in with Twitter
-          </a> 
-          <a id="tumblr_login_button" class="btn-block" href="{% url 'social:begin' 'tumblr' %}?next={{ request.path }}">
-          <img class="login-button-icon" src="../../media/img/button-icon-tumblr.png"> Log in with Tumblr
-          </a> 
-          <a id="weibo_login_button" class="btn-block" href="{% url 'social:begin' 'weibo' %}?next={{ request.path }}">
-          <img class="login-button-icon" src="../../media/img/button-icon-weibo.png"> Log in with Weibo
-          </a> 
-        </p>
-        <br>
-      </div>
-
-      <div id="tab2" class="tab" style="text-align: left;">
-        <br/><br/><br/>
-        <form id="form-signup" method="post" action="../signup/">{% csrf_token %}
-          <table class="signuptable" width="400px">
-            <tr>
-              <td width=320>
-                <input type="text" name="first_name" value='First Name' style="width:135px"></input>
-                <input type="text" name="last_name" value='Last Name'></input>
-              </td>
-              <td><p id="chk_name_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
-            </tr>
-            <tr>
-              <td>
-                <input style="width:290px" type="text" name="email" value='Email'></input>
-                <img id="img-id-chk" src="{{url_prefix}}/media/img/checkmark.png">
-                <img id="img-id-nochk" src="{{url_prefix}}/media/img/uncheckmark.gif">
-                <img id="img-id-spin" src="{{url_prefix}}/media/img/loading_small.gif">
-              </td>
-              <td><p id="chk_email_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
-            </tr>
-            <tr>
-              <td>
-                <input style="width:290px" type="text" name="reemail" value='Re-enter Email'></input>
-              </td>
-              <td><p id="chk_reemail_msg" style="margin-left: -180px;font-size:10px;font-family: Century Gothic;color: red; "></p></td>
-            </tr>
-            <tr>
-              <td>
-                <input style="width:290px" type="text" name="password" value='Enter Password'> </input>
-              </td>
-              <td><p id="chk_pwd_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
-            </tr>
-          </table>
-          <br/>
-          &nbsp;&nbsp;<img id="account" src="../../media/img/user.png" align=""><font style="font-size:10px" face="Century Gothic"> By clicking Sign Up, you agree to our Terms and Policy.</font>
-          <p class="text-align:right;">
-          <button id="btn_signup" type="submit" class="ui-state-default button-text-only" style="width:100">Sign Up</button>
+  <div class="login-panel">
+    <div class="tabs" style="padding-left: 20px;width:400px;">
+      <ul class="tab-links">
+        <li class="active"><a href="#tab1">Login to PySAL-Cloud</a></li>
+        <li><a href="#tab2">No account? Sign Up</a></li>
+      </ul>
+  
+      <div class="tab-content" style="width:350px; height:400px;">
+        <div id="tab1" class="tab active" style="text-align: left;">
+          <p>
+            <form id="form-login" method="post">{% csrf_token %}
+            <table class="logintable">
+              <tr><td>Your Email:</td><td>Password:</td></tr>
+              <tr>
+                <td><input type="text" name="lemail" value=''></input></td>
+                <td>
+                  <input type="password" name="lpassword" value=''></input>&nbsp;
+                  <button id="btn_login" type="submit" class="ui-state-default button-text-only">Login </button>
+                </td>
+              </tr>
+            </table>
+            <br/>
+            &nbsp;&nbsp;&nbsp;<font color="red" style="font-size:10px" face="Century Gothic">{{error_msg}}</font>
+            
+            {% if error_msg != "" %}<br><br>
+            &nbsp;&nbsp;&nbsp;<font color="blue" style="font-size:10px" face="Century Gothic">Forget my password?</font>
+            {% endif %}
+            </form>
           </p>
-        </form>
+          
+          <p style="border-top: 1px solid #ccc;text-align:center;"></p>
+          
+          <p style="margin-left:30px;margin-top:30px;">
+            <a id="facebook_login_button" class="btn-block" href="{% url 'social:begin' 'facebook' %}?next={{ request.path }}">
+            <img class="login-button-icon" src="../../media/img/button-icon-facebook.png"> Log in with Facebook
+            </a>   
+            <a id="google_login_button" class="btn-block" href="{% url 'social:begin' 'google-oauth2' %}?next={{ request.path }}">
+            <img class="login-button-icon" src="../../media/img/button-icon-google.png"> Log in with Google
+            </a> 
+            <a id="twitter_login_button" class="btn-block" href="{% url 'social:begin' 'twitter' %}?next={{ request.path }}">
+            <img class="login-button-icon" src="../../media/img/button-icon-twitter.png"> Log in with Twitter
+            </a> 
+            <a id="tumblr_login_button" class="btn-block" href="{% url 'social:begin' 'tumblr' %}?next={{ request.path }}">
+            <img class="login-button-icon" src="../../media/img/button-icon-tumblr.png"> Log in with Tumblr
+            </a> 
+            <a id="weibo_login_button" class="btn-block" href="{% url 'social:begin' 'weibo' %}?next={{ request.path }}">
+            <img class="login-button-icon" src="../../media/img/button-icon-weibo.png"> Log in with Weibo
+            </a> 
+          </p>
+          <br>
+        </div>
+  
+        <div id="tab2" class="tab" style="text-align: left;">
+          <br/><br/><br/>
+          <form id="form-signup" method="post" action="../signup/">{% csrf_token %}
+            <table class="signuptable" width="400px">
+              <tr>
+                <td width=320>
+                  <input type="text" name="first_name" value='First Name' style="width:135px"></input>
+                  <input type="text" name="last_name" value='Last Name'></input>
+                </td>
+                <td><p id="chk_name_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
+              </tr>
+              <tr>
+                <td>
+                  <input style="width:290px" type="text" name="email" value='Email'></input>
+                  <img id="img-id-chk" src="{{url_prefix}}/media/img/checkmark.png">
+                  <img id="img-id-nochk" src="{{url_prefix}}/media/img/uncheckmark.gif">
+                  <img id="img-id-spin" src="{{url_prefix}}/media/img/loading_small.gif">
+                </td>
+                <td><p id="chk_email_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
+              </tr>
+              <tr>
+                <td>
+                  <input style="width:290px" type="text" name="reemail" value='Re-enter Email'></input>
+                </td>
+                <td><p id="chk_reemail_msg" style="margin-left: -180px;font-size:10px;font-family: Century Gothic;color: red; "></p></td>
+              </tr>
+              <tr>
+                <td>
+                  <input style="width:290px" type="text" name="password" value='Enter Password'> </input>
+                </td>
+                <td><p id="chk_pwd_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
+              </tr>
+            </table>
+            <br/>
+            &nbsp;&nbsp;<img id="account" src="../../media/img/user.png" align=""><font style="font-size:10px" face="Century Gothic"> By clicking Sign Up, you agree to our Terms and Policy.</font>
+            <p class="text-align:right;">
+            <button id="btn_signup" type="submit" class="ui-state-default button-text-only" style="width:100">Sign Up</button>
+            </p>
+          </form>
+        </div>
+      
       </div>
-    <br/><br/><br/><br/><br/>
-    <br/><br/><br/><br/><br/>
-    <br/><br/><br/><br/><br/>
-    
-    </div>
+    </div> <!-- end login-panel div-->
 </div> <!-- end content div-->
 <script>
 $(document).ready(function() {
