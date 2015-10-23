@@ -37,6 +37,7 @@ input[type="radio"] {
   text-align: left;
 }
 
+/* center the jquery ui tabs*/
 .centered .ui-tabs-nav {
     height: 2.8em;
     text-align: center;
@@ -47,6 +48,60 @@ input[type="radio"] {
     margin: 0em;
 }   
 
+/*popup iframe style*/
+iframe {
+  margin: 5px;
+  width: -moz-calc(100% - 10px); /* Firefox */
+  width: -webkit-calc(100% - 10px); /* Chrome, Safari */
+  width: calc(100% - 10px); /* IE9+ and future browsers */
+  height: -moz-calc(100% - 38px); /* Firefox */
+  height: -webkit-calc(100% - 38px); /* Chrome, Safari */
+  height: calc(100% - 38px); /* IE9+ and future browsers */
+  background: rgb(255,255,255);
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+}
+.popup-frame {
+  background-image: url("../img/menu-bg.png");
+  width: 350px; 
+  height: 250px; 
+  padding: 0.5em; 
+  z-index: 10001;
+  border: 1px #999 solid;
+  background-color:#CCC;
+  opacity: 0.5;
+  cursor: hand;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  -webkit-filter: drop-shadow(10px 10px 10px #222);
+  filter:         drop-shadow(10px 10px 10px #222); 
+}
+.popup-frame:hover{
+  opacity: 0.9;
+}
+.popup-close {
+  float: left;
+  background: url("../img/close_pop.png") no-repeat;
+  width: 16px; /*or your image's width*/
+  height: 16px; /*or your image's height*/
+  margin: 0;
+  padding: 0;
+}
+.iframeBlocker {
+  position: absolute; 
+  top: 5; 
+  left: 5; 
+  width: -moz-calc(100% - 10px); /* Firefox */
+  width: -webkit-calc(100% - 10px); /* Chrome, Safari */
+  width: calc(100% - 10px); /* IE9+ and future browsers */
+  height: -moz-calc(100% - 38px); /* Firefox */
+  height: -webkit-calc(100% - 38px); /* Chrome, Safari */
+  height: calc(100% - 38px); /* IE9+ and future browsers */
+  display: none;
+}
+/* logo */
 .logo {
   width: 215px;
   height: 40px;
@@ -472,27 +527,7 @@ border: 1px solid #aaa;margin: 1px 10px;
   padding: 25px;
   width: 50%;
 }
-.popup-frame {
-  width: 350px; 
-  height: 250px; 
-  padding: 0.5em; 
-  z-index: 10001;
-  border: 1px #999 solid;
-  background-color:#FFF;
-  opacity: 0.5;
-  cursor: pointer;
-}
-.popup-frame:hover{
-  opacity: 0.9;
-}
-.popup-close {
-  float: left;
-  background: url("../img/close_pop.png") no-repeat;
-  width: 16px; /*or your image's width*/
-  height: 16px; /*or your image's height*/
-  margin: 0;
-  padding: 0;
-}
+
 .leaflet-top {
   top: 50px;
 }

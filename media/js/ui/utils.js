@@ -193,18 +193,32 @@ return {
       id: uuid,
       'data-role': "popup",
     });
+    var wrapper = $('<div/>', {class: 'iframeBlocker'});
+    wrapper.appendTo(main);
+    
     var closeBtn = $('<div/>', {class:'popup-close'}).click(function(){
     //var closeBtn = $('<a/>', {class: 'ui-btn ui-corner-all ui-shadow ui-btn ui-icon-delete ui-btn-icon-notext ui-btn-right'}).click(function(){    
       $(this).parent().remove();
     });
+    closeBtn.appendTo(main);
+    
     main.draggable().resizable();
     main.resize(function() {
         $('#tool-menu-arrow, #dialog-arrow, .ui-dialog').hide();
     });
-    closeBtn.appendTo(main);
-    var frame = $('<iframe />', {
-      width: '100%',
-      height: '100%',
+    var isDown = false;
+    main.mousedown(function(){ $('.iframeBlocker').css('display', 'block'); });
+
+    main.mousemove(function(){
+      if (isDown) {
+        //drag      
+      }    
+    });
+    main.mouseup(function(){$('.iframeBlocker').css('display', 'none'); });
+    
+    var frame = $('<iframe />', { 
+      //width: '100%',
+      //height: '100%',
       src: url,
       scrolling: 'no',
       frameborder: 0,
