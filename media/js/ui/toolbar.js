@@ -67,6 +67,8 @@ var Toolbar = (function($, FileDlg){
     
     var OnMenuButtonClick = function(btnID, dlgID) {
       $(btnID).click(function(){
+	$('.image-wrap').css({"-webkit-filter":"grayscale(100%) opacity(0.8)",});
+	
         //if ($(menu).is(".visible") || $(menu).css('display') == 'block') {
         // hide all dialogs
         $('.ui-dialog-content').dialog('close');
@@ -81,6 +83,7 @@ var Toolbar = (function($, FileDlg){
         //$('#dialog-arrow').css({'left':pos.left});
         //$('#dialog-arrow').show();
         $(dlgID).dialog('open');
+	$(this).css({"-webkit-filter":"grayscale(0%)"});
       });
     };
     

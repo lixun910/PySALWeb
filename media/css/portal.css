@@ -316,8 +316,6 @@ border: 1px solid #aaa;margin: 1px 10px;
   z-index:10002;
   left: 0;
   -webkit-overflow-scrolling: touch;
-  overflow-x: scroll;
-  overflow-y: none;
   white-space: nowrap;
   max-height: 153px;
 }
@@ -380,7 +378,17 @@ border: 1px solid #aaa;margin: 1px 10px;
   cursor:pointer;
   left: 0;
   bottom: 40;
-  
+}
+#layer-tree:after {
+  content:"";
+  width:0;
+  height:0;
+  border-right:10px solid transparent;
+  border-left:10px solid transparent;
+  border-top:10px solid rgb(238,238,238);
+  position: absolute;
+  top: 100%;
+  left: 10px;
 }
 #add-layer { 
   margin: 5px; 

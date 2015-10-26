@@ -261,16 +261,20 @@ and (max-device-width : 667px)  {
     padding-top: 0px;
   }
 }
+
+.inlineinput div {
+    display: inline;
+}
+
 </style>
 
 <link rel="stylesheet" href="../../media/css/header.css" />
 <link rel="stylesheet" href="../../media/css/tabs.css" />
-
+<link rel="stylesheet" href="{{url_prefix}}/media/css/{{theme_jquery}}/jquery-ui-1.10.0.custom.css">
 
 <script src="{{url_prefix}}/media/js/jquery.min.js"></script>
 <script src="{{url_prefix}}/media/js/utils.js"></script>
 <script src="{{url_prefix}}/media/js/login.js"></script>
-<link rel="stylesheet" href="{{url_prefix}}/media/css/{{theme_jquery}}/jquery-ui-1.10.4.custom.min.css">
 </head>
 
 <body>
@@ -313,7 +317,19 @@ and (max-device-width : 667px)  {
       <div class="tab-content" style="width:350px; height:400px;">
         <div id="tab1" class="tab active" style="text-align: left;">
           <p>
-            <form id="form-login" method="post">{% csrf_token %}
+
+            <form id="form-login" method="post" role="form">{% csrf_token %}
+            <div>
+              <span class="inlineinput">
+                <input type="text"  name="lemail" placeholder='Enter email'  style='display: inline; width: 120px;'></input>
+              </span>
+              <span class="inlineinput">
+                <input type="password" name="lpassword" placeholder="Enter password"  style='display: inline; width: 120px;'>
+              </span>
+              <button type="submit" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" id="btn_login">Submit</button>
+            </div>
+            
+            <!--
             <table class="logintable">
               <tr><td>Your Email:</td><td>Password:</td></tr>
               <tr>
@@ -325,6 +341,7 @@ and (max-device-width : 667px)  {
               </tr>
             </table>
             <br/>
+            -->
             &nbsp;&nbsp;&nbsp;<font color="red" style="font-size:10px" face="Century Gothic">{{error_msg}}</font>
             
             {% if error_msg != "" %}<br><br>
