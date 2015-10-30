@@ -30,6 +30,8 @@ require.config({
     'colorbrewer'  : 'lib/colorbrewer',
     md5 : 'lib/md5.min',
     ss : 'lib/simple_statistics',
+    html2canvas : 'lib/html2canvas',
+    'html2canvas.svg' : 'lib/html2canvas.svg',
     //zip : 'lib/zip/zip',
   },
   shim : {
@@ -47,6 +49,7 @@ require.config({
     "list" : {},
     'colorbrewer': {},
     ss : {exports : 'ss'},
+    "html2canvas.svg" : {deps: ['html2canvas']},
     //zip : {},
   },
 });

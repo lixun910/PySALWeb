@@ -14,7 +14,7 @@ import logging, os, zipfile, shutil, time
 from hashlib import md5
 from views_utils import *
 from views_utils import Save_new_shapefile
-from views_cartodb import carto_upload_csv
+from views_cartodb import do_upload_file
 from Jobs import job_google_search
 import multiprocessing as mp
 import google
@@ -115,7 +115,7 @@ def google_search_carto(request):
         google.saveGeoJSON(findings, ofile=opath)
    
         # call to upload the file to CartoDB
-        table_name = carto_upload_csv(open(opath, 'rb'), carto_uid, carto_key)
+        table_name = do_upload_file(open(opath, 'rb'), carto_uid, carto_key)
         
         rsp = {'status': status, 'table_name' : table_name}
         return HttpResponse(json.dumps(rsp), content_type="application/json")    

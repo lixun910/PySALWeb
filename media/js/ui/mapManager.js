@@ -161,7 +161,8 @@ var Manager = (function(window){
     
     //create basemap
     function OnAddMap(map) {
-    $('#map').css("opacity",1);
+      // show leaflet map
+      $('#map').css("opacity",1);
       // create a HTML5 canvas object for this map
       var canvas = $('<canvas/>', {'id':numMaps}).attr('class','paint-canvas');
       container.append(canvas);
@@ -170,14 +171,18 @@ var Manager = (function(window){
       if (params['fill_color'] === undefined) {
         params['fill_color'] = layerColors[numMaps % 6];
       }
+      // create canvas-map object
       var mapCanvas = new MapCanvas(map, canvas, hlcanvas, params);
       for (var i=0; i<mapCanvasList.length; i++) {
         mapCanvasList[i].updateExtent(map);
       }
+      // managed by mapCanvasList
       mapCanvasList.push(mapCanvas);
       mapOrder.push(numMaps);
-      numMaps += 1;
+      
+      // hookup map event to this "top" canvas
       SetupBasemapEvent();
+      numMaps += 1;
     }
     
     function GetMapCanvasByName(name) {
@@ -217,16 +222,14 @@ var Manager = (function(window){
       AddMap : function(data, callback) {
         if (data.file_type === 'shp') {
           var shp = data.file_content.shp;
-          if (!shp.lastModifiedDate || shp.constructor == Blob) {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-              var shpReader = new ShpReader(reader.result);
-              var map = new ShapeFileMap(data.file_name, shpReader, basemap.GetL(), basemap.GetLmap());
-              OnAddMap(map);
-              if (callback) callback(map);
-            };
-            reader.readAsArrayBuffer(shp);
-          }
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var shpReader = new ShpReader(reader.result);
+            var map = new ShapeFileMap(data.file_name, shpReader, basemap.GetL(), basemap.GetLmap());
+            OnAddMap(map);
+            if (callback) callback(map);
+          };
+          reader.readAsArrayBuffer(shp);
         }
       },
       

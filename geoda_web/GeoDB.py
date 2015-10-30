@@ -11,6 +11,7 @@ from pysal.weights.user import get_points_array_from_shapefile
 from scipy.spatial import cKDTree
 from geoda_web.models import Geodata
 
+
 TBL_PREFIX = "myapp_"
 db_set = settings.DATABASES['default']
 db_host = db_set['HOST']
@@ -21,8 +22,7 @@ db_name = db_set['NAME']
 
 def GetDS():
     global db_host, db_port, db_uname, db_upwd, db_name
-    conn_str = "PG: host=%s dbname=%s user=%s password=%s" \
-             % (db_host, db_name, db_uname, db_upwd)
+    conn_str = "PG: host=%s dbname=%s user=%s password=%s" % (db_host, db_name, db_uname, db_upwd)
     DS = ogr.Open(conn_str) 
     return DS
 

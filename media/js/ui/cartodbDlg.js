@@ -1,6 +1,7 @@
 
 // Author: xunli at asu.edu
-define(['jquery', './utils','./cartoProxy','jquery.chosen'], function($, Utils, CartoProxy) {
+define(['jquery', './utils','./cartoProxy','html2canvas','jquery.chosen'], 
+       function($, Utils, CartoProxy) {
 
 var window = this;
 
@@ -38,6 +39,47 @@ var CartoDlg = (function($, CartoProxy) {
       '#sel-carto-table-count1',
       '#sel-carto-table-count2'
     ];
+   
+    // one click share to social 
+    $('#btn_one_click_share').click(function(){
+      require(['ui/mapManager'], function(MapManager) {
+      
+        //$('#dialog-cartodb').dialog('close');
+        
+        var canvas_list = $(".paint-canvas");
+        
+        if (canvas_list && canvas_list.length > 0) {
+          // Hack: html2canvas needs to tweek this 
+          $('canvas').height($('body').height());
+          
+          var table_name = MapManager.getInstance().GetMap(0).name;   
+          
+          html2canvas($('#map-page')[0], {
+            allowTaint : false,
+            logging: true,
+            profile: false,
+            useCORS: true,
+            //height: $('body').height(),
+          }).then(function(canvas) {
+            console.log(canvas.toDataURL("image/png"));
+            
+            $('canvas').css("height","100%");
+            
+            $.ajax({
+              type: "POST",
+              url: "../publish_to_social/",
+              data: { 
+                imageData: canvas.toDataURL("image/png"),
+                csrfmiddlewaretoken: csrftoken,
+                "table_name" : table_name, 
+              }
+            }).done(function(data) {
+              console.log('save canvas:', data); 
+            });
+          });
+        }
+      }); // end require()
+    });
     
     var dlgPrgBar = $('#progress_bar_cartodb').hide();
     

@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 urlpatterns = patterns('',
     url(r'^mylogin/$', 'django.contrib.auth.views.login', name='login'),
     url(r'^mylogout/$', 'django.contrib.auth.views.logout', name='logout'),
+    
 )
                        
 urlpatterns += patterns('geoda_web.views',
@@ -57,6 +58,7 @@ urlpatterns += patterns('geoda_web.views_cartodb',
 )
 
 urlpatterns += patterns('geoda_web.views_map',
+    url(r'^publish_to_social/$', 'publish_to_social', name='publish map to social'),
     url(r'^get_dropbox_data/$', 'get_dropbox_data', name='get map data dropbox'),
     url(r'^get_map_names/$', 'get_map_names', name='get map names'),
     url(r'^get_map_conf/$', 'get_configure', name='get map configuration'),
@@ -77,7 +79,8 @@ urlpatterns += patterns('geoda_web.views_map',
     url(r'^get_fields/$', 'get_fields', name='get field names'),
     url(r'^get_metadata/$', 'get_metadata', name='get meta data'),
     url(r'^get_minmaxdist/$', 'get_minmaxdist', name='get'),
-    url(r'^upload/$', 'upload', name='upload'),
+    url(r'^upload_zipfile_to_carto/$', 'uploadZipFileToCartoDB', name='upload Zip File'),
+    url(r'^upload_zipurl_to_carto/$', 'uploadZipUrlToCartoDB', name='upload Zip Url'),
     url(r'^upload_canvas/$', 'upload_canvas', name='upload canvas'),
     url(r'^draw/$', TemplateView.as_view(template_name='myapp/draw.html')),
 )    

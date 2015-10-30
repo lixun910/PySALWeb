@@ -93,11 +93,14 @@ var LayerTree = (function($) {
         $(elm).prependTo($('#sortable-layers'));
         
         PositionLayerTree();
+        
         // change current layer name
         PlaceLayerName(name);
         $('.tree-item-eye[id='+nMaps+']').click(function() {
           SwitchLayer($(this), mapManager.GetOrigIdx($(this).attr("id")));
         });
+        
+        // reposition
       },
       
     };

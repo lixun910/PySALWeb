@@ -20,7 +20,7 @@ var GDAMsgBox = (function($){
     dlg.dialog({
       dialogClass: "dialogWithDropShadow",
       width: 400, 
-      height: 200, 
+      height: 300, 
       autoOpen: false, 
       modal: true,
       buttons: {OK: function() {$( this ).dialog( "close" );}}

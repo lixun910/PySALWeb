@@ -326,22 +326,9 @@ and (max-device-width : 667px)  {
               <span class="inlineinput">
                 <input type="password" name="lpassword" placeholder="Enter password"  style='display: inline; width: 120px;'>
               </span>
-              <button type="submit" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" id="btn_login">Submit</button>
+              <button type="submit" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only " id="btn_login">Submit</button>
             </div>
             
-            <!--
-            <table class="logintable">
-              <tr><td>Your Email:</td><td>Password:</td></tr>
-              <tr>
-                <td><input type="text" name="lemail" value=''></input></td>
-                <td>
-                  <input type="password" name="lpassword" value=''></input>&nbsp;
-                  <button id="btn_login" type="submit" class="ui-state-default button-text-only">Login </button>
-                </td>
-              </tr>
-            </table>
-            <br/>
-            -->
             &nbsp;&nbsp;&nbsp;<font color="red" style="font-size:10px" face="Century Gothic">{{error_msg}}</font>
             
             {% if error_msg != "" %}<br><br>

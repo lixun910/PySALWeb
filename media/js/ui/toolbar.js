@@ -174,15 +174,10 @@ var Toolbar = (function($, FileDlg){
       },
       
       Show : function(map) {
-	if (map['uuid'] === undefined) {
-	  // cartodb app
-	  // hide some buttons
-	  $('#btnCreateW, #btnHistW').hide();
-	} else {
-	  // pysal cloud app
-	}
+	//$('#btnCreateW, #btnHistW').hide();
 	ToggleButtons(true);
 	layerTree.AddMap(map.name);
+	
       },
       
       Hide : function() {

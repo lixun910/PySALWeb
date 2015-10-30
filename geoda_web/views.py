@@ -27,15 +27,23 @@ def my_logout(request):
     
 def my_login(request):
     error_msg = ""
+    
+    if request.user.is_authenticated():
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/index/') 
+    
     if request.method == 'POST':
         email = request.POST.get("lemail")
         password = request.POST.get("lpassword")
         user = authenticate(username=email, password=password)
         if user is not None:
-            # user.is_active
+            # the password verified for the user
+            #if user.is_active:
+            #    print("User is valid, active and authenticated")
+            #else:
+            #    print("The password is valid, but the account has been disabled!")
             login(request, user)
             print user.id
-            return HttpResponseRedirect(URL_PREFIX+'/myapp/index/') 
+            return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/index/') 
         else:
             error_msg = "Email or password don't match any existing record."
     return render_to_response(
@@ -49,6 +57,7 @@ def my_login(request):
 
 def my_signup(request):
     print "signup", request.POST
+    
     if request.method == 'POST': 
         first_name = request.POST.get("first_name")
         last_name = request.POST.get("last_name")
@@ -127,6 +136,7 @@ def index(request):
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
 
+    """
     geodata = Geodata.objects.all().filter( userid=userid )
     geodata_content =  {}
     first_geodata = ''
@@ -135,18 +145,29 @@ def index(request):
         if i == 0:
             first_geodata = layer
     jsonprefix = settings.URL_PREFIX + settings.MEDIA_URL
-    # render main page with userid, shps/tables, weights
+    """
+    auth_provider = ""
+    if request.user.social_auth:
+        if len(request.user.social_auth.filter(provider="twitter"))>0:
+            auth_provider = 'twitter'
+        elif len(request.user.social_auth.filter(provider="facebook"))>0:
+            auth_provider = 'facebook'
+        elif len(request.user.social_auth.filter(provider="tumblr"))>0:
+            auth_provider = 'tumblr'
+        
+        
     return render_to_response(
         'myapp/index.html', {
-            'test': {0:1},
             'userid': userid, 
-            'geodata': geodata_content, 
-            'geodata0': first_geodata,
-            'n': len(geodata),
-            'nn':range(1,len(geodata)+1),
-            'url_prefix': settings.URL_PREFIX,
-            'jsonprefix' : jsonprefix,
-            'theme_jquery': settings.THEME_JQUERY,
+            'auth_provider' : auth_provider
+            #'test': {0:1},
+            #'geodata': geodata_content, 
+            #'geodata0': first_geodata,
+            #'n': len(geodata),
+            #'nn':range(1,len(geodata)+1),
+            #'url_prefix': settings.URL_PREFIX,
+            #'jsonprefix' : jsonprefix,
+            #'theme_jquery': settings.THEME_JQUERY,
             },
         context_instance=RequestContext(request)
     )

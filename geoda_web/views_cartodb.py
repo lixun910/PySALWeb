@@ -181,7 +181,7 @@ def carto_upload_file(request):
         key = request.GET.get("carto_key", None)
         filelist = request.FILES.getlist('userfile')
         if key and uid:
-            table_name = carto_upload_csv(filelist[0], uid, key)
+            table_name = do_upload_file(filelist[0], uid, key)
             rsp = {'table_name':table_name}
             return HttpResponse(
                 json.dumps(rsp),
@@ -206,7 +206,7 @@ def carto_add_field_from_file(request):
         file_name = request.POST.get('file_name', None)
  
         # upload zipped file to cartodb and get returned_table_name
-        returned_table_name = carto_upload_csv(filelist[0], uid, key)
+        returned_table_name = do_upload_file(filelist[0], uid, key)
         
         # add field with field_name to destinated table_name
         carto_add_field_only(table_name, field_name, field_type, uid, key)
@@ -237,7 +237,7 @@ def carto_add_field_only(table_name, field_name, field_type, uid, key):
     except:
         print "Add field faield"
         
-def carto_upload_csv(fileObj, uid, key):
+def do_upload_file(fileObj, uid, key):
     url = "https://%s.cartodb.com/api/v1/imports/?api_key=%s" % (uid,key)
     r = requests.post(url, files={'file': fileObj}, verify=False)
     data = r.json()

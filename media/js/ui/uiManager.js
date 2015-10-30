@@ -47,7 +47,7 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
       zip.createReader(new zip.BlobReader(f), function(zipReader) {
         zipReader.getEntries(function(entries) {
           entries.forEach(function(entry) {
-            var suffix = getSuffix(entry.filename);
+            var suffix = Utils.getSuffix(entry.filename);
             var writer;
             if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
               writer = new zip.TextWriter();
@@ -85,14 +85,7 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
       });  
     };
     
-    var ShowPrgDiv = function(msg, visible) {
-      if (visible == true) {
-        $('#prgInfo span').text(msg);
-        $('#prgInfo').show();
-      } else {
-        $('#prgInfo').hide();
-      }
-    };
+
     
     var OnMapShown = function(map) {
       $('#loading').hide();

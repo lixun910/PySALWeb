@@ -22,6 +22,7 @@ from hashlib import md5
 from geoda_web.models import Document, Geodata, Weights, SpregModel, MapConfigure
 from views_utils import * 
 from views_utils import Save_new_shapefile
+from views_cartodb import do_upload_file
 
 from pysal import Quantiles, Equal_Interval, Natural_Breaks, Fisher_Jenks, Moran_Local, W
 from pysal import open as pysalOpen
@@ -577,10 +578,8 @@ def road_snap_points(request):
             counts = net.SnapPointsToNetwork(pt_path, float(road_seg_length))
             GeoDB.AddField(road_uuid, col_name, 0, counts)  # 0 integer
             
-            return HttpResponse(
-                RSP_OK,
-                content_type="application/json"
-            )
+            return HttpResponse(RSP_OK, content_type="application/json")
+        
     return HttpResponse(RSP_FAIL, content_type="application/json")    
 
 @login_required
@@ -631,13 +630,74 @@ def road_create_w(request):
                 weights = weights
             )
             new_w_item.save() 
-              
-            return HttpResponse(
-                RSP_OK,
-                content_type="application/json"
-            )
+            return HttpResponse(RSP_OK, content_type="application/json")
+        
     return HttpResponse(RSP_FAIL, content_type="application/json")   
 
+@login_required
+def uploadZipFileToCartoDB(request):
+    # check user login
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+
+    if request.method == 'POST': 
+        carto_uid = request.POST.get("carto_uid", None)
+        carto_key = request.POST.get("carto_key", None)
+        filelist = request.FILES.getlist('userfile')
+        
+        if len(filelist) == 0:
+            return HttpResponse(RSP_FAIL, content_type="application/json")
+        
+        elif len(filelist) == 1 and str(filelist[0]).endswith("zip"):
+            # NOTE: we don't save a copy to our server    
+            # but upload to CartoDB
+            table_name = do_upload_file(filelist[0], carto_uid, carto_key)
+            rst = {"table_name" : table_name, "success" : 1};
+            return HttpResponse(json.dumps(rst), content_type="application/json")
+        
+        else:
+            return HttpResponse(RSP_FAIL, content_type="application/json")
+        
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+            
+        
+@login_required
+def uploadZipUrlToCartoDB(request):
+    # check user login
+    userid = request.user.username
+    if not userid:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+
+    if request.method == 'GET': 
+        carto_uid = request.GET.get("carto_uid", None)
+        carto_key = request.GET.get("carto_key", None)
+        zip_url = request.GET.get('zip', None)
+        
+        if zip_url != None:
+            # NOTE: we save a copy to our server first
+            # then upload to CartoDB
+            tmp_name = gen_rnd_str()
+            user_uuid = md5(userid).hexdigest()
+            base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
+            extract_loc = os.path.join(base_loc, tmp_name)
+            if os.path.exists(extract_loc):
+                shutil.rmtree(extract_loc)
+            os.mkdir(extract_loc) 
+            zip_name = zip_url.split('/')[-1]
+            zip_loc = os.path.join(extract_loc, zip_name)
+            urllib.urlretrieve(zip_url, zip_loc)
+            
+            table_name = do_upload_file(open(zip_loc, 'rb'), carto_uid, carto_key)
+            rst = {"table_name" : table_name, "success" : 1};
+            os.remove(zip_loc)
+            return HttpResponse(json.dumps(rst), content_type="application/json")
+        
+        else:
+            return HttpResponse(RSP_FAIL, content_type="application/json")
+        
+    return HttpResponse(RSP_FAIL, content_type="application/json")
+        
 """
 Upload shape files to server. Write meta data to meta database.
 In background, export files to spatial database. 
@@ -715,7 +775,8 @@ def upload(request):
             ziploc = os.path.join(extract_loc, str(filelist[0]))
             if os.path.exists(extract_loc):
                 shutil.rmtree(extract_loc)
-            os.mkdir(extract_loc) 
+            os.mkdir(extract_loc)
+        
             _save_upload_file(filelist[0], ziploc)
             isJson,isShp,shp_path,driver= _process_zip(userid,extract_loc,ziploc) 
         else:
@@ -885,3 +946,52 @@ def upload_canvas(request):
     return HttpResponse("ERROR")
 
     
+@login_required
+def publish_to_social(request):
+    import base64, cStringIO, re
+    user = request.user
+    if not user.username:
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+    
+    if request.method == 'POST': 
+        table_name = request.POST.get("table_name", None)
+        datauri = request.POST['imageData']
+       
+        # save the canvas image 
+        user_uuid = md5(user.username).hexdigest()
+        path_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
+        if not os.path.exists(path_loc):
+            os.mkdir(path_loc)
+        image_loc = os.path.join(path_loc, table_name + '.png')
+        if os.path.exists(image_loc):
+            pass
+        imgstr = re.search(r'base64,(.*)', datauri).group(1)
+        o = open(image_loc, 'wb')
+        o.write(imgstr.decode('base64'))
+        o.close()
+       
+        # publish this map to social
+        social_auth = request.user.social_auth
+        if social_auth:
+            if len(social_auth.filter(provider="twitter")) > 0:
+                from twitter import *
+                social = social_auth.get(provider="twitter")
+                oauth_token = str(social.tokens['oauth_token'])
+                oauth_token_secret = str(social.tokens['oauth_token_secret'])
+                CONSUMER_KEY = str(settings.SOCIAL_AUTH_TWITTER_KEY)
+                CONSUMER_SECRET = str(settings.SOCIAL_AUTH_TWITTER_SECRET)
+                twitter = Twitter(auth=OAuth(oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET))
+                
+                # upload image                
+                with open(image_loc, "rb") as imagefile:
+                    imagedata = imagefile.read()    
+                #t_up = Twitter(domain='upload.twitter.com',auth=OAuth(oauth_token, oauth_token_secret, CONSUMER_KEY, CONSUMER_SECRET))
+                #id_img1 = t_up.media.upload(media=imagedata)["media_id_string"]
+                #twitter.statuses.update(status="PTT ★", media_ids=",".join([id_img1]))         
+                
+                params = {"media[]": imagedata, "status": table_name +" made by @GeodaWeb"}
+                twitter.statuses.update_with_media(**params)
+                
+                return HttpResponse(RSP_OK, content_type="application/json")
+
+    return HttpResponse(RSP_FAIL, content_type="application/json")
