@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>GeoDa-CartoDB</title>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+
+  <link rel="stylesheet" href="../media/css/cartodb.css" />
+  <link rel="stylesheet" href="../media/asserts/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="../media/css/custom-theme/jquery-ui-1.10.0.custom.css">
+  <link rel="stylesheet" href="../media/asserts/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="../media/css/publish.css" />
+</head>
+<script src="../media/js/require.js" charset="utf-8"></script>
+<script src="../media/js/cartodb.js"></script>
+
+<body>
+  <div class="awesome-bar">
+    <div class="logo"></div>
+    <div class="logo_text">GeoDa Web</div>
+  </div>
+  <div style="padding-top:48px"></div>
+  <div id="map"></div>
+
+
+<!-- include cartodb.js library -->
+
+<!-- Place your code in the script tags below -->
+<script>
+function getParameterByName(name) {
+  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+    results = regex.exec(location.search);
+  return results == undefined ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+var   popFrame = function(url, newWindow) {
+    if (newWindow==true) {
+      window.open(
+        url,
+        "_blank",
+        "titlebar=no,toolbar=no,location=no,width=900, height=700, scrollbars=yes"
+      );
+      return;
+    }
+    var uuid = "abcdert";//this.guid();
+    var main = $('<div/>', {
+      class:'popup-frame ui-popup-container',
+      id: uuid,
+      'data-role': "popup",
+    });
+    var wrapper = $('<div/>', {class: 'iframeBlocker'});
+    wrapper.appendTo(main);
+    
+    var closeBtn = $('<div/>', {class:'popup-close'}).click(function(){
+    //var closeBtn = $('<a/>', {class: 'ui-btn ui-corner-all ui-shadow ui-btn ui-icon-delete ui-btn-icon-notext ui-btn-right'}).click(function(){    
+      $(this).parent().remove();
+    });
+    closeBtn.appendTo(main);
+    
+    main.draggable().resizable();
+    main.resize(function() {
+        $('#tool-menu-arrow, #dialog-arrow, .ui-dialog').hide();
+    });
+    var isDown = false;
+    main.mousedown(function(){ $('.iframeBlocker').css('display', 'block'); });
+
+    main.mousemove(function(){
+      if (isDown) {
+        //drag      
+      }    
+    });
+    main.mouseup(function(){$('.iframeBlocker').css('display', 'none'); });
+    
+    var frame = $('<iframe />', { 
+      //width: '100%',
+      //height: '100%',
+      src: url,
+      scrolling: 'no',
+      frameborder: 0,
+    });
+    frame.appendTo(main);
+    main.appendTo($('body'));
+    main.css({ 
+      position: 'fixed',
+      left: 100 + Math.random() * 20, 
+      top: 100 + Math.random() * 20,
+    });
+    main.show();
+    if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) 
+      $('div.tool-menu, .ui-dialog, #dialog-arrow').hide();
+    return uuid;
+  }
+  
+window.onload = function() {
+  var user_id = getParameterByName('uid');
+  var viz_name = getParameterByName('vizname');
+  var plots = getParameterByName('plots');
+  var vizjson_url = '../media/temp/' + user_id + '/' + viz_name + '.json'; // <-- Paste viz.json URL between quotes
+
+  cartodb.createVis("map", vizjson_url) // <-- Change map_id to 'map'
+    .done(function(vis, layers) {
+      // do stuff
+      console.log("Map successfully created");
+    })
+    .error(function(err) {
+      // report error
+      console.log("An error occurred: " + err);
+    });
+    
+  popFrame('boxplot.html');
+}
+</script>
+</body>
+</html>

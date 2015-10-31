@@ -701,6 +701,8 @@ def uploadZipUrlToCartoDB(request):
 """
 Upload shape files to server. Write meta data to meta database.
 In background, export files to spatial database. 
+
+@deprecated
 """
 @login_required
 def upload(request):

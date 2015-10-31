@@ -1,220 +1,124 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>GeoDa-CartoDB</title>
-<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
-<link rel="shortcut icon" href="https://cartodb.com/assets/favicon.ico" />
-
-<link rel="stylesheet" href="../media/css/cartodb.css" />
-
-<style>
-html, body{
-    height: 100%;
-    padding: 0;
-    margin: 0;
-  }
-.awesome-bar {
-  display: block;
-  position: fixed;
-  width: 100%;
-  min-width: 600px;
-  height: 48px;
-  z-index: 9999;
-  opacity: 0.9;
-  font-size: 150%;
-  font-family: Verdana,Helvetica,Arial,sans-serif;
-  color: #EEE;
-
-  background: rgba(0,0,0,0.9);
-  -moz-box-shadow: 0 14px 18px rgba(0,0,0,0.9);
-  -webkit-box-shadow: 0 14px 18px rgba(0,0,0,0.9);
-  box-shadow: 0 14px 18px rgba(0,0,0,0.9);
-}
-.logo {
-  width: 45px;
-  height: 40px;
-  margin: 5px 0 0 10px;
-  background: url("../media/img/geoda-logo.png") no-repeat;
-  float: left;
-  cursor: pointer;
--webkit-filter: drop-shadow(10px 10px 10px #222);
-    filter:         drop-shadow(10px 10px 10px #222); 
-}
-.logo_text {
-  margin: 10px 0 0 10px;
-  float: right;
-  width: 120px;
-  height: 40px;
-  font-size: 70%;
-  font-family: Verdana,Helvetica,Arial,sans-serif;
--webkit-filter: drop-shadow(10px 10px 10px #222);
-    filter:         drop-shadow(10px 10px 10px #222); 
-}
-#map{
-  position: relative; 
-  border: 0px solid red;
-  width: 100%;
-  height: -moz-calc(100% - 48px); 
-  height: -webkit-calc(100% - 48px); 
-  height: calc(100% - 48px); 
-}
-/*popup iframe style*/
-iframe {
-  margin: 5px;
-  width: -moz-calc(100% - 10px); /* Firefox */
-  width: -webkit-calc(100% - 10px); /* Chrome, Safari */
-  width: calc(100% - 10px); /* IE9+ and future browsers */
-  height: -moz-calc(100% - 38px); /* Firefox */
-  height: -webkit-calc(100% - 38px); /* Chrome, Safari */
-  height: calc(100% - 38px); /* IE9+ and future browsers */
-  background: rgb(255,255,255);
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
-}
-.popup-frame {
-  background-image: url("../img/menu-bg.png");
-  width: 350px; 
-  height: 250px; 
-  padding: 0.5em; 
-  z-index: 10001;
-  border: 1px #999 solid;
-  background-color:#CCC;
-  opacity: 0.5;
-  cursor: hand;
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
-  -webkit-filter: drop-shadow(10px 10px 10px #222);
-  filter:         drop-shadow(10px 10px 10px #222); 
-}
-.popup-frame:hover{
-  opacity: 0.9;
-}
-.popup-close {
-  float: left;
-  background: url("../img/close_pop.png") no-repeat;
-  width: 16px; /*or your image's width*/
-  height: 16px; /*or your image's height*/
-  margin: 0;
-  padding: 0;
-}
-.iframeBlocker {
-  position: absolute; 
-  top: 25px; 
-  left: 5; 
-  width: -moz-calc(100% - 10px); /* Firefox */
-  width: -webkit-calc(100% - 10px); /* Chrome, Safari */
-  width: calc(100% - 10px); /* IE9+ and future browsers */
-  height: -moz-calc(100% - 38px); /* Firefox */
-  height: -webkit-calc(100% - 38px); /* Chrome, Safari */
-  height: calc(100% - 38px); /* IE9+ and future browsers */
-  display: none;
-}
-</style>
-
-<script src="../media/js/jquery.min.js"></script>
-<script src="../media/js/jquery-ui.js"></script>
+  <title>GeoDa-Web Publication</title>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+  
+  <link rel="stylesheet" href="../media/css/cartodb.css" />
+  <link rel="stylesheet" href="../media/asserts/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="../media/css/custom-theme/jquery-ui-1.10.0.custom.css">
+  <link rel="stylesheet" href="../media/asserts/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="../media/css/publish.css" />
+  
+  <script src="../media/js/cartodb.js"></script>
+  <script src="../media/js/require.js"></script>
+  <script src="../../media/js/zip/zip.js"></script>
 </head>
 <body>
 
-<div class="awesome-bar">
-  <div class="logo"></div>
-  <div class="logo_text">GeoDa Web</div>
-</div>
-<div style="padding-top:48px"></div>
-<div id="map"></div>
-
-
-<!-- include cartodb.js library -->
-<script src="../media/js/cartodb.js"></script>
-
-<!-- Place your code in the script tags below -->
-<script>
-function getParameterByName(name) {
-  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-    results = regex.exec(location.search);
-  return results == undefined ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-}
-
-var   popFrame = function(url, newWindow) {
-    if (newWindow==true) {
-      window.open(
-        url,
-        "_blank",
-        "titlebar=no,toolbar=no,location=no,width=900, height=700, scrollbars=yes"
-      );
-      return;
-    }
-    var uuid = "abcdert";//this.guid();
-    var main = $('<div/>', {
-      class:'popup-frame ui-popup-container',
-      id: uuid,
-      'data-role': "popup",
-    });
-    var wrapper = $('<div/>', {class: 'iframeBlocker'});
-    wrapper.appendTo(main);
-    
-    var closeBtn = $('<div/>', {class:'popup-close'}).click(function(){
-    //var closeBtn = $('<a/>', {class: 'ui-btn ui-corner-all ui-shadow ui-btn ui-icon-delete ui-btn-icon-notext ui-btn-right'}).click(function(){    
-      $(this).parent().remove();
-    });
-    closeBtn.appendTo(main);
-    
-    main.draggable().resizable();
-    main.resize(function() {
-        $('#tool-menu-arrow, #dialog-arrow, .ui-dialog').hide();
-    });
-    var isDown = false;
-    main.mousedown(function(){ $('.iframeBlocker').css('display', 'block'); });
-
-    main.mousemove(function(){
-      if (isDown) {
-        //drag      
-      }    
-    });
-    main.mouseup(function(){$('.iframeBlocker').css('display', 'none'); });
-    
-    var frame = $('<iframe />', { 
-      //width: '100%',
-      //height: '100%',
-      src: url,
-      scrolling: 'no',
-      frameborder: 0,
-    });
-    frame.appendTo(main);
-    main.appendTo($('body'));
-    main.css({ 
-      position: 'fixed',
-      left: 100 + Math.random() * 20, 
-      top: 100 + Math.random() * 20,
-    });
-    main.show();
-    if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) 
-      $('div.tool-menu, .ui-dialog, #dialog-arrow').hide();
-    return uuid;
-  }
+  <div class="awesome-bar">
+      <div class="logo"></div>
+  </div>
   
-window.onload = function() {
-  var user_id = getParameterByName('uid');
-  var viz_name = getParameterByName('vizname');
-  var plots = getParameterByName('plots');
+  <div role="main" class="ui-content" id="map-container">
+    <div id="map"></div>
+  </div>
+  
+  <canvas class="hl-canvas"></canvas>
+  
+</body>
+
+<script>
+require.config({
+    baseUrl: '../media/js',
+    paths: {
+      jquery: 'lib/jquery.min',
+      jqueryui : 'lib/jquery-ui-1.10.4.custom.min',
+      d3: 'lib/d3.v3.min',
+      colorbrewer  : 'lib/colorbrewer',
+    },
+    shim : {
+      "jqueryui" : {deps: ['jquery']},
+      d3 : {exports : 'd3'},
+      colorbrewer: {exports : "colorbrewer"},
+    }
+});
+
+require(["jquery", 
+         "./ui/cartoProxy",
+         "./ui/utils", 
+         "./ui/basemap", 
+         "./ui/mapManager", 
+         'colorbrewer', 'd3', 'jqueryui'],
+function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
+
+  console.log("After libs loaded...");
+  var user_id = Utils.getParameterByName('uid');
+  var viz_name = Utils.getParameterByName('vizname');
+  var plots = Utils.getParameterByName('plots');
   var vizjson_url = '../media/temp/' + user_id + '/' + viz_name + '.json'; // <-- Paste viz.json URL between quotes
 
   cartodb.createVis("map", vizjson_url) // <-- Change map_id to 'map'
     .done(function(vis, layers) {
-      // do stuff
       console.log("Map successfully created");
     })
     .error(function(err) {
-      // report error
       console.log("An error occurred: " + err);
     });
     
-  popFrame('boxplot.html');
-}
+  // download geometries from CartoDB for interactive 
+  //var mapManager = MapManager.getInstance();     
+  //Utils.popFrame('boxplot.html');
+  
+
+  var uid = "lixun910";
+  var key = "340808e9a453af9680684a65990eb4eb706e9b56";
+  CartoProxy.SetUID(uid);
+  CartoProxy.SetKey(key);  
+  
+  var table_name = "nat";
+  
+  CartoProxy.DownloadTable(table_name, function(data) {
+    require(['ui/mapManager'], function(MapManager) {
+    
+      $('.cartodb-map-wrapper').hide()
+      
+      MapManager.getInstance().AddMap(data, function(map) { });
+    });
+  });
+  
+  // plots
+
+  // histogram 
+  function PopHistogram() {
+    var_name = "fh80";
+    var url = 'histogram.html?';
+    url += 'table_name=' + table_name;
+    url += '&carto_uid=' + CartoProxy.GetUID();
+    url += '&carto_key=' + CartoProxy.GetKey() + '&';
+    url += '&x=' + var_name;
+            
+    Utils.popFrame(url);
+  }
+  
+  // scatterplot 
+  function PopScatterPlot() {
+    var x = "fh80", y = "po80";
+    
+    var url = 'scatterplot.html?';
+    url += 'table_name=' + table_name;
+    url += '&carto_uid=' + CartoProxy.GetUID();
+    url += '&carto_key=' + CartoProxy.GetKey() + '&';
+    url += '&x=' + x + '&y=' + y;
+            
+    Utils.popFrame(url);
+  }
+  
+  PopHistogram();
+  PopScatterPlot();
+  
+}); // end require
+
 </script>
-</body>
 </html>

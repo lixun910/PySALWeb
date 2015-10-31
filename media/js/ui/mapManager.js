@@ -224,10 +224,15 @@ var Manager = (function(window){
           var shp = data.file_content.shp;
           var reader = new FileReader();
           reader.onload = function(e) {
-            var shpReader = new ShpReader(reader.result);
-            var map = new ShapeFileMap(data.file_name, shpReader, basemap.GetL(), basemap.GetLmap());
-            OnAddMap(map);
-            if (callback) callback(map);
+            // just in case basemap is not ready     
+            require(['ui/basemap'], function(BaseMap){
+              basemap = BaseMap.getInstance();
+              
+              var shpReader = new ShpReader(reader.result);
+              var map = new ShapeFileMap(data.file_name, shpReader, basemap.GetL(), basemap.GetLmap());
+              OnAddMap(map);
+              if (callback) callback(map);
+            });
           };
           reader.readAsArrayBuffer(shp);
         }
