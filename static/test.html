@@ -87,11 +87,16 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
       MapManager.getInstance().AddMap(data, function(map) { });
     });
   });
+ 
+  // Cluster map
+  // Moran's I scatter plot
+  function PopMoranIScatterPlot(table_name, var_name) {
+  }
   
-  // plots
-
+  
+  // Plots
   // histogram 
-  function PopHistogram() {
+  function PopHistogram(table_name, var_name) {
     var_name = "fh80";
     var url = 'histogram.html?';
     url += 'table_name=' + table_name;
@@ -103,7 +108,7 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
   }
   
   // scatterplot 
-  function PopScatterPlot() {
+  function PopScatterPlot(table_name, var_name_x, var_name_y) {
     var x = "fh80", y = "po80";
     
     var url = 'scatterplot.html?';
@@ -113,6 +118,18 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
     url += '&x=' + x + '&y=' + y;
             
     Utils.popFrame(url);
+  }
+  
+  // scatter matrix
+  function PopScatterMatrix(table_name, var_names/*[list]*/) {
+  }
+  
+  // parallel coordinates
+  function PopParallelCoordinates(table_name, var_names/*[list]*/) {
+  }
+ 
+  // box plot
+  function PopBoxPlot(table_name, var_name) {
   }
   
   PopHistogram();
