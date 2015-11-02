@@ -6,7 +6,7 @@
 <style>
 body { 
 /*
-  background: url({{url_prefix}}/media/img/bg.jpg) no-repeat center center fixed; 
+  background: url({{url_prefix}}/../media/img/bg.jpg) no-repeat center center fixed; 
   -webkit-background-size: cover;
   -moz-background-size: cover;
   -o-background-size: cover;
@@ -270,11 +270,11 @@ and (max-device-width : 667px)  {
 
 <link rel="stylesheet" href="../../media/css/header.css" />
 <link rel="stylesheet" href="../../media/css/tabs.css" />
-<link rel="stylesheet" href="{{url_prefix}}/media/css/{{theme_jquery}}/jquery-ui-1.10.0.custom.css">
+<link rel="stylesheet" href="../../media/css/{{theme_jquery}}/jquery-ui-1.10.0.custom.css">
 
-<script src="{{url_prefix}}/media/js/jquery.min.js"></script>
-<script src="{{url_prefix}}/media/js/utils.js"></script>
-<script src="{{url_prefix}}/media/js/login.js"></script>
+<script src="../../media/js/jquery.min.js"></script>
+<script src="../../media/js/utils.js"></script>
+<script src="../../media/js/login.js"></script>
 </head>
 
 <body>
@@ -373,9 +373,9 @@ and (max-device-width : 667px)  {
               <tr>
                 <td>
                   <input style="width:290px" type="text" name="email" value='Email'></input>
-                  <img id="img-id-chk" src="{{url_prefix}}/media/img/checkmark.png">
-                  <img id="img-id-nochk" src="{{url_prefix}}/media/img/uncheckmark.gif">
-                  <img id="img-id-spin" src="{{url_prefix}}/media/img/loading_small.gif">
+                  <img id="img-id-chk" src="../../media/img/checkmark.png">
+                  <img id="img-id-nochk" src="../../media/img/uncheckmark.gif">
+                  <img id="img-id-spin" src="../../media/img/loading_small.gif">
                 </td>
                 <td><p id="chk_email_msg" style="margin-left: -180px; font-size:10px;font-family: Century Gothic;color: red; "></p></td>
               </tr>
@@ -438,7 +438,7 @@ $(document).ready(function() {
 $("#img-id-chk, #img-id-nochk, #img-id-spin").hide();          
 
 $('#btn_login').click( function() {
-  $.post("../login/", $("form-login").serialize())
+  $.post("./login/", $("form-login").serialize())
   .done(function(data) {
     console.log(data);
     location.reload();
@@ -457,7 +457,7 @@ $('#btn_signup').submit( function(event) {
 
 function checkDupEmail(email) {
   //$('#img-id-spin').show();
-  $.get("../dup_email/", {'email': email})
+  $.get("./dup_email/", {'email': email})
   .done( function(data) {
    // $('#img-id-spin').hide();
     if (data == 1) {

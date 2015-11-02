@@ -21,7 +21,8 @@ urlpatterns += static(settings.URL_PREFIX + settings.STATIC_URL, document_root=s
 
 urlpatterns += [
     url(r'^admin/', include(admin.site.urls)),
-    url('', include('social.apps.django_app.urls', namespace='social')),
+    url('xun/', include('social.apps.django_app.urls', namespace='social')),
+    url('', include('social.apps.django_app.urls')),
     url(r'^accounts/', include('registration.backends.simple.urls')),
     url(r'^openlogin/$', 'common_auth.views.login'),
     url(r'^openlogout/$', 'common_auth.views.logout'),    

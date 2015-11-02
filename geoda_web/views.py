@@ -129,7 +129,7 @@ def main(request):
         context_instance=RequestContext(request)
     )
 
-@login_required
+@login_required(login_url='/')
 def index(request):
     # check user login
     userid = request.user.username
@@ -177,7 +177,7 @@ def index2(request):
     # check user login
     userid = request.user.username
     if not userid:
-        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
+        return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/mylogin/') 
 
     geodata = Geodata.objects.all().filter( userid=userid )
     geodata_content =  {}
