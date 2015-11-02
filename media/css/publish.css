@@ -7,8 +7,12 @@ html, body{
  
 /* cartodb hacks*/ 
 .cartodb-zoom {
-  top: 50px;
+  top: 39px;
   right: 10px;
+}
+ div.cartodb-tiles-loader div.loader {
+  top:130px;
+  left: -40px;
 }
 /* leaflet-map hacks */
 .leaflet-top {

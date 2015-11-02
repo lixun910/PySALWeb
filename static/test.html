@@ -58,7 +58,12 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
   var viz_name = Utils.getParameterByName('vizname');
   var plots = Utils.getParameterByName('plots');
   var vizjson_url = '../media/temp/' + user_id + '/' + viz_name + '.json'; // <-- Paste viz.json URL between quotes
+  var uid = "lixun910";
+  var key = "340808e9a453af9680684a65990eb4eb706e9b56";
+  CartoProxy.SetUID(uid);
+  CartoProxy.SetKey(key);  
 
+  // Create CartoDB map first
   cartodb.createVis("map", vizjson_url) // <-- Change map_id to 'map'
     .done(function(vis, layers) {
       console.log("Map successfully created");
@@ -67,27 +72,114 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
       console.log("An error occurred: " + err);
     });
     
-  // download geometries from CartoDB for interactive 
-  //var mapManager = MapManager.getInstance();     
-  //Utils.popFrame('boxplot.html');
+  // In background, get data from CartoDB for interactive 
+  var maps_conf_url = '../media/temp/' + user_id + '/' + viz_name + '.maps.json'; 
   
-
-  var uid = "lixun910";
-  var key = "340808e9a453af9680684a65990eb4eb706e9b56";
-  CartoProxy.SetUID(uid);
-  CartoProxy.SetKey(key);  
-  
-  var table_name = "nat";
-  
-  CartoProxy.DownloadTable(table_name, function(data) {
-    require(['ui/mapManager'], function(MapManager) {
-    
-      $('.cartodb-map-wrapper').hide()
+  require(['ui/mapManager'], function(MapManager) {
+    $.get(maps_conf_url).done(function(maps_conf){
+      console.log(maps_conf);
+      var n_maps = maps_conf.length;
       
-      MapManager.getInstance().AddMap(data, function(map) { });
-    });
-  });
+      for (var i=0; i<n_maps; i++) {
+        var m_conf = maps_conf[i];
+        if (m_conf) {
+          var table_name = m_conf["map_name"];
+          CartoProxy.DownloadTable(table_name, function(data) { 
+            // update UI 
+            //$('.cartodb-map-wrapper').hide()
+            $('.cartodb-map-wrapper').children().first().hide();
+            $('.cartodb-zoom').hide()
+            $('.leaflet-control-attribution').first().hide()
+            
+            // add map
+            MapManager.getInstance().AddMap(data, function(map) {
+              var field = m_conf["legend_field"];
+              if (field != undefined) {
+                var mapCanvas = MapManager.getInstance().GetCanvasByMap(map);
+                if (mapCanvas) {
+                  CartoProxy.GetVariables(table_name, [field], false, function(result){
+                    //console.log(result);
+                    var data = result[field], /*list*/
+                        n_data = data.length,
+                        bins = m_conf["bins"],
+                        n_bins = bins.length,
+                        colors = m_conf["colors"],
+                        n_colors = colors.length,
+                        color_theme = {};
+                    // generate colorTheme: {'#ccc':[ids], ...}
+                    for (var m=0; m<n_colors; m++) {
+                      color_theme[colors[m]] = [];
+                    }
+                    for (var m=0; m<n_data;m++)  {
+                      var found = false;
+                      for (var bi=0; bi < n_bins; bi++) {
+                        if ( data[m] <= bins[bi] ) {
+                          color_theme[ colors[bi] ].push( m );
+                          found = true;
+                          break;
+                        }
+                      }
+                      if (!found) color_theme[ colors[n_bins] ].push( m );
+                    }
+                    // update Map Style
+                    m_conf['color_theme'] = color_theme;
+                    mapCanvas.update(m_conf);
+                    
+                    // create legend if necessary
+                    Utils.create_legend($('#legend'), bins, colors);
+                  });
+                }
+              }
+            }); // END MapManger.AddMap()
+            
+          }); // END CartoProxy.DownloadTable
+          
+        } // END IF
+        
+      } // END FOR
+      
+    }); // END $.get(maps_conf_url)
+  }); // END require['ui/mapManager']
+  
  
+  var plots_conf_url = '../media/temp/' + user_id + '/' + viz_name + '.plots.json'; 
+
+  $.get(plots_conf_url).done(function(plots_conf){
+    console.log(plots_conf);
+    
+    var n = plots_conf.length;
+    
+    for (var i=0; i<n; i++) {
+    
+      var p_conf = plots_conf[i];
+      
+      if ( p_conf ) {
+        var plot_type = p_conf['plot_type'];
+        if (plot_type)  {
+          var table_name = p_conf["table_name"],
+              key = p_conf["carto_key"],
+              uid = p_conf["carto_uid"],
+              pos = p_conf["pos"];
+              
+          if (plot_type == "scatterplot") {
+            var x_name = p_conf["x"],
+                y_name = p_conf["y"];
+            PopScatterPlot(table_name, x_name, y_name, pos, uid, key);
+            
+          } else if (plot_type == "histogram") {
+            var x_name = p_conf["x"];
+            PopHistogram(table_name, x_name, pos, uid, key);
+          
+          } else if (plot_type == "scatter_matrix") {
+          
+          } else if (plot_type == "parcoords") {
+          
+          }
+        }
+      }
+    }
+  });
+  
   // Cluster map
   // Moran's I scatter plot
   function PopMoranIScatterPlot(table_name, var_name) {
@@ -96,28 +188,27 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
   
   // Plots
   // histogram 
-  function PopHistogram(table_name, var_name) {
-    var_name = "fh80";
+  function PopHistogram(table_name, x, pos, uid, key) {
     var url = 'histogram.html?';
+    
     url += 'table_name=' + table_name;
-    url += '&carto_uid=' + CartoProxy.GetUID();
-    url += '&carto_key=' + CartoProxy.GetKey() + '&';
-    url += '&x=' + var_name;
+    url += '&carto_uid=' + uid;
+    url += '&carto_key=' + key + '&';
+    url += '&x=' + x;
             
-    Utils.popFrame(url);
+    Utils.popFrame(url, false, pos);
   }
   
   // scatterplot 
-  function PopScatterPlot(table_name, var_name_x, var_name_y) {
-    var x = "fh80", y = "po80";
+  function PopScatterPlot(table_name, x, y, pos, uid, key) {
     
     var url = 'scatterplot.html?';
     url += 'table_name=' + table_name;
-    url += '&carto_uid=' + CartoProxy.GetUID();
-    url += '&carto_key=' + CartoProxy.GetKey() + '&';
+    url += '&carto_uid=' + uid;
+    url += '&carto_key=' + key + '&';
     url += '&x=' + x + '&y=' + y;
             
-    Utils.popFrame(url);
+    Utils.popFrame(url, false, pos);
   }
   
   // scatter matrix
@@ -132,8 +223,6 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
   function PopBoxPlot(table_name, var_name) {
   }
   
-  PopHistogram();
-  PopScatterPlot();
   
 }); // end require
 

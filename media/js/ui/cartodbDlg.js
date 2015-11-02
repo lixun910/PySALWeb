@@ -41,7 +41,7 @@ var CartoDlg = (function($, CartoProxy) {
     ];
    
     // one click share to social 
-    $('#btn_one_click_share').click(function(){
+    function ShareScreenshot() {
       require(['ui/mapManager'], function(MapManager) {
       
         //$('#dialog-cartodb').dialog('close');
@@ -79,7 +79,7 @@ var CartoDlg = (function($, CartoProxy) {
           });
         }
       }); // end require()
-    });
+    }
     
     var dlgPrgBar = $('#progress_bar_cartodb').hide();
     
@@ -144,20 +144,10 @@ var CartoDlg = (function($, CartoProxy) {
       });
     };
   
-    var OnOKClick = function() {
-    
-      var that = $(this);
-      var sel_id = dlgTabs.tabs('option','active'),
-          uid = CartoProxy.GetUID(),
-          key = CartoProxy.GetKey();
-          
-      dlgPrgBar.show();
-      
-      if (sel_id === 0) {
-        // setup
-        
-      } else if (sel_id === 1) {
-        var title = $('#txt-carto-vizjson').val();
+    function CreateShareViz() {
+        var title = $('#txt-carto-vizjson').val(),
+            uid = CartoProxy.GetUID(),
+            key = CartoProxy.GetKey();
         require(['ui/mapManager', 'ui/basemap'], function(MapManager, Basemap) {
           var mapManager = MapManager.getInstance(),
               n_maps = mapManager.GetNumMaps(),
@@ -188,6 +178,34 @@ var CartoDlg = (function($, CartoProxy) {
             });
           }
               
+          // get plots
+          plot_confs = [];
+          $('iframe').each(function(idx, obj) {
+            var url = obj.src;
+            if (url != "") {
+              var plot_conf = {},
+                  items = url.split("?");
+                  
+              var pos = $(obj).parent();
+              if (pos) 
+                plot_conf['pos'] = pos.position();
+                  
+              var plot_type = items[0].split("/"),
+                  plot_type = plot_type[plot_type.length-1],
+                  plot_type = plot_type.split(".")[0];
+              plot_conf['plot_type'] = plot_type;
+              
+              var plot_params = items[1].split("&"),
+                  n_params = plot_params.length;
+              for (var i=0; i<n_params; i++) {
+                var param = plot_params[i].split("=");
+                plot_conf[param[0]] = param[1];
+              }
+              
+              plot_confs.push(plot_conf);
+            }
+          });
+          
           $.get("../carto_create_viz/", {
             'carto_uid' : uid,
             'carto_key' : key,
@@ -198,6 +216,7 @@ var CartoDlg = (function($, CartoProxy) {
             'tile_idx' : basemap.GetTileIdx(),
             'viz_confs' : JSON.stringify(viz_confs),
             'viz_type' : 0,
+            'plot_confs' : JSON.stringify(plot_confs),
           }).done(function(data){
             console.log(data);
             userid = data.userid;
@@ -214,6 +233,31 @@ var CartoDlg = (function($, CartoProxy) {
           
           dlgPrgBar.hide();
         });
+    }
+    
+    var OnOKClick = function() {
+    
+      var that = $(this);
+      var sel_id = dlgTabs.tabs('option','active'),
+          uid = CartoProxy.GetUID(),
+          key = CartoProxy.GetKey();
+          
+      dlgPrgBar.show();
+      
+      if (sel_id === 0) {
+        // setup
+        
+      } else if (sel_id === 1) {
+          
+        var auth_provider = $('#auth_provider').val();
+        
+        Utils.ShowYesNoDlg("Do you want to share this map to your "+auth_provider +"?", function() {
+          ShareScreenshot();
+          CreateShareViz();
+        }, function() {
+          CreateShareViz();
+        });
+          
         
       } else if (sel_id === 2) {
         // download to local disk

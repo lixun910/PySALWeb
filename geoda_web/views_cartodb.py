@@ -542,10 +542,11 @@ def carto_create_viz(request):
         zoom = request.GET.get("zoom", None) 
         alpha = request.GET.get('alpha', "0.8")
         tile_idx = request.GET.get('tile_idx', 0)
-        viz_confs = request.GET.get('viz_confs', None) 
         viz_type = request.GET.get('viz_type', None) 
+        str_viz_confs = request.GET.get('viz_confs', None) 
+        str_plot_confs = request.GET.get('plot_confs', None) 
         
-        if (viz_confs == None):
+        if (str_viz_confs == None):
             return HttpResponse(RSP_FAIL, content_type="application/json")    
        
         viz_name = md5(userid + title).hexdigest()
@@ -560,7 +561,7 @@ def carto_create_viz(request):
             tile_idx = int(tile_idx)
 
         layers = []
-        viz_confs = json.loads(viz_confs)
+        viz_confs = json.loads(str_viz_confs)
         for i, viz_conf in enumerate(viz_confs):
             layers.append(_get_layer_viz(viz_conf, i))
             
@@ -614,7 +615,7 @@ def carto_create_viz(request):
                         }
                     }
                 }
-                ],
+            ],
             "overlays": [
                 {
                     "type": "share",
@@ -705,7 +706,7 @@ def carto_create_viz(request):
                         }                    
                     },
                 },
-                ],
+            ],
             "prev": None,
             "next": None,
             "transition_options": {
@@ -720,6 +721,16 @@ def carto_create_viz(request):
         file_path = os.path.join(base_loc, viz_name+".json")
         o = open(file_path, 'w')
         o.write(vizjson)
+        o.close()
+       
+        file_path = os.path.join(base_loc, viz_name+".maps.json")
+        o = open(file_path, 'w')
+        o.write(str_viz_confs)
+        o.close()
+        
+        file_path = os.path.join(base_loc, viz_name+".plots.json")
+        o = open(file_path, 'w')
+        o.write(str_plot_confs)
         o.close()
         
         new_item = CartoViz(

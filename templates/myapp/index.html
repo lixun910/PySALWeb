@@ -230,9 +230,7 @@
   <div class="mainDlg" id="dialog-cartodb"  title="Share">
     <span> 
     {% if auth_provider != "" %} 
-      <br>
-	<button type="submit" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only " id="btn_one_click_share">One click to share this map to {{ auth_provider }}</button>
-      <br>
+	<input type="hidden" id="auth_provider" value="{{ auth_provider }}">
     {% endif %}
     </span>
     <div id="tabs-dlg-cartodb"  class="centered">

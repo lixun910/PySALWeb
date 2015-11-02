@@ -349,10 +349,18 @@ MapCanvas.prototype = {
       return;
     // color_theme  --  {'#CCCC':[ids], ...}
     if ('color_theme' in params) this.color_theme = params['color_theme'];
+    
     if ('transparency' in params) this.ALPHA = params['transparency'];
+    else if ('alpha' in params) this.ALPHA = params['alpha'];
+    
     if ('stroke_width' in params) this.STROKE_WIDTH= params['stroke_width'];
+    
     if ('stroke_color' in params) this.STROKE_CLR = params['stroke_color'];
+    else if ('stroke_clr' in params) this.STROKE_CLR = params['stroke_clr'];
+    
     if ('fill_color' in params) this.FILL_CLR = params['fill_color'];
+    else if ('fill_clr' in params) this.FILL_CLR = params['fill_clr'];
+    
     if ('horizontal_ratio' in params) this.hratio = params['horizontal_ratio'];
     if ('vertical_ratio' in params) this.vratio = params['vertical_ratio'];
     if ('noForeground' in params) this.ALPHA = params['noForeground'];

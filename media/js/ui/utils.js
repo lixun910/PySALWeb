@@ -65,6 +65,13 @@ return {
     return results == undefined ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
   },
 
+  getParameterByNameFromUrl: function(url,name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(url);
+    return results == undefined ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+  },
+  
   getFileName : function(url) {
     return url.substring(url.lastIndexOf('/')+1);
   },
@@ -178,7 +185,7 @@ return {
     xhr.send();
   },
 
-  popFrame : function(url, newWindow) {
+  popFrame : function(url, newWindow, pos) {
     if (newWindow==true) {
       window.open(
         url,
@@ -225,14 +232,25 @@ return {
     });
     frame.appendTo(main);
     main.appendTo($('body'));
+    
+    var left =  100 + Math.random() * 20,
+        top = 100 + Math.random() * 20;
+       
+    if (pos)  {
+      left = pos['left'];
+      top = pos['top'];
+    }
+    
     main.css({ 
       position: 'fixed',
-      left: 100 + Math.random() * 20, 
-      top: 100 + Math.random() * 20,
+      left: left,
+      top: top,
     });
     main.show();
+    
     if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) 
       $('div.tool-menu, .ui-dialog, #dialog-arrow').hide();
+      
     return uuid;
   },
   
@@ -240,7 +258,7 @@ return {
   map2vizJson : function() {
   },
   
-  ShowYesNoDlg : function(msg, onYes) {
+  ShowYesNoDlg : function(msg, onYes, onNo) {
     $('<div></div>').appendTo('body')
     .html('<br/><div>'+msg+'</div>')
     .dialog({
@@ -252,6 +270,7 @@ return {
           $(this).dialog("close");
         },
         No: function() {
+          if (onNo) onNo();
           $(this).dialog("close");
         }
       },

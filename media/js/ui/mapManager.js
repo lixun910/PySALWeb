@@ -182,7 +182,9 @@ var Manager = (function(window){
       
       // hookup map event to this "top" canvas
       SetupBasemapEvent();
-      numMaps += 1;
+      
+      //numMaps += 1;
+      return numMaps++;
     }
     
     function GetMapCanvasByName(name) {
@@ -257,6 +259,17 @@ var Manager = (function(window){
         if (idx === undefined) idx = numMaps-1;
         return mapCanvasList[mapOrder[idx]];
       },
+      
+      GetCanvasByMap : function(map) {
+        for (var i=0; i<mapCanvasList.length; i++) {
+          var mapcanvas = mapCanvasList[i];
+          
+          if (map.name === mapcanvas.map.name) 
+            return mapcanvas;
+        }
+        return undefined;
+      },
+      
       
       GetMap : function(idx) {
         return  this.GetMapCanvas(idx).map;

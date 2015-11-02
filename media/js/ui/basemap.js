@@ -41,8 +41,11 @@ var GDABasemap = (function($, L, cartodb){
    
     
     var mapProvider = $('#mapproviders');
+    
     var mapProviders = mapProvider.children();
+    
     var currentTileUrl = tileUrls[tileIdx];
+    
     $(mapProviders[0]).css({'border':'2px solid orange'});
     
     function OnMapInfoChange() {
@@ -52,7 +55,18 @@ var GDABasemap = (function($, L, cartodb){
         $('.hl-canvas')[0].style.pointerEvents = 'none';
       }
     }    
-
+    
+    $('body').keydown(function(event){
+      if (event.which == 77) {
+        $('.hl-canvas')[0].style.pointerEvents = 'none';
+      }
+    });
+    $('body').keyup(function(event){
+      if (event.which == 77) {
+        $('.hl-canvas')[0].style.pointerEvents = 'auto';
+      }
+    });
+    
     // basemap buton on the right side of top bar
     $('.basemap').click(function(){
       $('#mapInfo').toggle();
