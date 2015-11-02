@@ -64,6 +64,7 @@ var CartoDlg = (function($, CartoProxy) {
             console.log(canvas.toDataURL("image/png"));
             
             $('canvas').css("height","100%");
+            var title = $('#txt-carto-vizjson').val();
             
             $.ajax({
               type: "POST",
@@ -72,6 +73,7 @@ var CartoDlg = (function($, CartoProxy) {
                 imageData: canvas.toDataURL("image/png"),
                 csrfmiddlewaretoken: csrftoken,
                 "table_name" : table_name, 
+                "title" : title,
               }
             }).done(function(data) {
               console.log('save canvas:', data); 

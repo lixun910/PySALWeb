@@ -957,8 +957,12 @@ def publish_to_social(request):
     
     if request.method == 'POST': 
         table_name = request.POST.get("table_name", None)
+        title = request.POST.get("title", None)
         datauri = request.POST['imageData']
        
+        userid = user.username
+        viz_name = md5(userid + title).hexdigest()
+        
         # save the canvas image 
         user_uuid = md5(user.username).hexdigest()
         path_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
@@ -991,7 +995,8 @@ def publish_to_social(request):
                 #id_img1 = t_up.media.upload(media=imagedata)["media_id_string"]
                 #twitter.statuses.update(status="PTT ★", media_ids=",".join([id_img1]))         
                 
-                params = {"media[]": imagedata, "status": table_name +" made by @GeodaWeb"}
+                share_url = "http://127.0.0.1:8000/xun/static/test.html?uid=%s&vizname=%s" % (user_uuid, viz_name)
+                params = {"media[]": imagedata, "status": table_name +" made by @GeodaWeb\n" + share_url}
                 twitter.statuses.update_with_media(**params)
                 
                 return HttpResponse(RSP_OK, content_type="application/json")
