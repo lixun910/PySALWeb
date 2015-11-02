@@ -164,19 +164,23 @@ var CartoProxy = {
     xhr.onload = function(evt) {
       if (this.status == 200) {
      
-        var f = xhr.response,
-            bShp=0,
-            bHasPrj = false,
-            proj = null,
-            shpFile, dbfFile, prjFile;
+        var f = xhr.response;
         
         zip.createReader(new zip.BlobReader(f), function(zipReader) {
           zipReader.getEntries(function(entries) {
-            entries.forEach(function(entry) {
-              var suffix = Utils.getSuffix(entry.filename);
-              if (suffix === 'prj') bHasPrj = true;
-            });
-            entries.forEach(function(entry) {
+
+
+            var i=0,
+                n = entries.length,
+                bShp = false,
+                bShx = false,
+                bDbf = false,
+                bPrj = false,
+                shpFile, dbfFile, prjFile,
+                fileName = '',
+                prj;
+
+            entries.forEach(function(entry,ii) {
               var suffix = Utils.getSuffix(entry.filename);
               var writer;
               if (suffix === 'json' || suffix === 'geojson' || suffix === 'prj') {
@@ -184,9 +188,14 @@ var CartoProxy = {
               } else {
                 writer = new zip.BlobWriter();
               }
-              entry.getData(writer, function(o) {
-                if (entry.filename[0] === '_')  return;
-                if (suffix === 'geojson' || suffix === 'json') {
+              console.log(entry.filename, suffix);
+              entry.getData(new zip.BlobWriter(), function onload(o) {
+                i += 1;
+                console.log('inside',entry.filename);
+                if (entry.filename[0] === '_')  
+                  return;
+
+                if (suffix == 'geojson' || suffix == 'json') {
                   o = JSON.parse(o);
                   if (onSuccess) onSuccess( {
                     'file_type' : 'json',
@@ -194,20 +203,24 @@ var CartoProxy = {
                     'file_content' : o,
                   });
                   return;
-                } else if (suffix === "shp") {
-                  bShp += 1;
+                } else if (suffix == "shp") {
+                  bShp = true;
                   shpFile = o;
-                } else if (suffix === "shx") {
-                  bShp += 1;
-                } else if (suffix === "dbf") {
-                  bShp += 1;
+                  fileName = table_name + ".shp";
+                } else if (suffix == "shx") {
+                  bShx = true;
+                  shxFile = o;
+                } else if (suffix == "dbf") {
+                  bDbf = true;
                   dbfFile = o;
-                } else if (suffix === "prj") {
-                  bHasPrj = true;
+                } else if (suffix == "prj") {
+                  bPrj = true;
                   prjFile = o;
+                  proj = proj4(o, proj4.defs('WGS84'));
                 }
-                if (bShp >= 3) {
-                  if (bHasPrj && prjFile) {
+                console.log(i,n, table_name, bShp, bShx, bDbf, bPrj);
+                if (i == n) {
+                  if (bShp && bShx && bDbf && bPrj) {
                     if (onSuccess) onSuccess({
                       'file_type' : 'shp',
                       'file_name' : table_name,

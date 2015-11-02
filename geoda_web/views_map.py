@@ -17,6 +17,8 @@ import numpy as np
 import json, time, os, logging, StringIO, shutil, time
 import zipfile
 import urllib
+import requests, json
+import base64, cStringIO, re
 from hashlib import md5
 
 from geoda_web.models import Document, Geodata, Weights, SpregModel, MapConfigure
@@ -947,10 +949,16 @@ def upload_canvas(request):
 
     return HttpResponse("ERROR")
 
+def goo_shorten_url(url):
+    post_url = 'https://www.googleapis.com/urlshortener/v1/url?key=AIzaSyAU7KVznamXg5CytX9AkNJUa1dIRLZUZwU'
+    payload = {'longUrl': url}
+    headers = {'content-type': 'application/json'}
+    r = requests.post(post_url, data=json.dumps(payload), headers=headers)
+    a = json.loads(r.text)
+    return a['id']
     
 @login_required
 def publish_to_social(request):
-    import base64, cStringIO, re
     user = request.user
     if not user.username:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
@@ -961,10 +969,16 @@ def publish_to_social(request):
         datauri = request.POST['imageData']
        
         userid = user.username
+        user_uuid = md5(userid).hexdigest()
         viz_name = md5(userid + title).hexdigest()
-        
+       
+        #from django.contrib.sites.models import get_current_site
+        #full_url = 'https://' +  get_current_site(request).domain + ''
+        share_url = "https://webpool.csf.asu.edu/xun/static/test.html?uid=%s&vizname=%s" % (user_uuid, viz_name)
+        share_url = goo_shorten_url(share_url)
+        print share_url
+
         # save the canvas image 
-        user_uuid = md5(user.username).hexdigest()
         path_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
         if not os.path.exists(path_loc):
             os.mkdir(path_loc)
@@ -995,8 +1009,7 @@ def publish_to_social(request):
                 #id_img1 = t_up.media.upload(media=imagedata)["media_id_string"]
                 #twitter.statuses.update(status="PTT ★", media_ids=",".join([id_img1]))         
                 
-                share_url = "http://127.0.0.1:8000/xun/static/test.html?uid=%s&vizname=%s" % (user_uuid, viz_name)
-                params = {"media[]": imagedata, "status": table_name +" made by @GeodaWeb\n" + share_url}
+                params = {"media[]": imagedata, "status": title +" made by #GeodaWeb\n" + share_url}
                 twitter.statuses.update_with_media(**params)
                 
                 return HttpResponse(RSP_OK, content_type="application/json")

@@ -718,6 +718,9 @@ def carto_create_viz(request):
         
         user_uuid = md5(userid).hexdigest()
         base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
+        if not os.path.exists(base_loc):
+            os.mkdir(base_loc)
+            os.chmod(path, mode=0755)
         file_path = os.path.join(base_loc, viz_name+".json")
         o = open(file_path, 'w')
         o.write(vizjson)
