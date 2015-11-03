@@ -11,10 +11,10 @@
   <link rel="stylesheet" href="../media/asserts/css/font-awesome.min.css" />
   <link rel="stylesheet" href="../media/css/publish.css" />
   
+  <script src="../media/js/lib/marked.min.js"></script>
   <script src="../media/js/cartodb.js"></script>
   <script src="../media/js/require.js"></script>
   <script src="../media/js/zip1/zip.js"></script>
-  <script src="../media/js/lib/marked.min.js"></script>
 </head>
 <body>
 
@@ -38,11 +38,13 @@ require.config({
       jqueryui : 'lib/jquery-ui-1.10.4.custom.min',
       d3: 'lib/d3.v3.min',
       colorbrewer  : 'lib/colorbrewer',
+      proj4 : 'lib/proj4',
     },
     shim : {
       "jqueryui" : {deps: ['jquery']},
       d3 : {exports : 'd3'},
       colorbrewer: {exports : "colorbrewer"},
+      proj4 : {exports: 'proj4'},
     }
 });
 
@@ -51,8 +53,8 @@ require(["jquery",
          "./ui/utils", 
          "./ui/basemap", 
          "./ui/mapManager", 
-         'colorbrewer', 'd3', 'jqueryui'],
-function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
+         'colorbrewer', 'd3', 'proj4', 'jqueryui' ],
+function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3, proj4) {
 
   console.log("After libs loaded...");
   var user_id = Utils.getParameterByName('uid');
@@ -68,6 +70,11 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
   cartodb.createVis("map", vizjson_url) // <-- Change map_id to 'map'
     .done(function(vis, layers) {
       console.log("Map successfully created");
+$('.overlay-text.desktop').draggable();
+            $('.cartodb-map-wrapper').children().first().hide();
+            $('.cartodb-zoom').hide()
+            $('.cartodb-searchbox').hide()
+            $('.leaflet-control-attribution').first().hide()
     })
     .error(function(err) {
       console.log("An error occurred: " + err);
@@ -76,11 +83,11 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
   // In background, get data from CartoDB for interactive 
   var maps_conf_url = '../media/temp/' + user_id + '/' + viz_name + '.maps.json'; 
   
-  require(['ui/mapManager'], function(MapManager) {
+  require(['ui/mapManager','ui/basemap'], function(MapManager, Basemap) {
     $.get(maps_conf_url).done(function(maps_conf){
       console.log(maps_conf);
       var n_maps = maps_conf.length;
-      
+      var setup_basemap = false; 
       for (var i=0; i<n_maps; i++) {
         var m_conf = maps_conf[i];
         if (m_conf) {
@@ -88,16 +95,24 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
           CartoProxy.DownloadTable(table_name, function(data) { 
             // update UI 
             //$('.cartodb-map-wrapper').hide()
-            $('.cartodb-map-wrapper').children().first().hide();
-            $('.cartodb-zoom').hide()
-            $('.leaflet-control-attribution').first().hide()
             
             // add map
             MapManager.getInstance().AddMap(data, function(map) {
+          if (!setup_basemap) {
+            if (m_conf['tile_idx']) {
+              Basemap.getInstance().SelectBasemap(m_conf['tile_idx']);
+            setup_basemap = true;
+          } 
+          } 
               var field = m_conf["legend_field"];
               if (field != undefined) {
                 var mapCanvas = MapManager.getInstance().GetCanvasByMap(map);
                 if (mapCanvas) {
+                  if (m_conf['map_type']=="POINT") {
+                    if (m_conf['heatmap'] == true) {
+                      mapCanvas.update({'heatmap':true});
+                    }
+                  } else {
                   CartoProxy.GetVariables(table_name, [field], false, function(result){
                     //console.log(result);
                     var data = result[field], /*list*/
@@ -128,7 +143,8 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
                     
                     // create legend if necessary
                     Utils.create_legend($('#legend'), bins, colors);
-                  });
+                  }); // END CartoProxy.GetVariable
+                  } // END else
                 }
               }
             }); // END MapManger.AddMap()
@@ -142,12 +158,6 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
     }); // END $.get(maps_conf_url)
   }); // END require['ui/mapManager']
   
- 
-  var maps_content_url = '../media/temp/' + user_id + '/' + viz_name + '.content.txt'; 
-  $.get(maps_content_url).done(function(content){
-    $('#map_content').html(marked(content)).show();
-    
-  });
   
   var plots_conf_url = '../media/temp/' + user_id + '/' + viz_name + '.plots.json'; 
 
@@ -181,6 +191,11 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
           
           } else if (plot_type == "parcoords") {
           
+          } else if (plot_type == "moran_scatterplot") {
+            var x_name = p_conf["x"];
+            var w_conf = p_conf["w_conf"];
+            PopMoranScatterPlot(table_name, x_name, w_conf, pos, uid, key);
+
           }
         }
       }
@@ -189,7 +204,16 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
   
   // Cluster map
   // Moran's I scatter plot
-  function PopMoranIScatterPlot(table_name, var_name) {
+  function PopMoranScatterPlot(table_name, x, w_conf, pos, uid, key) {
+    var url = 'moran_scatterplot.html?';
+    
+    url += 'table_name=' + table_name;
+    url += '&carto_uid=' + uid;
+    url += '&carto_key=' + key + '&';
+    url += '&x=' + x;
+    url += '&w_conf=' + w_conf;
+            
+    Utils.popFrame(url, false, pos);
   }
   
   
@@ -230,6 +254,11 @@ function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3) {
   function PopBoxPlot(table_name, var_name) {
   }
   
+ 
+  var maps_content_url = '../media/temp/' + user_id + '/' + viz_name + '.content.txt'; 
+  $.get(maps_content_url).done(function(content){
+    $('#map_content').html(marked(content)).draggable().resizable().show();
+  });
   
 }); // end require
 

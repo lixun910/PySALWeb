@@ -124,6 +124,11 @@ var GDABasemap = (function($, L, cartodb){
     
     return {
       // public
+      SelectBasemap : function(idx) {
+        tileIdx = idx;
+        currentTileUrl = tileUrls[tileIdx];
+        baselayer = CreateBaseLayer();
+      },
       GetTileIdx : function() {
         return tileIdx;
       },

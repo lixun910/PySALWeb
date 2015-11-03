@@ -1,6 +1,6 @@
 
 // Author: xunli at asu.edu
-define(['./msgbox', './message', './utils', 'proj4'], function(MsgBox, M, Utils, proj4) {
+define(['./msgbox', './message', './utils','proj4'], function(MsgBox, M, Utils,proj4) {
 
 var zip = this.zip;
 
@@ -189,7 +189,7 @@ var CartoProxy = {
                 writer = new zip.BlobWriter();
               }
               console.log(entry.filename, suffix);
-              entry.getData(new zip.BlobWriter(), function onload(o) {
+              entry.getData(writer, function onload(o) {
                 i += 1;
                 console.log('inside',entry.filename);
                 if (entry.filename[0] === '_')  

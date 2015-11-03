@@ -170,6 +170,7 @@ var CartoDlg = (function($, CartoProxy) {
             viz_confs.push({
               'map_name' : map.name,
               'map_type' : mapcanvas.shpType,
+              'heatmap' : mapcanvas.heatmap,
               'fields' : fields,
               'legend_name' : map.name,
               'legend_field' : mapcanvas.field,

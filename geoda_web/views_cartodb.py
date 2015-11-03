@@ -565,7 +565,8 @@ def carto_create_viz(request):
         viz_confs = json.loads(str_viz_confs)
         for i, viz_conf in enumerate(viz_confs):
             layers.append(_get_layer_viz(viz_conf, i))
-            
+            viz_conf['tile_idx'] = tile_idx
+ 
         tile_options = _get_tile_provider(tile_idx)
         
         vizjson = {
