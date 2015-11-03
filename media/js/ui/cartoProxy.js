@@ -1,6 +1,6 @@
 
 // Author: xunli at asu.edu
-define(['./msgbox', './message', './utils'], function(MsgBox, M, Utils) {
+define(['./msgbox', './message', './utils', 'proj4'], function(MsgBox, M, Utils, proj4) {
 
 var zip = this.zip;
 

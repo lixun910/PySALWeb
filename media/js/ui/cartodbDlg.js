@@ -1,6 +1,6 @@
 
 // Author: xunli at asu.edu
-define(['jquery', './utils','./cartoProxy','html2canvas','jquery.chosen'], 
+define(['jquery', './utils','./cartoProxy','html2canvas','jquery.chosen', 'jquery.textarea-markdown-editor'], 
        function($, Utils, CartoProxy) {
 
 var window = this;
@@ -30,6 +30,8 @@ var CartoDlg = (function($, CartoProxy) {
         }
       });
     }
+    
+    $('#carto_vizjson_content').markdownEditor();
     
     GetCartoViz();
     
@@ -64,7 +66,8 @@ var CartoDlg = (function($, CartoProxy) {
             console.log(canvas.toDataURL("image/png"));
             
             $('canvas').css("height","100%");
-            var title = $('#txt-carto-vizjson').val();
+            var title = $('#txt-carto-vizjson').val(),
+                content = $('#carto_vizjson_content').val();
             
             $.ajax({
               type: "POST",
@@ -74,6 +77,7 @@ var CartoDlg = (function($, CartoProxy) {
                 csrfmiddlewaretoken: csrftoken,
                 "table_name" : table_name, 
                 "title" : title,
+                "content": content,
               }
             }).done(function(data) {
               console.log('save canvas:', data); 
@@ -84,8 +88,6 @@ var CartoDlg = (function($, CartoProxy) {
     }
     
     var dlgPrgBar = $('#progress_bar_cartodb').hide();
-    
-    var dlgTabs = $('#tabs-dlg-cartodb').tabs();
     
     var dlg = $( "#dialog-cartodb" );
    
@@ -148,6 +150,7 @@ var CartoDlg = (function($, CartoProxy) {
   
     function CreateShareViz() {
         var title = $('#txt-carto-vizjson').val(),
+            content = $('#carto_vizjson_content').val(),
             uid = CartoProxy.GetUID(),
             key = CartoProxy.GetKey();
         require(['ui/mapManager', 'ui/basemap'], function(MapManager, Basemap) {
@@ -208,10 +211,11 @@ var CartoDlg = (function($, CartoProxy) {
             }
           });
           
-          $.get("../carto_create_viz/", {
+          $.post("../carto_create_viz/", {
             'carto_uid' : uid,
             'carto_key' : key,
             'title' : title,
+            'content' : content,
             'bounds[]' : basemap.GetBounds(),
             'center[]' : basemap.GetCenter(),
             'zoom' : basemap.GetZoom(),
@@ -219,6 +223,7 @@ var CartoDlg = (function($, CartoProxy) {
             'viz_confs' : JSON.stringify(viz_confs),
             'viz_type' : 0,
             'plot_confs' : JSON.stringify(plot_confs),
+            'csrfmiddlewaretoken' : csrftoken,
           }).done(function(data){
             console.log(data);
             userid = data.userid;
@@ -240,59 +245,21 @@ var CartoDlg = (function($, CartoProxy) {
     var OnOKClick = function() {
     
       var that = $(this);
-      var sel_id = dlgTabs.tabs('option','active'),
-          uid = CartoProxy.GetUID(),
-          key = CartoProxy.GetKey();
           
       dlgPrgBar.show();
       
-      if (sel_id === 0) {
-        // setup
-        
-      } else if (sel_id === 1) {
-          
-        var auth_provider = $('#auth_provider').val();
-        
-        Utils.ShowYesNoDlg("Do you want to share this map to your "+auth_provider +"?", function() {
-          ShareScreenshot();
-          CreateShareViz();
-        }, function() {
-          CreateShareViz();
-        });
-          
-        
-      } else if (sel_id === 2) {
-        // download to local disk
-        var table_name = $('#sel-carto-table-download').find(':selected').text();
-        gViz.CartoDownloadTable(uid, key, table_name, function(msg){
-          $('#progress_bar_cartodb').hide();
-          var name = msg.name;  
-          // create a url and download
-          $.download('./cgi-bin/download.py','name='+name,'get');
-        });
-        
-      } else if (sel_id == 3) {
-        // upload: using uuid send command to call cartodb_upload()
-        var upload_uuid = $('#sel-carto-table-upload').find(':selected').val();
-        gViz.CartoUploadTable(uid, key, upload_uuid, function(msg){
-          $('#progress_bar_cartodb').hide();
-          var new_table_name = msg["new_table_name"];
-          if (new_table_name == undefined || new_table_name == "") {
-            ShowMsgBox("Error", "Upload table to CartoDB failed. Please try again or contact our administators.");
-          } else {
-            ShowMsgBox("", "Upload table to CartoDB done. A new table [" + new_table_name + "] has been created.");
-            $.each(carto_table_sel, function(i, sel) {
-              $(sel).append($('<option>', {value: new_table_name}).text(new_table_name));
-            });
-          }
-        });
-        
-      } 
+      if ($('#auth_provider').length > 0 && $("#auth_provider").is(":checked")) {
+        ShareScreenshot();
+      }
+      
+      CreateShareViz();
+      
+      dlgPrgBar.hide();
     };
     
     dlg.dialog({
-      height: 300,
-      width: 550,
+      height: 600,
+      width: 670,
       autoOpen: false,
       modal: false,
       dialogClass: "dialogWithDropShadow",

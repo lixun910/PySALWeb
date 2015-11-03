@@ -533,18 +533,19 @@ def carto_create_viz(request):
     if not userid:
         return HttpResponseRedirect(settings.URL_PREFIX+'/myapp/login/') 
 
-    if request.method == 'GET': 
-        cartodb_uid = request.GET.get("carto_uid", None)
-        cartodb_key = request.GET.get("carto_key", None)
-        title = request.GET.get("title", None)
-        bounds = request.GET.getlist("bounds[]", None)
-        center = request.GET.getlist("center[]", None)
-        zoom = request.GET.get("zoom", None) 
-        alpha = request.GET.get('alpha', "0.8")
-        tile_idx = request.GET.get('tile_idx', 0)
-        viz_type = request.GET.get('viz_type', None) 
-        str_viz_confs = request.GET.get('viz_confs', None) 
-        str_plot_confs = request.GET.get('plot_confs', None) 
+    if request.method == 'POST': 
+        cartodb_uid = request.POST.get("carto_uid", None)
+        cartodb_key = request.POST.get("carto_key", None)
+        title = request.POST.get("title", None)
+        content = request.POST.get("content", None)
+        bounds = request.POST.getlist("bounds[]", None)
+        center = request.POST.getlist("center[]", None)
+        zoom = request.POST.get("zoom", None) 
+        alpha = request.POST.get('alpha', "0.8")
+        tile_idx = request.POST.get('tile_idx', 0)
+        viz_type = request.POST.get('viz_type', None) 
+        str_viz_confs = request.POST.get('viz_confs', None) 
+        str_plot_confs = request.POST.get('plot_confs', None) 
         
         if (str_viz_confs == None):
             return HttpResponse(RSP_FAIL, content_type="application/json")    
@@ -734,6 +735,11 @@ def carto_create_viz(request):
         file_path = os.path.join(base_loc, viz_name+".plots.json")
         o = open(file_path, 'w')
         o.write(str_plot_confs)
+        o.close()
+        
+        file_path = os.path.join(base_loc, viz_name+".content.txt")
+        o = open(file_path, 'w')
+        o.write(content)
         o.close()
         
         new_item = CartoViz(

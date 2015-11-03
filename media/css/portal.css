@@ -833,6 +833,19 @@ ol li:hover {
 .mainDlg, .tool-menu{
   display: none;
 }
+
+#txt-carto-vizjson {
+  width: 350px;
+}
+#carto_vizjson_content{
+  height: 200px;
+  width: 350px;
+}
+
+#dialog-cartodb {
+  text-align: left;
+  margin: 10px;
+}
 #bottombar, #multilayer_arrow, #w-dist-loading, #divPop, #img-id-chk, #img-id-spin, #img-id-nochk, #progress_bar_openfile,#progress_bar_cartodb,#progress_bar_road, #progress_bar_spacetime, #btnMultiLayer, #progress_bar_lisa, #tool-menu-arrow, #dialog-arrow, #prgInfo, #legend{
   display: none;
 }

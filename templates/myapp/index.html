@@ -227,64 +227,40 @@
   // CartoDB
   ///////////////////////////////////////////////////////////////////////////////
   -->
-  <div class="mainDlg" id="dialog-cartodb"  title="Share">
-    <span> 
-    {% if auth_provider != "" %} 
-	<input type="hidden" id="auth_provider" value="{{ auth_provider }}">
-    {% endif %}
-    </span>
-    <div id="tabs-dlg-cartodb"  class="centered">
-      <ul>
-	<li><a href="#tabs-1">Setup</a></li>
-	<li><a href="#tabs-2">Share current map</a></li>
-	<li><a href="#tabs-3">View your shared map</a></li>
-      </ul>
-      <div id="tabs-1">
-	<form id="cartodb-setup-form">
-	  <table>
-	    <tr>
-	      <td>CartoDB user id</td>
-	      <td>
-		<input type="text" id="txt-carto-setup-id" size=55 value="">
-	      </td>
-	    </tr>
-	    <tr>
-	      <td>CartoDB app key</td>
-	      <td>
-		<input type="text" id="txt-carto-setup-key" size=55 value="">
-	      </td>
-	    </tr>
-	  </table>
-	</form>
-      </div>
-      <div id="tabs-2">
+  <div class="mainDlg" id="dialog-cartodb"  title="Publish current map">
 	<form id="cartodb-vizjson-form">
-	  <table>
+	  <table width="100%">
 	    <tr>
 	      <td>Input name for visualization</td>
-	      <td>
-		<input type="text" id="txt-carto-vizjson" size=55>
-	      </td>
+	      <td><input type="text" id="txt-carto-vizjson" size=75></td>
 	    </tr>
-	       </table>
-	</form>
-      </div>
-      <div id="tabs-3">
-	       <br/>
-	<table>
 	    <tr>
-	      <td>Select a shared map</td>
+	      <td>Input description for visualization <br/>(This editor supports Markdown gramma)</td>
+	      <td><textarea id="carto_vizjson_content" ></textarea></td>
+	    </tr>
+	    <tr><td></td>
 	      <td>
-		<select id="sel-carto-viz">
-			     <option></option>
-		</select>
+	  {% if auth_provider != "" %} 
+	      <input type="checkbox" id="auth_provider" checked> Share this map to your "{{ auth_provider }}" account
+	  {% endif %}
 	      </td>
 	    </tr>
 	  </table>
-      </div>
-    </div>
-    <br/>
+	</form>
     <div id="progress_bar_cartodb"><img src="../../media/img/progress-bar.gif"></div>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+	<table width="100%">
+	    <tr>
+	      <td>Select a map to view &nbsp;</td>
+	      <td>
+		<select id="sel-carto-viz"><option></option></select>
+	      </td>
+	    </tr>
+	  </table>
   </div>
 
   <!--
@@ -299,31 +275,6 @@
 	<li><a href="#tabs-1">Snapping Points to Roads</a></li>
 	<li><a href="#tabs-2">Road Segmentation</a></li>
       </ul>
-      <div id="tabs-2">
-	<form id="form-road-segement">
-	  <table>
-	    <tr>
-	      <td>Select a road layer</td>
-	      <td>
-		<select id="sel-road-seg">
-		</select>
-	      </td>
-	    </tr>
-	    <tr>
-	      <td>Input a maximum length of segemented road (ft)</td>
-	      <td>
-		<input type="text" id="txt-seg-road-length" size=25 value="1000">
-	      </td>
-	    </tr>
-	    <tr>
-	      <td>Input a file name for saving the segemented roads</td>
-	      <td>
-		<input type="text" id="txt-seg-road-name" size=25 value="">
-	      </td>
-	    </tr>
-	  </table>
-	</form>
-      </div>
       <div id="tabs-1">
 	<form id="form-snap-points-to-roads">
 	  <table>
@@ -351,7 +302,31 @@
 	</form>
       </div>
     </div>
-    <br/>  <br/>
+      <div id="tabs-2">
+	<form id="form-road-segement">
+	  <table>
+	    <tr>
+	      <td>Select a road layer</td>
+	      <td>
+		<select id="sel-road-seg">
+		</select>
+	      </td>
+	    </tr>
+	    <tr>
+	      <td>Input a maximum length of segemented road (ft)</td>
+	      <td>
+		<input type="text" id="txt-seg-road-length" size=25 value="1000">
+	      </td>
+	    </tr>
+	    <tr>
+	      <td>Input a file name for saving the segemented roads</td>
+	      <td>
+		<input type="text" id="txt-seg-road-name" size=25 value="">
+	      </td>
+	    </tr>
+	  </table>
+	</form>
+      </div>
     <div id="progress_bar_road"><img src="../../media/img/progress-bar.gif"></div>
   </div>
 
@@ -600,9 +575,6 @@
   </div>
   <div class="mainDlg"  id="dlg-save-map-conf" title="Save Map Configuration">
     <br>
-    <br>
-    <br>
-    <br>
     <label for="name">Input a map configuration name:</label>
     <input type="text" id="map-conf-name" class="text ui-widget-content ui-corner-all" value="default">
   </div>
@@ -785,7 +757,6 @@
   ///////////////////////////////////////////////////////////////////////////////
   // Spatial Regression
   ///////////////////////////////////////////////////////////////////////////////
-  
   -->
   
   <div class="mainDlg"  id="dialog-regression" title="Spatial Regression Dialog" data-role="popup"> 
