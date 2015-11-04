@@ -53,6 +53,7 @@ var CartoDlg = (function($, CartoProxy) {
         if (canvas_list && canvas_list.length > 0) {
           // Hack: html2canvas needs to tweek this 
           $('canvas').height($('body').height());
+          $('div.tool-menu, #dialog-arrow').hide();
           
           var table_name = MapManager.getInstance().GetMap(0).name;   
           

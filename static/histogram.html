@@ -28,7 +28,11 @@ svg {
   fill: steelblue;
   shape-rendering: crispEdges;
 }
-
+.hover {
+  border: 1px solid yellow;
+  -webkit-filter: drop-shadow(10px 10px 10px #222);
+  filter:         drop-shadow(10px 10px 10px #222); 
+}
 .bar text {
   fill: #000;
 }
@@ -68,12 +72,12 @@ function(CartoProxy,Utils, colorbrewer, d3){
 
   console.log(this.window, CartoProxy, colorbrewer, d3);
   
+  var x, y, data, xAxis, yAxis, results, numbins, barWidth;
   var resizeTimer;
   
   var colors = colorbrewer.Paired[10];
   
-  var uuid = Utils.getParameterByName('uuid'),
-      table_name = Utils.getParameterByName('table_name'),
+  var table_name = Utils.getParameterByName('table_name'),
       carto_uid = Utils.getParameterByName('carto_uid'),
       carto_key = Utils.getParameterByName('carto_key'),
       var_x = Utils.getParameterByName('x');
@@ -94,40 +98,50 @@ function(CartoProxy,Utils, colorbrewer, d3){
   var graph = d3.select("#graph")
       .attr("width", screenW)
       .attr("height", screenH)
-    .append("g")
+      .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     
-  var x, y, data, xAxis, yAxis, results, numbins, barWidth;
   
-  var ProcessData = function(var_x, data) {  
-    var results = data[var_x];
+  var ProcessData = function(var_x, _data) {  
+    var results = _data[var_x],
+        n_data = results.length;
     
-    for (var i=0, n = results.length; i < n; i++ ) {
-      var x = results[i];
+    for (var i=0; i < n_data; i++ ) {
+      var _x = results[i];
       if ( i == 0 ) {
-        xMin = x;
-        xMax = x;
+        xMin = _x;
+        xMax = _x;
       } else {
-        if ( x < xMin) xMin = x;
-        if ( x > xMax) xMax = x;
+        if ( _x < xMin) xMin = _x;
+        if ( _x > xMax) xMax = _x;
       }
     }
   
     x = d3.scale.linear()
       .domain([xMin, xMax])
-      .range([0, width]);
+      .range([0, width]).nice();
   
     // Generate a histogram using twenty uniformly-spaced bins.
     data = d3.layout.histogram()
       .bins(x.ticks(10))
       (results);
-  
+      
+    var bin_thres = x.ticks(10);
+    var hist_dict = {};
+    
+    for (var i=0, n=bin_thres.length; i<n; i++) {
+      
+      for (var j=0; j < n_data; j++ ) {
+        
+      }
+    }
+    
     numbins = data.length;
     barWidth = (width-10)/numbins - 1;
   
     y = d3.scale.linear()
       .domain([0, d3.max(data, function(d) { return d.y; })])
-      .range([height, 0]);
+      .range([height, 0]).nice();
       
     xAxis = d3.svg.axis()
         .scale(x)
@@ -150,7 +164,16 @@ function(CartoProxy,Utils, colorbrewer, d3){
         .attr("x", 1)
         .attr("width", barWidth)
         .attr("height", function(d) { return height +2 - y(d.y) ; })
-        .style('fill', function(d,i) {return colors[i%10];});
+        .style('fill', function(d,i) {return colors[i%10];})
+        .on("mouseover",function(){
+            $(this).attr("fill-old", $(this).css("fill"));
+            $(this).css("fill", 'rgb(255,255,0)');
+            $(this).css("cursor", "hand");
+          })
+        .on("mouseout",function(){
+            if($(this).attr("fill-old")) 
+              $(this).css("fill", $(this).attr("fill-old"));
+          });
   
     bar.append("text")
         .attr("y", 0) 
@@ -165,7 +188,12 @@ function(CartoProxy,Utils, colorbrewer, d3){
         
     graph.append("g")
         .attr("class", "y axis")
-        .call(yAxis);
+        .call(yAxis)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em");
+
   };
  
   function resize() {
@@ -180,23 +208,12 @@ function(CartoProxy,Utils, colorbrewer, d3){
     width = screenW - margin.left - margin.right;
     height = screenH - margin.top- margin.bottom;
     
-    x = d3.scale.linear()
-      .domain([xMin, xMax])
-      .range([0, width]);
+    x.range([0, width]);
       
     barWidth = width/numbins - 1;
       
-    y = d3.scale.linear()
-      .domain([0, d3.max(data, function(d) { return d.y; })])
-      .range([height, 0]);
+    y.range([height, 0]);
       
-    xAxis = d3.svg.axis()
-        .scale(x)
-        .orient("bottom");
-  
-    yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("left");
         
     graph.select('.x.axis')
       .attr("transform", "translate(0," + (height+10) + ")")
@@ -218,18 +235,14 @@ function(CartoProxy,Utils, colorbrewer, d3){
     
   };
   
-  this.window.addEventListener("resize", resize);
+  d3.select(window).on('resize', resize); 
   
   if (table_name)  {
     CartoProxy.SetUID(carto_uid);
     CartoProxy.SetKey(carto_key);
     var isCSV = false;
-    CartoProxy.GetVariables(table_name, [var_x], isCSV, function(data){
-      ProcessData(var_x, data);
-    });
-  } else if (uuid) {
-    $.get('../myapp/histogram/', {'layer_uuid': uuid, 'var_x' : var_x}).done(function(data){
-      ProcessData(var_x, data);
+    CartoProxy.GetVariables(table_name, [var_x], isCSV, function(_data){
+      ProcessData(var_x, _data);
     });
   }
 });
