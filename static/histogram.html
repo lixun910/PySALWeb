@@ -75,27 +75,6 @@ function(CartoProxy,Utils, colorbrewer, d3){
 
   console.log(this.window, CartoProxy, colorbrewer, d3);
   
-  // brush&link-- incoming
-  $(this.window).bind('storage', function(e) {
-    var key = uuid ? uuid : table_name;
-    var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
-    if ( hl_ids && key in hl_ids ) {
-      var ids = hl_ids[key];
-      Highlight(ids);
-    }
-  });
-  
-  // brush^link -- outgoing
-  function OnBinSelect(selected_ids) {
-    var key = uuid ? uuid : table_name;
-    var hl = {};
-    if ( localStorage["HL_IDS"] ){ 
-      hl = JSON.parse(localStorage["HL_IDS"]);
-    }
-    hl[key] = selected_ids;
-    localStorage["HL_IDS"] = JSON.stringify(hl);
-  } 
-  
   var x, y, data, xAxis, yAxis, results, numbins, barWidth;
   var resizeTimer;
   
@@ -127,6 +106,31 @@ function(CartoProxy,Utils, colorbrewer, d3){
     
   var bin_dict = {}; // bin: [ids]
   
+ 
+  function Highligh(selected_ids) {
+  }
+
+  // brush&link-- incoming
+  $(this.window).bind('storage', function(e) {
+    var key = table_name;
+    var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
+    if ( hl_ids && key in hl_ids ) {
+      var ids = hl_ids[key];
+      Highlight(ids);
+    }
+  });
+  
+  // brush^link -- outgoing
+  function OnBinSelect(selected_ids) {
+    var key = table_name;
+    var hl = {};
+    if ( localStorage["HL_IDS"] ){ 
+      hl = JSON.parse(localStorage["HL_IDS"]);
+    }
+    hl[key] = selected_ids;
+    localStorage["HL_IDS"] = JSON.stringify(hl);
+  } 
+
   var ProcessData = function(var_x, _data) {  
     var results = _data[var_x],
         n_data = results.length;

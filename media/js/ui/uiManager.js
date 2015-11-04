@@ -31,7 +31,7 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
         spregDlg, 
         weightsDlg,
         scatMatrixDlg,
-        parcoodsDlg,
+        parcoordsDlg,
       ];
     };
     
@@ -189,7 +189,7 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
         spregDlg = dlgs[9];
         weightsDlg = dlgs[10];
         scatMatrixDlg = dlgs[11];
-        parcoodsDlg = dlgs[12];
+        parcoordsDlg = dlgs[12];
       },
     
       IsDialogSetup : function() {
