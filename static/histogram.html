@@ -67,10 +67,34 @@ require.config({
     }
 });
 
+// test only
+//var uuid = "abcd1234";
+
 require(["./ui/cartoProxy","./ui/utils", 'colorbrewer', 'd3'],
 function(CartoProxy,Utils, colorbrewer, d3){
 
   console.log(this.window, CartoProxy, colorbrewer, d3);
+  
+  // brush&link-- incoming
+  $(this.window).bind('storage', function(e) {
+    var key = uuid ? uuid : table_name;
+    var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
+    if ( hl_ids && key in hl_ids ) {
+      var ids = hl_ids[key];
+      Highlight(ids);
+    }
+  });
+  
+  // brush^link -- outgoing
+  function OnBinSelect(selected_ids) {
+    var key = uuid ? uuid : table_name;
+    var hl = {};
+    if ( localStorage["HL_IDS"] ){ 
+      hl = JSON.parse(localStorage["HL_IDS"]);
+    }
+    hl[key] = selected_ids;
+    localStorage["HL_IDS"] = JSON.stringify(hl);
+  } 
   
   var x, y, data, xAxis, yAxis, results, numbins, barWidth;
   var resizeTimer;
@@ -101,6 +125,7 @@ function(CartoProxy,Utils, colorbrewer, d3){
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     
+  var bin_dict = {}; // bin: [ids]
   
   var ProcessData = function(var_x, _data) {  
     var results = _data[var_x],
@@ -127,12 +152,15 @@ function(CartoProxy,Utils, colorbrewer, d3){
       (results);
       
     var bin_thres = x.ticks(10);
-    var hist_dict = {};
     
-    for (var i=0, n=bin_thres.length; i<n; i++) {
-      
+    for (var b_idx=0, n=bin_thres.length; b_idx < n-1; b_idx++) {
+      bin_dict[b_idx]  = [];
+      var lbound = bin_thres[b_idx],
+          ubound = bin_thres[b_idx+1];
       for (var j=0; j < n_data; j++ ) {
-        
+        if (results[j] >= lbound && results[j] < ubound) {
+          bin_dict[b_idx].push(j);
+        }
       }
     }
     
@@ -162,9 +190,19 @@ function(CartoProxy,Utils, colorbrewer, d3){
     
     bar.append("rect")
         .attr("x", 1)
+        .attr("id", function(d,i) { return i;})
         .attr("width", barWidth)
         .attr("height", function(d) { return height +2 - y(d.y) ; })
         .style('fill', function(d,i) {return colors[i%10];})
+        .on("click",function(){ 
+            var bin_idx = $(this).attr("id")
+                selected_ids = bin_dict[bin_idx];
+              
+            if (selected_ids) {
+              // highlight/linking
+              OnBinSelect(selected_ids);
+            }
+          })
         .on("mouseover",function(){
             $(this).attr("fill-old", $(this).css("fill"));
             $(this).css("fill", 'rgb(255,255,0)');
@@ -237,10 +275,16 @@ function(CartoProxy,Utils, colorbrewer, d3){
   
   d3.select(window).on('resize', resize); 
   
+  
+  // test only
+  //data = {'x':[0.0, 0.0, 0.3333333333, 0.6666666667, 0.0, 0.0, 1.0, 0.3333333333, 1.3333333333, 0.0, 0.0, 0.6666666667, 0.0, 0.0, 0.0, 0.0, 0.3333333333, 0.0, 0.0, 0.0]};
+  //ProcessData('x', data);
+  
   if (table_name)  {
     CartoProxy.SetUID(carto_uid);
     CartoProxy.SetKey(carto_key);
     var isCSV = false;
+    
     CartoProxy.GetVariables(table_name, [var_x], isCSV, function(_data){
       ProcessData(var_x, _data);
     });

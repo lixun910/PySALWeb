@@ -25,9 +25,8 @@ var science = { stats: {} };
  <div id="slider"></div>
  <span id="linear-txt"></span>
 </div>
-<button style="position:absolute;bottom:0;right:0;" type="submit" id="btnSaveImage">Save Image</button>
-<script>
 
+<script>
 require.config({
     baseUrl: '../media/js',
     paths: {
@@ -64,7 +63,8 @@ function(CartoProxy,Utils, colorbrewer, d3){
       carto_key = Utils.getParameterByName('carto_key'),
       fieldX = Utils.getParameterByName('x'),
       fieldY = Utils.getParameterByName('y');
-      
+
+  
   var points = [],
       sorted_points = [],
       xValues = [],
@@ -413,20 +413,6 @@ function(CartoProxy,Utils, colorbrewer, d3){
   } // end ProcessData()
   
   
-  $('#btnSaveImage').click(function(){
-    console.log("click");
-    html2canvas(document.body, {
-      allowTaint : false,
-      logging: true,
-      profile: false,
-      useCORS: true,
-      height: $('body').height(),
-    }).then(function(canvas) {
-      console.log(canvas.toDataURL("image/png"));
-    });
-  }); // end $('#btnSaveImage').click()
-  
-  
   // brush&link
   $(this.window).bind('storage', function(e) {
     var key = uuid ? uuid : table_name;
@@ -438,13 +424,7 @@ function(CartoProxy,Utils, colorbrewer, d3){
   });
 
   // get data 
-  if (uuid)  {
-    $.get('../myapp/scatter_plot/',{'layer_uuid' : uuid, 'var_x' : fieldX, 'var_y' : fieldY,}).done(function(data){
-      ProcessData(fieldX, fieldY, data);
-    });
-    
-  } else if (table_name){
-  
+  if (table_name){
     CartoProxy.SetUID(carto_uid);
     CartoProxy.SetKey(carto_key);
     var isCSV = false;
@@ -452,8 +432,11 @@ function(CartoProxy,Utils, colorbrewer, d3){
       ProcessData(fieldX, fieldY, data);
     });
   }
-  
-  
+ 
+  // test only
+  //uuid = "abcd1234";
+  //data = {'x':[0.0, 0.0, 0.3333333333, 0.6666666667, 0.0, 0.0, 1.0, 0.3333333333, 1.3333333333, 0.0, 0.0, 0.6666666667, 0.0, 0.0, 0.0, 0.0, 0.3333333333, 0.0, 0.0, 0.0],'y':[0.0, 0.0, 0.3333333333, 0.6666666667, 0.0, 0.0, 1.0, 0.3333333333, 1.3333333333, 0.0, 0.0, 0.6666666667, 0.0, 0.0, 0.0, 0.0, 0.3333333333, 0.0, 0.0, 0.0]};
+  //ProcessData('x', 'y', data);
 });
 </script>
 
