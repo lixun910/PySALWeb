@@ -21,51 +21,55 @@ canvas{
   pointer-events: none;
 }
 
+.box {
+  font: 10px sans-serif;
+}
+
+.box line,
+.box rect,
+.box circle {
+  fill: steelblue;
+  stroke: #000;
+  stroke-width: 1px;
+}
+
+.box .center {
+  stroke-dasharray: 3,3;
+}
+
+.box .outlier {
+  fill: none;
+  stroke: #000;
+}
+
 .axis {
+  font: 12px sans-serif;
+}
+ 
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+ 
+.x.axis path { 
+  fill: none;
+  stroke: #000;
   shape-rendering: crispEdges;
 }
 
-.axis line {
-  stroke: #ddd;
-  stroke-width: .5px;
-}
-
-.axis path {
-  display: none;
-}
-
-rect.extent {
-  fill: #000;
-  fill-opacity: .125;
+.brush .extent {
   stroke: #fff;
-}
-
-rect.frame {
-  fill: #fff;
-  fill-opacity: .7;
-  stroke: #aaa;
-}
-
-circle {
-  fill: #ccc;
-  fill-opacity: .5;
-}
-
-.cell text {
-  pointer-events: none;
-}
-
-.highlight {
-  fill: #008;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
 }
 </style>
 
 <script src="../media/js/require.js" charset="utf-8"></script>
-<script src="../media/js/lib/jquery.min.js" charset="utf-8"></script>
-<script src="../media/js/lib/jquery-ui-1.10.4.custom.min.js" charset="utf-8"></script>
 
 <body>
-<div id="map-container"> 
+<div id="container"> 
   <svg id='graph'></svg>
   <canvas id='paint-canvas'></canvas>
 </div>
@@ -77,7 +81,6 @@ require.config({
   baseUrl: '../media/js',
   paths: {
     jquery: './lib/jquery.min',
-    jqueryui : 'lib/jquery-ui-1.10.4.custom.min',
     d3: './lib/d3.v3.min',
     colorbrewer  : './lib/colorbrewer',
   },
@@ -89,339 +92,521 @@ require.config({
 
 require(["./ui/cartoProxy","./ui/utils", 'colorbrewer', 'd3'],
 function(CartoProxy,Utils, colorbrewer, d3){
+  
+d3.box = function() {
+  var width = 1,
+      height = 1,
+      duration = 0,
+      domain = null,
+      value = Number,
+      whiskers = boxWhiskers,
+      quartiles = boxQuartiles,
+          showLabels = true, // whether or not to show text labels
+          numBars = 4,
+          curBar = 1,
+      tickFormat = null;
 
-  var uuid = Utils.getParameterByName('uuid'),
-      carto_conf = Utils.getParameterByName('carto');
+  // For each small multiple…
+  function box(g) {
+    g.each(function(data, i) {
+      //d = d.map(value).sort(d3.ascending);
+          //var boxIndex = data[0];
+          //var boxIndex = 1;
+          var d = data[1].sort(d3.ascending);
+          
+         // console.log(boxIndex); 
+          //console.log(d); 
+          
+      var g = d3.select(this),
+          n = d.length,
+          min = d[0],
+          max = d[n - 1];
 
-  if (carto_conf) {
-    carto_conf = JSON.parse(carto_conf);    
+      // Compute quartiles. Must return exactly 3 elements.
+      var quartileData = d.quartiles = quartiles(d);
+
+      // Compute whiskers. Must return exactly 2 elements, or null.
+      var whiskerIndices = whiskers && whiskers.call(this, d, i),
+          whiskerData = whiskerIndices && whiskerIndices.map(function(i) { return d[i]; });
+
+      // Compute outliers. If no whiskers are specified, all data are "outliers".
+      // We compute the outliers as indices, so that we can join across transitions!
+      var outlierIndices = whiskerIndices
+          ? d3.range(0, whiskerIndices[0]).concat(d3.range(whiskerIndices[1] + 1, n))
+          : d3.range(n);
+
+      // Compute the new x-scale.
+      var x1 = d3.scale.linear()
+          .domain(domain && domain.call(this, d, i) || [min, max])
+          .range([height, 0]);
+
+      // Retrieve the old x-scale, if this is an update.
+      var x0 = this.__chart__ || d3.scale.linear()
+          .domain([0, Infinity])
+                 // .domain([0, max])
+          .range(x1.range());
+
+      // Stash the new scale.
+      this.__chart__ = x1;
+
+      // Note: the box, median, and box tick elements are fixed in number,
+      // so we only have to handle enter and update. In contrast, the outliers
+      // and other elements are variable, so we need to exit them! Variable
+      // elements also fade in and out.
+
+      // Update center line: the vertical line spanning the whiskers.
+      var center = g.selectAll("line.center")
+          .data(whiskerData ? [whiskerData] : []);
+
+         //vertical line
+      center.enter().insert("line", "rect")
+          .attr("class", "center")
+          .attr("x1", width / 2)
+          .attr("y1", function(d) { return x0(d[0]); })
+          .attr("x2", width / 2)
+          .attr("y2", function(d) { return x0(d[1]); })
+          .style("opacity", 1e-6)
+        .transition()
+          .duration(duration)
+          .style("opacity", 1)
+          .attr("y1", function(d) { return x1(d[0]); })
+          .attr("y2", function(d) { return x1(d[1]); });
+
+      center.transition()
+          .duration(duration)
+          .style("opacity", 1)
+          .attr("y1", function(d) { return x1(d[0]); })
+          .attr("y2", function(d) { return x1(d[1]); });
+
+      center.exit().transition()
+          .duration(duration)
+          .style("opacity", 1e-6)
+          .attr("y1", function(d) { return x1(d[0]); })
+          .attr("y2", function(d) { return x1(d[1]); })
+          .remove();
+
+      // Update innerquartile box.
+      var box = g.selectAll("rect.box")
+          .data([quartileData]);
+
+      box.enter().append("rect")
+          .attr("class", "box")
+          .attr("x", 0)
+          .attr("y", function(d) { return x0(d[2]); })
+          .attr("width", width)
+          .attr("height", function(d) { return x0(d[0]) - x0(d[2]); })
+        .transition()
+          .duration(duration)
+          .attr("y", function(d) { return x1(d[2]); })
+          .attr("height", function(d) { return x1(d[0]) - x1(d[2]); });
+
+      box.transition()
+          .duration(duration)
+          .attr("y", function(d) { return x1(d[2]); })
+          .attr("height", function(d) { return x1(d[0]) - x1(d[2]); });
+
+      // Update median line.
+      var medianLine = g.selectAll("line.median")
+          .data([quartileData[1]]);
+
+      medianLine.enter().append("line")
+          .attr("class", "median")
+          .attr("x1", 0)
+          .attr("y1", x0)
+          .attr("x2", width)
+          .attr("y2", x0)
+        .transition()
+          .duration(duration)
+          .attr("y1", x1)
+          .attr("y2", x1);
+
+      medianLine.transition()
+          .duration(duration)
+          .attr("y1", x1)
+          .attr("y2", x1);
+
+      // Update whiskers.
+      var whisker = g.selectAll("line.whisker")
+          .data(whiskerData || []);
+
+      whisker.enter().insert("line", "circle, text")
+          .attr("class", "whisker")
+          .attr("x1", 0)
+          .attr("y1", x0)
+          .attr("x2", 0 + width)
+          .attr("y2", x0)
+          .style("opacity", 1e-6)
+        .transition()
+          .duration(duration)
+          .attr("y1", x1)
+          .attr("y2", x1)
+          .style("opacity", 1);
+
+      whisker.transition()
+          .duration(duration)
+          .attr("y1", x1)
+          .attr("y2", x1)
+          .style("opacity", 1);
+
+      whisker.exit().transition()
+          .duration(duration)
+          .attr("y1", x1)
+          .attr("y2", x1)
+          .style("opacity", 1e-6)
+          .remove();
+
+      // Update outliers.
+      var outlier = g.selectAll("circle.outlier")
+          .data(outlierIndices, Number);
+
+      outlier.enter().insert("circle", "text")
+          .attr("class", "outlier")
+          .attr("r", 2)
+          .attr("cx", width / 2)
+          .attr("cy", function(i) { return x0(d[i]); })
+          .style("opacity", 1e-6)
+        .transition()
+          .duration(duration)
+          .attr("cy", function(i) { return x1(d[i]); })
+          .style("opacity", 1);
+
+      outlier.transition()
+          .duration(duration)
+          .attr("cy", function(i) { return x1(d[i]); })
+          .style("opacity", 1);
+
+      outlier.exit().transition()
+          .duration(duration)
+          .attr("cy", function(i) { return x1(d[i]); })
+          .style("opacity", 1e-6)
+          .remove();
+
+      // Compute the tick format.
+      var format = tickFormat || x1.tickFormat(8);
+
+      // Update box ticks.
+      var boxTick = g.selectAll("text.box")
+          .data(quartileData);
+         if(showLabels == true) {
+      boxTick.enter().append("text")
+          .attr("class", "box")
+          .attr("dy", ".3em")
+          .attr("dx", function(d, i) { return i & 1 ? 6 : -6 })
+          .attr("x", function(d, i) { return i & 1 ?  + width : 0 })
+          .attr("y", x0)
+          .attr("text-anchor", function(d, i) { return i & 1 ? "start" : "end"; })
+          .text(format)
+        .transition()
+          .duration(duration)
+          .attr("y", x1);
+        }
+                 
+      boxTick.transition()
+          .duration(duration)
+          .text(format)
+          .attr("y", x1);
+
+      // Update whisker ticks. These are handled separately from the box
+      // ticks because they may or may not exist, and we want don't want
+      // to join box ticks pre-transition with whisker ticks post-.
+      var whiskerTick = g.selectAll("text.whisker")
+          .data(whiskerData || []);
+        if(showLabels == true) {
+      whiskerTick.enter().append("text")
+          .attr("class", "whisker")
+          .attr("dy", ".3em")
+          .attr("dx", 6)
+          .attr("x", width)
+          .attr("y", x0)
+          .text(format)
+          .style("opacity", 1e-6)
+        .transition()
+          .duration(duration)
+          .attr("y", x1)
+          .style("opacity", 1);
+        }
+      whiskerTick.transition()
+          .duration(duration)
+          .text(format)
+          .attr("y", x1)
+          .style("opacity", 1);
+
+      whiskerTick.exit().transition()
+          .duration(duration)
+          .attr("y", x1)
+          .style("opacity", 1e-6)
+          .remove();
+    });
+    d3.timer.flush();
   }
 
-  var table_name = carto_conf['table_name'],
-      fields = carto_conf['fields'],
-      carto_uid = carto_conf['carto_uid'],
-      carto_key = carto_conf['carto_key'];
+  box.width = function(x) {
+    if (!arguments.length) return width;
+    width = x;
+    return box;
+  };
+
+  box.height = function(x) {
+    if (!arguments.length) return height;
+    height = x;
+    return box;
+  };
+
+  box.tickFormat = function(x) {
+    if (!arguments.length) return tickFormat;
+    tickFormat = x;
+    return box;
+  };
+
+  box.duration = function(x) {
+    if (!arguments.length) return duration;
+    duration = x;
+    return box;
+  };
+
+  box.domain = function(x) {
+    if (!arguments.length) return domain;
+    domain = x == null ? x : d3.functor(x);
+    return box;
+  };
+
+  box.value = function(x) {
+    if (!arguments.length) return value;
+    value = x;
+    return box;
+  };
+
+  box.whiskers = function(x) {
+    if (!arguments.length) return whiskers;
+    whiskers = x;
+    return box;
+  };
+  
+  box.showLabels = function(x) {
+    if (!arguments.length) return showLabels;
+    showLabels = x;
+    return box;
+  };
+
+  box.quartiles = function(x) {
+    if (!arguments.length) return quartiles;
+    quartiles = x;
+    return box;
+  };
+
+  return box;
+};
+
+function boxWhiskers(d) {
+  return [0, d.length - 1];
+}
+
+function boxQuartiles(d) {
+  return [
+    d3.quantile(d, .25),
+    d3.quantile(d, .5),
+    d3.quantile(d, .75)
+  ];
+}
+
+// Returns a function to compute the interquartile range.
+function iqr(k) {
+  return function(d, i) {
+    var q1 = d.quartiles[0],
+        q3 = d.quartiles[2],
+        iqr = (q3 - q1) * k,
+        i = -1,
+        j = d.length;
+    while (d[++i] < q1 - iqr);
+    while (d[--j] > q3 + iqr);
+    return [i, j];
+  };
+}
+
+  var table_name = Utils.getParameterByName('table_name'),
+      carto_uid = Utils.getParameterByName('carto_uid'),
+      carto_key = Utils.getParameterByName('carto_key'),
+      var_x = Utils.getParameterByName('x');
+      
+  var margin = {top: 15, right: 30, bottom: 30, left: 30},
+      screenW = parseInt(d3.select("#graph").style("width")),
+      screenH = parseInt(d3.select("#graph").style("height")),
+      width = screenW - margin.left - margin.right,
+      height = screenH - margin.top - margin.bottom;
       
   var end = 2*Math.PI;
 
+  var resizeTimer;
+  
+  var brushX = d3.scale.identity().domain([0, width]),
+      brushY = d3.scale.identity().domain([0, height]);
+  
+  function resize() {
+    d3.select("#graph g").remove();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      console.log('resize');
+    }, 500);
+  }
+
+  d3.select(window).on('resize', resize); 
+  
+  $(window).bind('storage', function(e) {
+    var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
+    if ( table_name in hl_ids ) {
+      var ids = hl_ids[table_name];
+    }
+  });
+  
+  
   // load data and create chart
   CartoProxy.SetUID(carto_uid);
   CartoProxy.SetKey(carto_key);
   var isCSV = true;
-
-    
-  CartoProxy.GetVariables(table_name, fields, isCSV, function(csv_content) {
-
-    var csv_data = d3.csv.parse(csv_content);
-    csv_data.forEach(function(d,i) { d.id = d.id || i; });
   
-    // get canvas
-    var canvas = $('#paint-canvas')[0];
-    var hlcanvas = $('#hl-canvas')[0];
-      
-    // 
-    var screenW, screenH;
-    var ctx = canvas.getContext('2d');
-    var hlctx = hlcanvas.getContext('2d');
-    var buffer = document.createElement("canvas");
-    var screenObj = {};
-
-    function highlightPoints(hlPoints)  {
-      hlctx.clearRect(0, 0, screenW, screenH);
-      hlctx.strokeStyle = 'red';
-      for (var screenX in hlPoints) {
-        for (var screenY in hlPoints[screenX]) {
-          hlctx.beginPath();
-          hlctx.arc(screenX, screenY, 2, 0, end);
-          hlctx.stroke();
-          hlctx.closePath();
-        }
-      }
-      hlctx.strokeStyle = '';
-    }
-    
-    function highlightPrep(ids, hlPoints) {
-      if (hlPoints === undefined) hlPoints = {};
-    
-      for (var _screenID in screenObj) {
-        _screenCoords = screenObj[_screenID];
-        for (var i=0, m=ids.length; i<m; i++) {
-          item = _screenCoords[ids[i]];
-          screenX = item[0];
-          screenY = item[1];
-          if (hlPoints[screenX] === undefined) 
-            hlPoints[screenX] = {};
-          hlPoints[screenX][screenY] = null;
-        }
-      }
-      return hlPoints;
-    }
-      
-    function MainPlot() {
-      var margin = {top: 5, right: 0, bottom: 30, left: 0},
-        width = screenW - margin.left - margin.right,
-        height = screenH - margin.top - margin.bottom;
-      
-      screenW = $("#map-container").width(),
-      screenH = $("#map-container").height(),
-    
-      // get canvas
-      canvas.width =  screenW;
-      canvas.height = screenH;
-      
-      hlcanvas.width =  screenW;
-      hlcanvas.height = screenH;
-      
-      ctx.clearRect(0, 0, screenW, screenH);
-      ctx.globalAlpha = 0.5;
-      ctx.imageSmoothingEnabled= false;
-    
-      hlctx.clearRect(0, 0, screenW, screenH);
-      hlctx.globalAlpha = 0.8;
-      hlctx.imageSmoothingEnabled= false;
-      
-      // create buffer for canvas
-      buffer.width = screenW;
-      buffer.height = screenH;
-      var bufferctx = buffer.getContext('2d');
-      bufferctx.clearRect(0, 0, screenW, screenH);
-      bufferctx.globalAlpha = 0.8;
-      bufferctx.imageSmoothingEnabled= false;
-      
-    
-      // Size parameters for each cell
-      var n = fields.length,
-          cell_w = screenW / n,
-          cell_h = screenH / n,
-          padding = 15;
-        
-      if (cell_w < cell_h) {
-        size = cell_w - padding;
-        margin.top = (screenH - size * n) / 2.0;
-      } else {
-        size = cell_h - padding;
-        margin.left = (screenW - size * n) / 2.0;
-      }
-    
-      // Position scales.
-      var x = {}, y = {};
-      
-      fields.forEach(function(field) {
-        // values to numbers.
-        csv_data.forEach(function(d) { d[field] = +d[field]; });
-    
-        var value = function(d) { return d[field]; },
-            domain = [d3.min(csv_data, value), d3.max(csv_data, value)],
-            range = [padding / 2, size - padding / 2];
-        x[field] = d3.scale.linear().domain(domain).range(range);
-        y[field] = d3.scale.linear().domain(domain).range(range.reverse());
-      });
+  var labels = true; 
+  var csv;
+  var data = [];
+  data[0] = [];
+  data[0][0] = var_x;
+  data[0][1] = [];
   
-      // Axes.
-      var axis = d3.svg.axis()
-        .ticks(5)
-        .tickSize(size * n);
-    
-      // Brush.
-      var brush = d3.svg.brush()
-        .on("brushstart", brushstart)
-        .on("brush", brush)
-        .on("brushend", brushend);
-    
-      // Root panel.
-      var svg = d3.select("#graph")
-          .attr("width", screenW)
-          .attr("height", screenH)
-        .append("g")
-          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-          
-      // X-axis.
-      svg.selectAll("g.x.axis")
-        .data(fields)
-      .enter().append("svg:g")
-        .attr("class", "x axis")
-        .attr("transform", function(d, i) { return "translate(" + i * size + ",0)"; })
-        .each(function(d) { d3.select(this).call(axis.scale(x[d]).orient("bottom")); });
-    
-      // Y-axis.
-      svg.selectAll("g.y.axis")
-        .data(fields)
-      .enter().append("svg:g")
-        .attr("class", "y axis")
-        .attr("transform", function(d, i) { return "translate(0," + i * size + ")"; })
-        .each(function(d) { d3.select(this).call(axis.scale(y[d]).orient("right")); });
-   
-    
-      // Cell and plot.
-      var cell = svg.selectAll("g.cell")
-        .data(cross(fields, fields))
-      .enter().append("svg:g")
-        .attr("class", "cell")
-        .attr("transform", function(d) { return "translate(" + d.i * size + "," + d.j * size + ")"; })
-        .each(plot);
-    
-      // Titles for the diagonal.
-      cell.filter(function(d) { return d.i == d.j; }).append("svg:text")
-        .attr("x", padding)
-        .attr("y", padding)
-        .attr("dy", ".71em")
-        .text(function(d) { return d.x; }); 
-        
-      // Clear the previously-active brush, if any.
-      function brushstart(p) {
-        if (brush.data !== p) {
-          cell.call(brush.clear());
-          brush.x(x[p.x]).y(y[p.y]).data = p;
-        }
-      }
-    
-      // Highlight the selected circles.
-      function brush(p) {
-        // highlight current selection without computing
-        var pos = $(this).find('.extent').position(),
-            startX = pos.left,
-            startY = pos.top,
-            w = parseFloat($(this).find('.extent').attr("width")),
-            h = parseFloat($(this).find('.extent').attr("height")),
-            endX = startX + w,
-            endY = startY + h;
-        
-        ctx.clearRect(0, 0, screenW, screenH);
-        ctx.globalAlpha = 0.2;
-        ctx.drawImage(buffer, 0, 0);
-       
-        // highlight in current cells
-        var item,
-            offsetX = margin.left + (size) * p.i,
-            offsetY = margin.top + (size) * p.j,
-            screenX,
-            screenY,
-            hlIds = [];
-            hlPoints = {};
-        
-        var screenID = p.x + p.y;
-        var screenCoords = screenObj[screenID];
-        
-        for (var i=0, m=screenCoords.length; i<m; i++) {
-          item = screenCoords[i];
-          screenX = item[0];
-          screenY = item[1];
-          if (startX <= screenX && screenX <= endX && 
-              startY <= screenY && screenY <= endY) {
-              if (hlPoints[screenX] === undefined) 
-                hlPoints[screenX] = {};
-              hlPoints[screenX][screenY] = null;
-              hlIds.push(i);
-          }
-        }
-        
-        // other cells
-        for (var _screenID in screenObj) {
-          if (screenID === _screenID) continue;
-          _screenCoords = screenObj[_screenID];
-          for (var i=0, m=hlIds.length; i<m; i++) {
-            item = _screenCoords[hlIds[i]];
-            screenX = item[0];
-            screenY = item[1];
-            if (hlPoints[screenX] === undefined) 
-              hlPoints[screenX] = {};
-            hlPoints[screenX][screenY] = null;
-          }
-        }
-        
-        highlightPoints(hlPoints);
-        
-        var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
-        if (hl_ids === null) hl_ids = {};
-        hl_ids[table_name] = hlIds;
-        localStorage.setItem("HL_IDS", JSON.stringify(hl_ids));
-      }
-    
-      // If the brush is empty, select all circles.
-      function brushend() {
-        if (brush.empty())  {
-          hlctx.clearRect(0, 0, screenW, screenH);
-          ctx.clearRect(0, 0, screenW, screenH);
-          ctx.globalAlpha = 0.5;
-          ctx.drawImage(buffer, 0, 0);
-        }
-      }
-    
-      function cross(a, b) {
-        var c = [], n = a.length, m = b.length, i, j;
-        for (i = -1; ++i < n;) for (j = -1; ++j < m;) c.push({x: a[i], i: i, y: b[j], j: j});
-        return c;
-      }      
-    
-      function plot(p) {
-        var cell = d3.select(this);
-    
-        // Plot frame.
-        cell.append("svg:rect")
-          .attr("class", "frame")
-          .attr("x", padding / 2)
-          .attr("y", padding / 2)
-          .attr("width", size - padding)
-          .attr("height", size - padding);
+  var min = Infinity,
+      max = -Infinity;
       
-        // plot dots in canvas
-        var item,
-            offsetX = margin.left + (size) * p.i,
-            offsetY = margin.top + (size) * p.j,
-            screenX,
-            screenY;
-          
-        var screenID = p.x + p.y;
-        screenObj[screenID] = [];
-        
-        for (var i=0, m=csv_data.length; i<m; i++) {
-          item = csv_data[i];
-          screenX = (offsetX + x[p.x](item[p.x])) | 0;
-          screenY = (offsetY + y[p.y](item[p.y])) | 0;
-          
-          screenObj[screenID].push([screenX, screenY]);
-          
-          bufferctx.beginPath();
-          bufferctx.arc(screenX, screenY, 2, 0, end);
-          bufferctx.stroke();
-          bufferctx.fill();
-        }
-       
-        if (p.i === n -1 && p.j === n-1)
-          ctx.drawImage(buffer, 0, 0);
-        
-        // Plot brush.
-        cell.call(brush.x(x[p.x]).y(y[p.y]));
-      }     
-    }
+  var xScale, yScale;
     
-    MainPlot();
-  
-    var resizeTimer;
-    
-    function resize() {
-      d3.select("#graph g").remove();
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function() {
-        console.log('resize');
-        screenW = $("#map-container").width(),
-        screenH = $("#map-container").height();
-        
-        MainPlot();
-      }, 500);
-    }
+  CartoProxy.GetVariables(table_name, [var_x], isCSV, function(csv_content) {
 
-    d3.select(window).on('resize', resize); 
-    
-    
-    $(window).bind('storage', function(e) {
-      var hl_ids = JSON.parse(localStorage.getItem('HL_IDS'));
-      if ( table_name in hl_ids ) {
-        var ids = hl_ids[table_name];
-        var hlPoints = highlightPrep(ids);
-        highlightPoints(hlPoints);
-      }
+    csv= d3.csv.parse(csv_content);
+    csv.forEach(function(d,i) { 
+      d.id = d.id || i; 
+      var v = Math.floor(d[var_x]);
+      data[0][1].push(v);
+      if (v > max) max = v;
+      if (v < min) min = v;
     });
+    
+     
+    var chart = d3.box()
+      .whiskers(iqr(1.5))
+      .height(height)	
+      .domain([min, max])
+      .showLabels(labels);
+
+    var svg = d3.select("#graph")
+      .attr("width", screenW)
+      .attr("height", screenH)
+      .attr("class", "box")    
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // the x-axis
+    xScale = d3.scale.ordinal()	   
+      .domain( data.map(function(d) { console.log(d); return d[0] } ) )	    
+      .rangeRoundBands([0 , width], 0.7, 0.3); 		
+
+    var xAxis = d3.svg.axis()
+      .scale(xScale)
+      .orient("bottom");
+
+    // the y-axis
+    yScale = d3.scale.linear()
+      .domain([min, max])
+      .range([height + margin.top, 0 + margin.top]);
+        
+    var yAxis = d3.svg.axis()
+      .scale(yScale)
+      .orient("left");
+
+    // draw the boxplots	
+    svg.selectAll(".box")	   
+      .data(data)
+    .enter().append("g")
+      .attr("transform", function(d) { return "translate(" +  xScale(d[0])  + "," + margin.top + ")"; } )
+      .call(chart.width(xScale.rangeBand())); 
+        
+    // add a title
+    svg.append("text")
+      .attr("x", (width / 2))             
+      .attr("y", 0 + (margin.top / 10))
+      .attr("text-anchor", "middle")  
+      .style("font-size", "18px") 
+      //.style("text-decoration", "underline")  
+      .text(var_x);
+ 
+    // draw y axis
+    svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+      .append("text") // and text1
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .style("font-size", "16px") 
+        .text("");		
+      
+    // Clear the previously-active brush, if any.
+    function brushstart(p) {
+      if (brush.data !== p) {
+        brush.clear();
+      }
+    }
+    
+    function brush(p) {
+      // highlight current selection without computing
+      var e = brush.extent(),
+          x0 = e[0][0], 
+          y0 = e[0][1], 
+          x1 = e[1][0], 
+          y1 = e[1][1];
+      var d_y0 = yScale.invert(y0 ),
+          d_y1 = yScale.invert(y1 );
+      console.log(x0,y0,x1,y1);
+      var middle = width / 2.0; 
+      if (x0 < middle && x1 > middle) {
+        console.log("targe");
+        var selected_ids = [];
+        csv.forEach(function(d,i) {
+          var val = d['cartheft'];
+          if (d_y0 <val && val > d_y1) {
+            selected_ids.push(i);
+          }
+          
+        })
+          var hl = {},
+              key = table_name;
+          if ( localStorage["HL_IDS"] ){ 
+            hl = JSON.parse(localStorage["HL_IDS"]);
+          }
+          hl[key] = selected_ids;
+          localStorage["HL_IDS"] = JSON.stringify(hl);
+      }
+      
+    }
+  
+    // If the brush is empty, select all circles.
+    function brushend() {
+      if (brush.empty())  {
+        // clean any selection
+      } else {
+        // do sync
+      }
+    }
+    
+    // Brush.
+    var brush = d3.svg.brush()
+      .x(brushX)
+      .y(brushY)
+      .on("brushstart", brushstart)
+      .on("brush", brush)
+      .on("brushend", brushend);
+      
+     svg.append("g")
+        .attr("class", "brush")
+        .call(brush)
+        .call(brush.event);  
     
   }); // end CartoProxy.GetVariables()
   

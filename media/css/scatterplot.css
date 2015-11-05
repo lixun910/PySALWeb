@@ -6,7 +6,7 @@ html, body {
 }
 #selector {
   position: fixed;
-  top: 40px;
+  top: 0;
   left: 80px;
   width : 220px; 
   vertical-align: text-top;

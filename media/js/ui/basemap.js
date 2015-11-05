@@ -46,7 +46,7 @@ var GDABasemap = (function($, L, cartodb){
     
     var currentTileUrl = tileUrls[tileIdx];
     
-    $(mapProviders[0]).css({'border':'2px solid orange'});
+    $(mapProviders[3]).css({'border':'2px solid orange'});
     
     function OnMapInfoChange() {
       if ($('#mapInfo').is(':hidden') ) {
@@ -69,11 +69,13 @@ var GDABasemap = (function($, L, cartodb){
     
     // basemap buton on the right side of top bar
     $('.basemap').click(function(){
+      $('#userInfo').hide();
       $('#mapInfo').toggle();
       OnMapInfoChange();
     });
 
     $('.account').click(function(){
+      $('#mapInfo').hide();
       $('#userInfo').toggle();
     });
     

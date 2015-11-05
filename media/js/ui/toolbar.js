@@ -54,6 +54,7 @@ var Toolbar = (function($, FileDlg){
       '#btnSimMap' : '#dlg-simple-map',
       '#btnCatMap' : '#dlg-quantile-map',
       '#btnHist' : '#dlg-histogram',
+      '#btnBoxPlot' : '#dlg-boxplot',
       '#btnScatter' : '#dlg-scatter-plot',
       '#btnScatterMatrix' : '#dlg-scatter-matrix',
       '#btnMoranScatter' : '#dlg-moran-scatter-plot',
@@ -66,23 +67,21 @@ var Toolbar = (function($, FileDlg){
     };
     
     var OnMenuButtonClick = function(btnID, dlgID) {
+      $(btnID)
+	.mouseout(function(){
+	  $(this).css({"-webkit-filter":"graysale(100%) opacity(0.8)",});
+	})
+	.mouseover(function(){
+	  $(this).css({"-webkit-filter":"grayscale(0%)"});
+	});
       $(btnID).click(function(){
+	// fade all buttons first
 	$('.image-wrap').css({"-webkit-filter":"grayscale(100%) opacity(0.8)",});
-	
-        //if ($(menu).is(".visible") || $(menu).css('display') == 'block') {
-        // hide all dialogs
+        // hide all other dialogs first
         $('.ui-dialog-content').dialog('close');
-	/*
-        $(dlgID).dialog('option', "position", {
-          my: "bottom-38",
-          at: "top",
-          of: btnID
-        });
-	*/
-        //var pos=$(btnID).offset();
-        //$('#dialog-arrow').css({'left':pos.left});
-        //$('#dialog-arrow').show();
+	// then open targeting dialog
         $(dlgID).dialog('open');
+	// highligh current button also
 	$(this).css({"-webkit-filter":"grayscale(0%)"});
       });
     };

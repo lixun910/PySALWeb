@@ -159,6 +159,9 @@ input.search {
   padding-left: 13px;
   background: url("../img/user.png") no-repeat;
 }
+#userInfo {
+  text-align: left;
+}
 .basemap {
   float: left;
   width: 90px;
@@ -288,8 +291,8 @@ border: 1px solid #aaa;margin: 1px 10px;
   font-size: 120%;
   font-family: Verdana,Helvetica,Arial,sans-serif;
   color: #333;
-  -moz-border-radius:10px;
-  -webkit-border-radius:10px;
+  -moz-border-radius:5px;
+  -webkit-border-radius:5px;
   -webkit-box-shadow: 0px 0 3px rgba(0,0,0,0.25);
   -moz-box-shadow: 0px 0 3px rgba(0,0,0,0.25);
   box-shadow: 0px 0 3px rgba(0,0,0,0.25); 
@@ -845,6 +848,10 @@ ol li:hover {
 #dialog-cartodb {
   text-align: left;
   margin: 10px;
+}
+
+img.capacity {
+  height: 14px;
 }
 #bottombar, #multilayer_arrow, #w-dist-loading, #divPop, #img-id-chk, #img-id-spin, #img-id-nochk, #progress_bar_openfile,#progress_bar_cartodb,#progress_bar_road, #progress_bar_spacetime, #btnMultiLayer, #progress_bar_lisa, #tool-menu-arrow, #dialog-arrow, #prgInfo, #legend{
   display: none;

@@ -140,7 +140,8 @@ var OpenFileDlg = (function() {
     function InitDialogs() {
       var ui = UIManager.getInstance(); 
       if (ui.IsDialogSetup()) {
-        require(['ui/openfileDlg', 'ui/cartodbDlg', 'ui/choroplethDlg', 'ui/histogramDlg', 'ui/lisaDlg', 'ui/moranDlg', 'ui/networkDlg', 'ui/scatterDlg', 'ui/spacetimeDlg', 'ui/spregDlg', 'ui/weightsDlg', 'ui/scattermatrixDlg', 'ui/parcoordsDlg'], function(FileDlg, CartoDlg, ChoroplethDlg, HistogramDlg, LisaDlg, MoranDlg, NetworkDlg, ScatterDlg, SpacetimeDlg, SpregDlg, WeightsDlg, ScatterMatrixDlg, ParcoordsDlg){
+        require(['ui/openfileDlg', 'ui/cartodbDlg', 'ui/choroplethDlg', 'ui/histogramDlg', 'ui/lisaDlg', 'ui/moranDlg', 'ui/networkDlg', 'ui/scatterDlg', 'ui/spacetimeDlg', 'ui/spregDlg', 'ui/weightsDlg', 'ui/scattermatrixDlg', 'ui/parcoordsDlg', 'ui/boxplotDlg'], 
+        function(FileDlg, CartoDlg, ChoroplethDlg, HistogramDlg, LisaDlg, MoranDlg, NetworkDlg, ScatterDlg, SpacetimeDlg, SpregDlg, WeightsDlg, ScatterMatrixDlg, ParcoordsDlg, BoxplotDlg){
           var fileDlg = FileDlg.getInstance();
           var cartoDlg = CartoDlg.getInstance();
           var choroDlg = ChoroplethDlg.getInstance();
@@ -154,8 +155,9 @@ var OpenFileDlg = (function() {
           var wDlg = WeightsDlg.getInstance();
           var scatMatrixDlg = ScatterMatrixDlg.getInstance();
           var parcoordsDlg = ParcoordsDlg.getInstance();
+          var boxplotDlg = BoxplotDlg.getInstance();
          
-          ui.RegistDialogs([fileDlg, cartoDlg, choroDlg, histoDlg, lisaDlg, moranDlg, netwDlg, scatDlg, spacetimeDlg, spregDlg, wDlg, scatMatrixDlg, parcoordsDlg]); 
+          ui.RegistDialogs([fileDlg, cartoDlg, choroDlg, histoDlg, lisaDlg, moranDlg, netwDlg, scatDlg, spacetimeDlg, spregDlg, wDlg, scatMatrixDlg, parcoordsDlg, boxplotDlg]); 
         });
       }
     } 

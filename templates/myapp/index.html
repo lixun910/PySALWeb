@@ -11,12 +11,9 @@
 
 <link rel="stylesheet" href="../../media/css/chosen.css" />
 
-
 <link rel="stylesheet" href="../../media/asserts/css/bootstrap.min.css" />
 
 <link rel="stylesheet" href="../../media/css/jquery.switchButton.css" />
-
-
 
 <link rel="stylesheet" href="../../media/css/custom-theme/jquery-ui-1.10.0.custom.css">
 
@@ -121,6 +118,9 @@
       <div id="btnParcoords" class="image-wrap" style="background-image: url(../../media/img/wiz-pcp.png);">
 	<span>Parallel Coordinates</span>
       </div>
+      <div id="btnBoxPlot" class="image-wrap" style="background-image: url(../../media/img/wiz-boxplot.png);">
+	<span>Box Plot</span>
+      </div>
       <div id="btnBubbleMap" class="image-wrap" style="background-image: url(../../media/img/wiz-bubblemap.png);">
 	<span>Bubble Map</span>
       </div>
@@ -152,7 +152,6 @@
 
     <div class="down-arrow" id="tool-menu-arrow"></div>
     <div class="down-arrow" id="dialog-arrow"></div>
-    <!--<div class="asu-geoda"><img src="../../media/img/geodacenter_logo.png" height=20></div>-->
     <div id="btnOpenData"><img src="../../media/img/bigplus.png"></div>
 
   </div>  <!--end role "map-page"-->
@@ -301,7 +300,6 @@
 	  </table>
 	</form>
       </div>
-    </div>
       <div id="tabs-2">
 	<form id="form-road-segement">
 	  <table>
@@ -327,6 +325,7 @@
 	  </table>
 	</form>
       </div>
+    </div>
     <div id="progress_bar_road"><img src="../../media/img/progress-bar.gif"></div>
   </div>
 
@@ -337,18 +336,12 @@
   ///////////////////////////////////////////////////////////////////////////////
   -->
   <div class="mainDlg"  id="dialog-spacetime"  title="Space Time Aggregation">
-    <table><tr><td><img src="../../media/img/st.png"></td>
-    <td>&nbsp;&nbsp;Aggregate points in time and space and apply spatial analysis.</td>
-    </tr>
-    </table>
-    <br>
     <div id="spacetime_catalog">
       <h2><a href='#'>Space</a></h2>
       <div style="height:200px;">
 	<p style="text-align: left">Example of Space Aggregation (e.g. counting how many points in each polygon.)</p>
 	<br><img src="../../media/img/pnp.png"><br><br>
-	
-	<form id="spacetime-count-pform">
+<form id="spacetime-count-pform">
 	  <table>
 	    <tr>
 	      <td>1.Select the polygon layer:</td>
@@ -370,29 +363,30 @@
 	    </tr>
 	  </table>
 	</form>
-  
       </div>
+      <!--
       <h2><a href='#'> Time</a></h2>
       <div>
-      <table>
-	<tr><td height="30">Field:</td>
-	  <td><select><option>Date</option></select>&nbsp;&nbsp;
-	  <select><option>Time</option></select></td>
-	</tr>
-	<tr><td height="30">Time of Day&nbsp;&nbsp;&nbsp;</td>
-	  <td><select><option>00:00-23:59</option></select></td>
-	  <td><button>&nbsp;+&nbsp;</button> <button>&nbsp;-&nbsp;</button></td>
-	</tr>
-	<tr><td height="30">Step By</td>
-	  <td><input type="text" value=1 size=4><select><option>Day</option><option>Week</option></select></td>
-	</tr>
-	<tr><td height="30">Interval</td>
-	  <td>Start&nbsp;<input type="text" id="datepicker-start"><td>
-	</tr>
-	<tr><td height="30"></td><td>End&nbsp;&nbsp;&nbsp;<input type="text" id="datepicker-end"></td>
-	</tr>
-      </table>
+	<table>
+	  <tr><td height="30">Field:</td>
+	    <td><select><option>Date</option></select>&nbsp;&nbsp;
+	    <select><option>Time</option></select></td>
+	  </tr>
+	  <tr><td height="30">Time of Day&nbsp;&nbsp;&nbsp;</td>
+	    <td><select><option>00:00-23:59</option></select></td>
+	    <td><button>&nbsp;+&nbsp;</button> <button>&nbsp;-&nbsp;</button></td>
+	  </tr>
+	  <tr><td height="30">Step By</td>
+	    <td><input type="text" value=1 size=4><select><option>Day</option><option>Week</option></select></td>
+	  </tr>
+	  <tr><td height="30">Interval</td>
+	    <td>Start&nbsp;<input type="text" id="datepicker-start"><td>
+	  </tr>
+	  <tr><td height="30"></td><td>End&nbsp;&nbsp;&nbsp;<input type="text" id="datepicker-end"></td>
+	  </tr>
+	</table>
       </div>
+      -->
     </div>
     <div id="progress_bar_spacetime"><img src="../../media/img/progress-bar.gif"></div>
   </div>
@@ -539,6 +533,30 @@
     
   </div>
 
+  <!--
+  ///////////////////////////////////////////////////////////////////////////////
+  // Boxplot
+  ///////////////////////////////////////////////////////////////////////////////
+  -->
+  <div class="mainDlg"  id="dlg-boxplot" title="Open Box Plot">
+    <table>
+      <tr>
+      <td width="200"><label for="name">Select a variable:</label></td>
+      </tr>
+      <tr>
+      <td><select id="sel-boxplot-x"></td>
+      </tr>
+    </table> 
+    <br><br>
+    <table>
+      <tr>
+      <td>
+	<input type="checkbox" id="chk-newtab-box" id=0>Open in new window?
+      </td>
+      </tr>
+    </table> 
+  </div>
+  
   <!--
   ///////////////////////////////////////////////////////////////////////////////
   // Configure map
@@ -732,6 +750,7 @@
       </div>
     </div>
     </div>
+    <!--
     <br/><br/><br/>
     <table>
       <tr>
@@ -745,6 +764,7 @@
 	<td><select id='sel-w-files'></select></td>
       </tr>
     </table>
+    -->
     <div class="dlg-loading"></div>
   </div> 
   
@@ -1111,9 +1131,19 @@
   </div>
   
   <div id="userInfo" class="info-div">
-    <p>{{userid}}</p> <br/>
-    <span>Storage Usage: <img src="../../media/img/capacity.png" height=14></span> <br/><br/>
-    <button id="btn_logout">logout</button>
+    <p>{{userid}} 
+      {% if auth_provider == "twitter" %} 
+	<img src="../../media/img/account-twitter.png">
+      {% elif auth_provider == "google" %} 
+	<img src="../../media/img/account-google.png">
+      {% elif auth_provider == "facebook" %} 
+	<img src="../../media/img/account-facebook.png">
+      {% elif auth_provider == "tumblr" %} 
+	<img src="../../media/img/account-tumblr.png">
+      {% endif %}
+      <button id="btn_logout" class="ui-button ui-widget ui-state-default ui-corner-all">Logout</button>
+    </p>
+    <span>Storage Usage: <img src="../../media/img/capacity.png" class="capacity"></span>
   </div>
   
   <div id="mapInfo" class='info-div'>

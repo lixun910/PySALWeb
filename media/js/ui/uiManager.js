@@ -17,7 +17,7 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
     
     var fileDlg, cartoDlg, choroDlg, histDlg, lisaDlg, moranDlg,
         networkDlg, scatDlg, spacetimeDlg, spregDlg, weightsDlg, scatMatrixDlg,
-        parcoordsDlg;
+        parcoordsDlg, boxplotDlg;
         
     var GetDialogs = function() {
       return [
@@ -32,6 +32,7 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
         weightsDlg,
         scatMatrixDlg,
         parcoordsDlg,
+        boxplotDlg,
       ];
     };
     
@@ -190,6 +191,7 @@ var UIManager = (function(window, csrftoken, $, MsgBox ){
         weightsDlg = dlgs[10];
         scatMatrixDlg = dlgs[11];
         parcoordsDlg = dlgs[12];
+        boxplotDlg = dlgs[13];
       },
     
       IsDialogSetup : function() {
