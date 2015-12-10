@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GeoDa-Web Publication</title>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+  
+  <link rel="stylesheet" href="../media/css/cartodb.css" />
+  <link rel="stylesheet" href="../media/asserts/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="../media/css/custom-theme/jquery-ui-1.10.0.custom.css">
+  <link rel="stylesheet" href="../media/asserts/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="../media/css/publish.css" />
+  
+  <script src="../media/js/lib/marked.min.js"></script>
+  <script src="../media/js/cartodb.js"></script>
+  <script src="../media/js/require.js"></script>
+  <script src="../media/js/zip1/zip.js"></script>
+</head>
+<body>
+
+  <div class="awesome-bar">
+      <div class="logo"></div>
+  </div>
+  
+  <div role="main" class="ui-content" id="map-container">
+    <div id="map"></div>
+  </div>
+  
+  <canvas class="hl-canvas"></canvas>
+  <div class="info-div" id="map_content" style="display: block;"></div>
+</body>
+
+<script>
+require.config({
+    baseUrl: '../media/js',
+    paths: {
+      jquery: 'lib/jquery.min',
+      jqueryui : 'lib/jquery-ui-1.10.4.custom.min',
+      d3: 'lib/d3.v3.min',
+      colorbrewer  : 'lib/colorbrewer',
+      proj4 : 'lib/proj4',
+    },
+    shim : {
+      "jqueryui" : {deps: ['jquery']},
+      d3 : {exports : 'd3'},
+      colorbrewer: {exports : "colorbrewer"},
+      proj4 : {exports: 'proj4'},
+    }
+});
+
+require(["jquery", 
+         "./ui/cartoProxy",
+         "./ui/utils", 
+         "./ui/basemap", 
+         "./ui/mapManager", 
+         'colorbrewer', 'd3', 'proj4', 'jqueryui' ],
+function($, CartoProxy,Utils, Basemap, MapManager, colorbrewer, d3, proj4) {
+
+  console.log("After libs loaded...");
+  var user_id = Utils.getParameterByName('uid');
+  var viz_name = Utils.getParameterByName('vizname');
+  var plots = Utils.getParameterByName('plots');
+  var uid = "lixun910";
+  var key = "340808e9a453af9680684a65990eb4eb706e9b56";
+  CartoProxy.SetUID(uid);
+  CartoProxy.SetKey(key);  
+
+    
+  // In background, get data from CartoDB for interactive 
+  var maps_conf_url = '../media/temp/' + user_id + '/' + viz_name + '.maps.json'; 
+  
+  require(['ui/mapManager','ui/basemap'], function(MapManager, Basemap) {
+    $.get(maps_conf_url).done(function(maps_conf){
+      console.log(maps_conf);
+      var n_maps = maps_conf.length;
+      var setup_basemap = false; 
+      for (var i=0; i<n_maps; i++) {
+        var m_conf = maps_conf[i];
+        if (m_conf) {
+          var table_name = m_conf["map_name"];
+          CartoProxy.DownloadTable(table_name, function(data) { 
+            // update UI 
+            //$('.cartodb-map-wrapper').hide()
+            
+            // add map
+            MapManager.getInstance().AddMap(data, function(map) {
+          if (!setup_basemap) {
+            if (m_conf['tile_idx']) {
+              Basemap.getInstance().SelectBasemap(m_conf['tile_idx']);
+            setup_basemap = true;
+          } 
+          } 
+              var field = m_conf["legend_field"];
+              if (field != undefined) {
+                var mapCanvas = MapManager.getInstance().GetCanvasByMap(map);
+                if (mapCanvas) {
+                  if (m_conf['map_type']=="POINT") {
+                    if (m_conf['heatmap'] == true) {
+                      mapCanvas.update({'heatmap':true});
+                    }
+                  } else {
+                  CartoProxy.GetVariables(table_name, [field], false, function(result){
+                    //console.log(result);
+                    var data = result[field], /*list*/
+                        n_data = data.length,
+                        bins = m_conf["bins"],
+                        n_bins = bins.length,
+                        colors = m_conf["colors"],
+                        n_colors = colors.length,
+                        color_theme = {};
+                    // generate colorTheme: {'#ccc':[ids], ...}
+                    for (var m=0; m<n_colors; m++) {
+                      color_theme[colors[m]] = [];
+                    }
+                    for (var m=0; m<n_data;m++)  {
+                      var found = false;
+                      for (var bi=0; bi < n_bins; bi++) {
+                        if ( data[m] <= bins[bi] ) {
+                          color_theme[ colors[bi] ].push( m );
+                          found = true;
+                          break;
+                        }
+                      }
+                      if (!found) color_theme[ colors[n_bins] ].push( m );
+                    }
+                    // update Map Style
+                    m_conf['color_theme'] = color_theme;
+                    mapCanvas.update(m_conf);
+                    
+                    // create legend if necessary
+                    Utils.create_legend($('#legend'), bins, colors);
+                  }); // END CartoProxy.GetVariable
+                  } // END else
+                }
+              }
+            }); // END MapManger.AddMap()
+            
+          }); // END CartoProxy.DownloadTable
+          
+        } // END IF
+        
+      } // END FOR
+      
+    }); // END $.get(maps_conf_url)
+  }); // END require['ui/mapManager']
+  
+  
+  var plots_conf_url = '../media/temp/' + user_id + '/' + viz_name + '.plots.json'; 
+
+  $.get(plots_conf_url).done(function(plots_conf){
+    console.log(plots_conf);
+    
+    var n = plots_conf.length;
+    
+    for (var i=0; i<n; i++) {
+    
+      var p_conf = plots_conf[i];
+      
+      if ( p_conf ) {
+        var plot_type = p_conf['plot_type'];
+        if (plot_type)  {
+          var table_name = p_conf["table_name"],
+              key = p_conf["carto_key"],
+              uid = p_conf["carto_uid"],
+              pos = p_conf["pos"];
+              
+          if (plot_type == "scatterplot") {
+            var x_name = p_conf["x"],
+                y_name = p_conf["y"];
+            PopScatterPlot(table_name, x_name, y_name, pos, uid, key);
+            
+          } else if (plot_type == "histogram") {
+            var x_name = p_conf["x"];
+            PopHistogram(table_name, x_name, pos, uid, key);
+          
+          } else if (plot_type == "scatter_matrix") {
+          
+          } else if (plot_type == "parcoords") {
+          
+          } else if (plot_type == "moran_scatterplot") {
+            var x_name = p_conf["x"];
+            var w_conf = p_conf["w_conf"];
+            PopMoranScatterPlot(table_name, x_name, w_conf, pos, uid, key);
+
+          }
+        }
+      }
+    }
+  });
+  
+  // Cluster map
+  // Moran's I scatter plot
+  function PopMoranScatterPlot(table_name, x, w_conf, pos, uid, key) {
+    var url = 'moran_scatterplot.html?';
+    
+    url += 'table_name=' + table_name;
+    url += '&carto_uid=' + uid;
+    url += '&carto_key=' + key + '&';
+    url += '&x=' + x;
+    url += '&w_conf=' + w_conf;
+            
+    Utils.popFrame(url, false, pos);
+  }
+  
+  
+  // Plots
+  // histogram 
+  function PopHistogram(table_name, x, pos, uid, key) {
+    var url = 'histogram.html?';
+    
+    url += 'table_name=' + table_name;
+    url += '&carto_uid=' + uid;
+    url += '&carto_key=' + key + '&';
+    url += '&x=' + x;
+            
+    Utils.popFrame(url, false, pos);
+  }
+  
+  // scatterplot 
+  function PopScatterPlot(table_name, x, y, pos, uid, key) {
+    
+    var url = 'scatterplot.html?';
+    url += 'table_name=' + table_name;
+    url += '&carto_uid=' + uid;
+    url += '&carto_key=' + key + '&';
+    url += '&x=' + x + '&y=' + y;
+            
+    Utils.popFrame(url, false, pos);
+  }
+  
+  // scatter matrix
+  function PopScatterMatrix(table_name, var_names/*[list]*/) {
+  }
+  
+  // parallel coordinates
+  function PopParallelCoordinates(table_name, var_names/*[list]*/) {
+  }
+ 
+  // box plot
+  function PopBoxPlot(table_name, var_name) {
+  }
+  
+ 
+  var maps_content_url = '../media/temp/' + user_id + '/' + viz_name + '.content.txt'; 
+  $.get(maps_content_url).done(function(content){
+    $('#map_content').html(marked(content)).draggable().resizable().show();
+  });
+  
+}); // end require
+
+</script>
+</html>
