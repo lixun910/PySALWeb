@@ -779,4 +779,101 @@ def carto_get_viz(request):
 
 @csrf_exempt
 def geoda_publish(request):
-    return HttpResponse('Hello world')
+    
+    
+    if request.method == 'POST': 
+        #cartodb_uid = request.POST.get("carto_uid", None)
+        #cartodb_key = request.POST.get("carto_key", None)
+        
+        title = request.POST.get("table_name", None)
+        map_conf = request.POST.get('map', None)
+        lisa_conf = request.POST.get('lisa', None);
+        histogram_conf = request.POST.get('histogram', None);
+        scatterplot_conf = request.POST.get('scatterplot', None);
+        scattermatrix_conf = request.POST.get('scattermatrix', None);
+        
+        maps = []
+        
+        if map_conf:
+            map_conf = json.loads(map_conf)
+            map_conf["stroke_clr"] = "#FFFFFF"
+            map_conf["fill_clr"] = "#006400"
+            map_conf["stroke_width"]  = 0.6
+            map_conf["alpha"] = 0.8
+            maps.append(map_conf)
+            
+        if lisa_conf:
+            lisa_conf = json.loads(map_conf)
+            lisa_conf["stroke_clr"] = "#FFFFFF"
+            lisa_conf["fill_clr"] = "#006400"
+            lisa_conf["stroke_width"]  = 0.6
+            lisa_conf["alpha"] = 0.8
+            lisa_conf["bins"] = [0,1,2,3,4]
+            lisa_conf["colors"] = ["#ffffff","#E03531","#A8ABF5","#254BEF","#ECB0A6"]
+            lisa_conf["legend_field"] = "lisa"
+            maps.append(lisa_conf)
+            
+        table_name = map_conf['map_name']
+        
+        plots = []
+        
+        if histogram_conf:
+            histogram_conf = json.loads(histogram_conf)
+            x = histogram_conf[0]
+           
+            histogram_conf = {} 
+            histogram_conf["table_name"] = table_name
+            histogram_conf["pos"] = {"top":101.25,"left":115.53125}
+            histogram_conf["plot_type"] = "histogram"
+            histogram_conf["carto_uid"] = "lixun910"
+            histogram_conf["carto_key"] = "340808e9a453af9680684a65990eb4eb706e9b56"
+            histogram_conf["x"] = x 
+            
+            plots.append(histogram_conf)
+            
+        if scatterplot_conf:
+            scatterplot_conf = json.loads(histogram_conf)
+            x = scatterplot_conf[0]
+            y = scatterplot_conf[1]
+           
+            scatterplot_conf = {} 
+            scatterplot_conf["table_name"] = table_name
+            scatterplot_conf["pos"] = {"top":101.25,"left":115.53125}
+            scatterplot_conf["plot_type"] = "histogram"
+            scatterplot_conf["carto_uid"] = "lixun910"
+            scatterplot_conf["carto_key"] = "340808e9a453af9680684a65990eb4eb706e9b56"
+            scatterplot_conf["x"] = x 
+            scatterplot_conf["y"] = y
+            
+            plots.append(scatterplot_conf)
+            
+        userid="lixun910"
+        viz_name = md5(userid + title).hexdigest()
+        user_uuid = md5(userid).hexdigest()
+        base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
+        if not os.path.exists(base_loc):
+            os.mkdir(base_loc)
+            os.chmod(path, mode=0755)
+            
+        file_path = os.path.join(base_loc, viz_name+".maps.json")
+        o = open(file_path, 'w')
+        o.write(json.dumps(maps))
+        o.close()
+    
+        file_path = os.path.join(base_loc, viz_name+".plots.json")
+        o = open(file_path, 'w')
+        o.write(json.dumps(plots))
+        o.close()
+        
+        new_item = CartoViz(
+            uuid=viz_name,
+            userid=user_uuid,
+            name=title,
+            type="",
+        )
+        new_item.save()
+        
+        share_url = "https://webpool.csf.asu.edu/xun/static/geoda_pub.html?uid=%s&vizname=%s" % (user_uuid, viz_name)
+        return HttpResponse(share_url)            
+    
+    return HttpResponse('')
