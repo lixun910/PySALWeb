@@ -55,6 +55,7 @@ urlpatterns += patterns('geoda_web.views_cartodb',
     url(r'^carto_create_viz/$', 'carto_create_viz', name='carto create vizjson'),
     url(r'^carto_get_viz/$', 'carto_get_viz', name='carto get vizjson'),
     url(r'^carto_add_field_from_file/$', 'carto_add_field_from_file', name='carto field from csv file'),
+    url(r'^geoda_publish/$', 'geoda_publish', name='API geoda used to publish'),
 )
 
 urlpatterns += patterns('geoda_web.views_map',

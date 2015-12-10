@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
 from geoda_web.models import Geodata, CartoViz, Preference
 from geoda_web.forms import DocumentForm
@@ -775,3 +776,7 @@ def carto_get_viz(request):
         return HttpResponse(json.dumps(result), content_type="application/json")    
     
     return HttpResponse(RSP_FAIL, content_type="application/json")    
+
+@csrf_exempt
+def geoda_publish(request):
+    return HttpResponse('Hello world')
