@@ -723,7 +723,7 @@ def carto_create_viz(request):
         base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
         if not os.path.exists(base_loc):
             os.mkdir(base_loc)
-            os.chmod(path, mode=0755)
+            os.chmod(base_loc, mode=0755)
         file_path = os.path.join(base_loc, viz_name+".json")
         o = open(file_path, 'w')
         o.write(vizjson)
@@ -785,7 +785,9 @@ def geoda_publish(request):
         #cartodb_uid = request.POST.get("carto_uid", None)
         #cartodb_key = request.POST.get("carto_key", None)
         
-        title = request.POST.get("table_name", None)
+        title = request.POST.get("title", None)
+        content = request.POST.get("content", None)
+        table_name = request.POST.get("table_name", None)
         map_conf = request.POST.get('map', None)
         lisa_conf = request.POST.get('lisa', None);
         histogram_conf = request.POST.get('histogram', None);
@@ -800,10 +802,12 @@ def geoda_publish(request):
             map_conf["fill_clr"] = "#006400"
             map_conf["stroke_width"]  = 0.6
             map_conf["alpha"] = 0.8
+            map_conf["map_name"] =table_name 
             maps.append(map_conf)
             
         if lisa_conf:
-            lisa_conf = json.loads(map_conf)
+            lisa_conf = json.loads(lisa_conf)
+            lisa_conf = {}
             lisa_conf["stroke_clr"] = "#FFFFFF"
             lisa_conf["fill_clr"] = "#006400"
             lisa_conf["stroke_width"]  = 0.6
@@ -813,7 +817,6 @@ def geoda_publish(request):
             lisa_conf["legend_field"] = "lisa"
             maps.append(lisa_conf)
             
-        table_name = map_conf['map_name']
         
         plots = []
         
@@ -832,14 +835,14 @@ def geoda_publish(request):
             plots.append(histogram_conf)
             
         if scatterplot_conf:
-            scatterplot_conf = json.loads(histogram_conf)
+            scatterplot_conf = json.loads(scatterplot_conf)
             x = scatterplot_conf[0]
             y = scatterplot_conf[1]
            
             scatterplot_conf = {} 
             scatterplot_conf["table_name"] = table_name
             scatterplot_conf["pos"] = {"top":101.25,"left":115.53125}
-            scatterplot_conf["plot_type"] = "histogram"
+            scatterplot_conf["plot_type"] = "scatterplot"
             scatterplot_conf["carto_uid"] = "lixun910"
             scatterplot_conf["carto_key"] = "340808e9a453af9680684a65990eb4eb706e9b56"
             scatterplot_conf["x"] = x 
@@ -853,7 +856,7 @@ def geoda_publish(request):
         base_loc = os.path.join(settings.MEDIA_ROOT, 'temp', user_uuid)
         if not os.path.exists(base_loc):
             os.mkdir(base_loc)
-            os.chmod(path, mode=0755)
+            os.chmod(base_loc, mode=0755)
             
         file_path = os.path.join(base_loc, viz_name+".maps.json")
         o = open(file_path, 'w')
@@ -865,15 +868,21 @@ def geoda_publish(request):
         o.write(json.dumps(plots))
         o.close()
         
+        file_path = os.path.join(base_loc, viz_name+".content.txt")
+        o = open(file_path, 'w')
+        o.write(content)
+        o.close()
+        
         new_item = CartoViz(
             uuid=viz_name,
             userid=user_uuid,
             name=title,
-            type="",
+            type=0,
         )
         new_item.save()
         
         share_url = "https://webpool.csf.asu.edu/xun/static/geoda_pub.html?uid=%s&vizname=%s" % (user_uuid, viz_name)
+        share_url = "http://127.0.0.1:8000/static/geoda_pub.html?uid=%s&vizname=%s" % (user_uuid, viz_name)
         return HttpResponse(share_url)            
     
     return HttpResponse('')
