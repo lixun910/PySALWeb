@@ -63,7 +63,7 @@
 	  </td>
 	  <td width=90>
 	  <div id="multilayer_arrow"></div>
-	    <div class="blockBtn" id="btnShowTable"><img src="../../media/img/table.png"/><span>Table</span></div>
+	    <div class="blockBtn" id="btnShowTable"><img src="../../media/img/edit.png"/><span>Edit</span></div>
 	  </td>
 	  <td width=80>
 	    <div class="blockBtn" id="btnNewMap"><img src="../../media/img/nmap.png"/><span>Map</span></div>
@@ -90,18 +90,24 @@
       <ul id="sortable-layers"></ul>
     </div>
     
+    <div class="tool-menu" id="edit-menu">
+      <div id="btnVoronoiMap" class="image-wrap" style="background-image: url(../../media/img/wiz-voronoi.png);">
+	<span>Voronoi Map</span>
+      </div>
+      <div id="btnRoad" class="image-wrap" style="background-image: url(../../media/img/wiz-road.png);">
+	<span>Road Network Analysis</span>
+      </div>
+      <div id="btnSpaceTime" class="image-wrap" style="background-image: url(../../media/img/wiz-spacetime.png);">
+	<span>Space Time Aggregation</span>
+      </div>
+    </div>
+
     <div class="tool-menu" id="map-menu">
       <div id="btnSimMap" class="image-wrap" style="background-image: url(../../media/img/wiz-sim-poly.png);width: 92px; height: 82px;">
 	<span>Simple Map</span>
       </div>
       <div id="btnCatMap" class="image-wrap" style="background-image: url(../../media/img/wiz-cat-poly.png);">
 	<span>Choropleth Map</span>
-      </div>
-      <div id="btnVoronoiMap" class="image-wrap" style="background-image: url(../../media/img/wiz-voronoi.png);">
-	<span>Voronoi Map</span>
-      </div>
-      <div id="btnDensity" class="image-wrap" style="background-image: url(../../media/img/wiz-density.jpeg);">
-	<span>Density Map</span>
       </div>
     </div>
 
@@ -121,22 +127,16 @@
       <div id="btnBoxPlot" class="image-wrap" style="background-image: url(../../media/img/wiz-boxplot.png);">
 	<span>Box Plot</span>
       </div>
-      <div id="btnBubbleMap" class="image-wrap" style="background-image: url(../../media/img/wiz-bubblemap.png);">
+      <div id="btnBubbleMap" class="image-wrap" style="background-image: url(../../media/img/wiz-bubblemap.png);display:none;">
 	<span>Bubble Map</span>
       </div>
-      <div class="image-wrap" style="background-image: url(../../media/img/wiz-chord.png);">
+      <div class="image-wrap" style="background-image: url(../../media/img/wiz-chord.png);display:none;">
 	<span>Chord Diagram</span>
       </div>
     </div>
 
     <div class="tool-menu" id="space-menu">
-      <div id="btnRoad" class="image-wrap" style="background-image: url(../../media/img/wiz-road.png);">
-	<span>Road Network Analysis</span>
-      </div>
-      <div id="btnSpaceTime" class="image-wrap" style="background-image: url(../../media/img/wiz-spacetime.png);">
-	<span>Space Time Aggregation</span>
-      </div>
-      <div id="btnCreateW" class="image-wrap" style="background-image: url(../../media/img/wiz-w.png);">
+      <div id="btnCreateW" class="image-wrap" style="background-image: url(../../media/img/wiz-w.png); display:none;">
 	<span>Create Weights</span>
       </div>
       <div id="btnHistW" class="image-wrap" style="background-image: url(../../media/img/wiz-hist-w.png);">
@@ -147,6 +147,9 @@
       </div>
       <div id="btnLISA" class="image-wrap" style="background-image: url(../../media/img/wiz-lisa.png)">
 	<span>LISA Map</span>
+      </div>
+      <div id="btnDensity" class="image-wrap" style="background-image: url(../../media/img/wiz-density.jpeg);">
+	<span>Density Map</span>
       </div>
     </div>
 

@@ -20,7 +20,7 @@ var Toolbar = (function($, FileDlg){
     var toolMenu = {
       '#btnMultiLayer':'#layer-tree', 
       '#btnNewMap':'#map-menu', 
-      //'#btnShowTable':'#map-menu', 
+      '#btnShowTable':'#edit-menu', 
       '#btnExplore':'#explore-menu', 
       '#btnSpace':'#space-menu', 
       //'#btnSpreg':'#spreg-menu'
