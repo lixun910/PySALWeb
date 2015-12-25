@@ -882,7 +882,7 @@ def geoda_publish(request):
         new_item.save()
         
         share_url = "https://webpool.csf.asu.edu/xun/static/geoda_pub.html?uid=%s&vizname=%s" % (user_uuid, viz_name)
-        share_url = "http://127.0.0.1:8000/static/geoda_pub.html?uid=%s&vizname=%s" % (user_uuid, viz_name)
+        #share_url = "http://127.0.0.1:8000/static/geoda_pub.html?uid=%s&vizname=%s" % (user_uuid, viz_name)
         return HttpResponse(share_url)            
     
     return HttpResponse('')
